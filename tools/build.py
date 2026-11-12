@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
 
@@ -115,6 +115,10 @@ OPTIONS = [
     ("arrows", "toggle", "Flechas de posición", "Position arrows",
      "Flecha verde o roja durante 3 s cuando un coche gana o pierde posiciones.",
      "A green or red arrow for 3 s when a car gains or loses places.", {"default": True}),
+    ("logo_colour", "toggle", "Logos de equipo en color", "Team logos in colour",
+     "Los escudos de la retransmisión del propio juego, en color (y los de cualquier mod de logos). No: los blancos del HUD.",
+     "The game's own broadcast badges, in colour (and those of any logo mod). Off: the white HUD ones.",
+     {"default": True}),
     ("team_bar", "toggle", "Barra de color de equipo", "Team colour bar",
      "Una fina barra con el color del equipo junto al nombre.", "A thin team colour bar beside the name.",
      {"default": False}),
@@ -165,7 +169,7 @@ def manifest(flavour):
         if typ == "choice":
             o["values"] = [{"value": v, "label": a if es else b} for v, a, b in extra["values"]]
         opts.append(o)
-    files = ["native/tvt_logos.txt"]
+    files = []
     if flavour == "private":
         files.append("overlay")
     desc_es = ("Torre de tiempos estilo retransmisión F1 TV/DAZN dibujada con el propio HUD del juego, en lugar del "
@@ -193,7 +197,7 @@ def manifest(flavour):
         "options": opts,
         "operations": {
             "hud": ["registry/tower.json"],
-            "native": [{"dll": f"native/{DLL}", "files": files}],
+            "native": [dict({"dll": f"native/{DLL}"}, **({"files": files} if files else {}))],
         },
     }
 
@@ -226,8 +230,6 @@ def build_flavour(flavour, dll_path, logos):
     layout = json.loads((stage / "layout.json").read_text())
     (stage / "native").mkdir(exist_ok=True)
     shutil.copy2(dll_path, stage / "native" / DLL)
-    found = [hudgen.TEAMS.index(t) for t in layout["logos"]]
-    (stage / "native" / "tvt_logos.txt").write_text(" ".join(str(i) for i in found) + "\n")
     if flavour == "private":
         (stage / "overlay").mkdir(exist_ok=True)
         bc = logos / "broadcaster.png"
@@ -301,9 +303,17 @@ def preview_assets(stage, layout):
         if dst.exists():
             shutil.rmtree(dst)
         shutil.copytree(fonts, dst)
-    bc = ROOT / "assets" / "private" / "logos" / "broadcaster.png"
-    if bc.exists():
-        shutil.copy2(bc, data / "broadcaster.png")
+    logos = ROOT / "assets" / "private" / "logos"
+    if logos.exists():
+        dst = data / "logos"
+        if dst.exists():
+            shutil.rmtree(dst)
+        dst.mkdir()
+        for t in hudgen.TEAMS:
+            if (logos / f"{t}.png").exists():
+                shutil.copy2(logos / f"{t}.png", dst / f"{t}.png")
+        if (logos / "broadcaster.png").exists():
+            shutil.copy2(logos / "broadcaster.png", data / "broadcaster.png")
 
 
 def main():

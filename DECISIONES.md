@@ -41,7 +41,7 @@ disponibles en ajustes.
 cuando el coche de seguridad (vehículo no-racer) entra en el pit lane o se desvía hacia él. VSC ENDING: los
 primeros 4 s tras desactivarse el VSC se muestra `VSC ENDING` y después `TRACK CLEAR` 4 s (aproximación).
 
-**D9 — Logos.** PRIVATE: PNG reales (descargados a `assets/private/logos`, fuera de git) como sprites del HUD,
+**D9 — Logos (0.1.0; sustituida por D23 en 0.2.0).** PRIVATE: PNG reales (descargados a `assets/private/logos`, fuera de git) como sprites del HUD,
 elegidos por la clave de escudo del juego (`team_badge`). Si un equipo no tiene PNG, se usa el escudo del
 propio juego (`unit: team_logo`). PUBLIC: solo el escudo del propio juego por referencia (no se distribuye
 ningún logo) y logo de serie del juego en la cabecera.
@@ -89,3 +89,41 @@ diferencias en la columna derecha (los coches esperan en el pit lane).
 
 **D21 — Modo demo: mejor en una sesión de libres.** En Contrarreloj el juego enseña su propio tablero de
 tiempos, no el de posiciones, así que la torre (que vive dentro de este) puede no verse allí.
+
+## 0.2.0 (tras la primera prueba en el juego, 12-11-2026)
+
+**D22 — Torre más baja y más arriba.** Filas de 18,0 unidades (antes 21,6), cabecera de 38 y tarjeta de 16; toda
+la torre sube 40 unidades (`offset_y`), al hueco del contador de vueltas que ya se oculta. Con 22 coches cabe entera
+en pantalla. Ancho 186 y nombres con `clampwidth` en 78 unidades para que los apellidos largos no pisen la
+diferencia. Se sigue pudiendo mover/escalar en el editor de HUD.
+
+**D23 — Logos de equipo: siempre los del juego, en color.** El juego tiene dos juegos de escudos con la misma
+clave: `osd.timing_tower.team_badges_hud` (blancos, los de la torre del HUD) y `team_badges_broadcast` (los de la
+torre de retransmisión del juego). Por defecto se usa el de retransmisión. Como son texturas del juego, un mod de
+logos cambia también la torre. Ajuste *Logos de equipo en color* = No vuelve a los blancos. Se quitan los PNG privados de las
+filas (eran blancos y el mapeo fallaba: el juego llama `alfa_romeo_26` a Audi, `alphatauri_26` a Racing Bulls y
+`gm_cadillac_26` a Cadillac). Los PNG privados quedan solo para el visor HTML.
+
+**D24 — Neumático: solo la letra del compuesto en su color**, como en la torre de 2026 (captura real de
+Australia 2026 P1: `LEC 1:21.227 M P`). Sin círculo.
+
+**D25 — Banderas como la señal internacional de FOM.** Con SC, VSC, sus finales, bandera amarilla o bandera roja la
+tarjeta de color va pegada bajo la cabecera y **toda la torre lleva un marco de ese color** (amarillo o rojo).
+Textos: `SAFETY CAR`, `SAFETY CAR ENDING`, `VIRTUAL SAFETY CAR`, `VIRTUAL SAFETY CAR ENDING`, `RED FLAG`,
+`YELLOW FLAG S2`, `TRACK CLEAR` (sin marco). Fuente: capturas de la torre FOM y su rediseño público (ver
+INVESTIGACION.md §5); no se encontró una captura oficial de 2026 con SC, así que se pide confirmación con una
+captura real.
+
+**D26 — Q2/Q3 (SQ2/SQ3): los eliminados salen de la torre**, como en TV (antes se atenuaban). Q2 muestra 16 filas
+y Q3 10. Con *Top 10 + yo* y el jugador eliminado, solo el top 10.
+
+**D27 — Nombres por coche sin cambios bajo un nodo oculto.** En la prueba salió una fila con dos apellidos
+superpuestos al salir de la demo: el juego no aplica un cambio de visibilidad dentro de un grupo oculto, así que un
+nombre apagado mientras su grupo estaba oculto volvía a verse. Ahora los interruptores de coche (`rNN_cVV`) solo
+cambian con la fila visible: no hay grupo padre ligado a la demo, una fila oculta conserva su valor y apagar la
+torre ya no toca las filas. Limitación: si el propio juego oculta el tablero (garaje, menús) y el orden cambia
+mientras tanto, podría repetirse; si pasa, anotar cuándo.
+
+**D28 — Reloj de la cabecera con pulso.** El formateador del reloj del juego solo se ejecuta cuando su hoja de
+arranque pasa de 0 a 1; en la prueba se activó antes de existir el HUD y el reloj no salió. Ahora la hoja `clk`
+pulsa 4 veces por segundo en sesiones cronometradas.

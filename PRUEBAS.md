@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.1.0
+# Checklist de pruebas en el juego — TV Timing Tower 0.2.0
 
 Antes de empezar: instala `dist/tv-timing-tower-PRIVATE.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.1.0 loaded: … leaves, 12 private team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.2.0 loaded: … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -14,9 +14,15 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
       (`RUSSELL 1:19.832`, `VERSTAPPEN` con P…) y se puede mover, escalar y cambiar la opacidad.
 
 ## 1. Libres (Gran Premio → Libres 1)
-- [ ] Al salir a pista desaparece el tablero nativo y aparece la torre a la izquierda (cabecera F1 + `P1 mm:ss`).
-- [ ] El reloj de la cabecera cuenta hacia atrás (es el del propio juego).
-- [ ] Nombres en mayúsculas correctos (los del juego) y logos de equipo correctos para cada piloto.
+- [ ] Al salir a pista desaparece el tablero nativo y aparece la torre arriba a la izquierda, **entera** (las 22
+      filas en pantalla), con cabecera F1 + `P1 mm:ss`.
+- [ ] El reloj de la cabecera **sale y** cuenta hacia atrás (es el del propio juego).
+- [ ] Nombres en mayúsculas correctos (los del juego), **nunca dos apellidos en una fila** (prueba también tras volver
+      del garaje y tras salir de la demo con Ctrl+F8).
+- [ ] Logos de equipo **en color** y correctos (Audi con los aros, Racing Bulls, Cadillac). Ajuste *Logos de equipo
+      en color* = No: escudos blancos.
+- [ ] Neumático: solo la letra en su color (S roja, M amarilla, H blanca), sin círculo.
+- [ ] Apellidos largos (VERSTAPPEN, HULKENBERG, ANTONELLI) no pisan el tiempo.
 - [ ] Coches en garaje/boxes muestran la `P` blanca a la derecha.
 - [ ] Tras completar vueltas: el líder muestra su tiempo (`1:2x.xxx`), el resto `+0.xxx`.
 - [ ] Tu mejor vuelta parpadea en verde (o morado si es la mejor de la sesión) 3 s.
@@ -32,8 +38,8 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 ## 2. Clasificación (Q1, Q2, Q3)
 - [ ] Cabecera `Q1 mm:ss`.
 - [ ] Q1: posiciones 17-22 (con 22 coches) en caja roja oscura y línea roja encima de la 17.
-- [ ] Q2: `Q2`, zona de eliminación 11-16; si el juego sigue clasificando a los eliminados de Q1, salen atenuados.
-- [ ] Q3: `Q3`, sin zona roja; P11+ atenuados si aparecen.
+- [ ] Q2: `Q2`, zona de eliminación 11-16; los eliminados de Q1 **no aparecen** (16 filas).
+- [ ] Q3: `Q3`, sin zona roja, solo 10 filas.
 - [ ] Coche en out-lap / garaje: `P` blanca cuando está en boxes.
 - [ ] Al final de cada ronda la torre no se queda en blanco ni muestra filas raras.
 
@@ -54,11 +60,13 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
 
 ## 5. Estados de carrera (usa SC/VSC en "Frecuente" o provoca un accidente)
-- [ ] Bandera amarilla: tarjeta amarilla `YELLOW FLAG S2` bajo la cabecera, las filas bajan.
-- [ ] VSC: tarjeta `VIRTUAL SAFETY CAR`; al terminar `VSC ENDING` 4 s y luego `TRACK CLEAR` verde 4 s.
-- [ ] Safety Car: `SAFETY CAR`; cuando el coche de seguridad entra al pit lane `SAFETY CAR IN THIS LAP`;
+- [ ] Bandera amarilla: tarjeta amarilla `YELLOW FLAG S2` bajo la cabecera y marco amarillo alrededor de la torre.
+- [ ] VSC: tarjeta `VIRTUAL SAFETY CAR` + marco amarillo; al terminar `VIRTUAL SAFETY CAR ENDING` 4 s y luego
+      `TRACK CLEAR` verde 4 s (sin marco).
+- [ ] Safety Car: `SAFETY CAR` + marco amarillo; cuando el coche de seguridad entra al pit lane `SAFETY CAR ENDING`;
       al reanudar `TRACK CLEAR`.
-- [ ] Bandera roja: tarjeta roja `RED FLAG`, sin diferencias en la columna derecha.
+- [ ] Bandera roja: tarjeta roja `RED FLAG`, marco rojo, sin diferencias en la columna derecha.
+- [ ] Compara con la TV: si FOM lo muestra distinto, manda una captura de la emisión.
 - [ ] La caja de banderas nativa de la izquierda no aparece mientras se ve la torre (la torre la sustituye).
 
 ## 6. Modo demo
@@ -68,9 +76,9 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Ajuste *Modo demo* = Sí + *Escenario demo* fijo: se queda en ese escenario.
 
 ## 7. Logos (solo PRIVATE)
-- [ ] Logos reales de los 11 equipos 2026 en las filas; F1 en la cabecera.
+- [ ] Logo F1 real en la cabecera (los de equipo son los del juego en las dos builds).
 - [ ] Logo de la cadena arriba a la derecha mientras se ve la torre; *Logo de la cadena* = No lo quita.
-- [ ] Con la build PUBLIC: logos del propio juego y sin logo de cadena.
+- [ ] Con la build PUBLIC: logo de serie del juego en la cabecera y sin logo de cadena.
 
 ## 8. Fallo seguro
 - [ ] Desactiva el addon: vuelve el tablero nativo intacto.

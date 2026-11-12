@@ -24,28 +24,30 @@ TEAMS = ["mercedes", "ferrari", "redbull", "mclaren", "astonmartin", "alpine",
 PX = 4  # sprite pixels per HUD unit
 
 LAYOUT = {
-    "width": 178.0,
-    "row": 21.635,
-    "header": 44.0,
-    "card": 19.0,
-    "pos_box": [0.0, 20.0],
-    "pos_x": 10.0,
-    "logo_x": 29.0,
-    "logo_size": 13.0,
-    "bar_x": 37.2,
-    "name_x": 40.5,
-    "name_box": 80.0,
-    "gap_right": 158.5,
-    "gap_box": 52.0,
-    "tyre_x": 168.5,
-    "tyre_d": 12.0,
-    "text_y": 14.6,          # baseline of the row's texts
-    "cap_name": 8.0,
-    "cap_pos": 8.0,
-    "cap_gap": 7.2,
-    "cap_label": 5.4,
-    "side_x": 180.0,         # outside items (P box, penalty, fastest lap, flag)
-    "chip": 13.0,
+    # 0.2: shorter rows so 22 cars fit on screen, the tower moved up into the space of the (hidden) lap counter
+    "offset_y": -40.0,       # the whole tower, from the stock board's origin
+    "width": 186.0,
+    "row": 18.0,
+    "header": 38.0,
+    "card": 16.0,
+    "frame": 1.3,            # coloured frame (SC / VSC / yellow, red flag)
+    "pos_x": 9.0,
+    "logo_x": 25.0,
+    "logo_size": 12.5,
+    "bar_x": 17.6,
+    "name_x": 33.5,
+    "name_box": 78.0,
+    "gap_right": 168.0,
+    "gap_box": 48.0,
+    "tyre_x": 177.5,
+    "text_y": 12.6,          # baseline of the row's texts
+    "cap_name": 7.0,
+    "cap_pos": 7.0,
+    "cap_gap": 6.6,
+    "cap_label": 5.0,
+    "cap_tyre": 6.4,
+    "side_x": 188.0,         # outside items (P box, penalty, fastest lap, flag)
+    "chip": 12.0,
     "colours": {
         "bg": [14, 17, 36],
         "hdr": [10, 12, 27],
@@ -113,15 +115,16 @@ def make_art(art: Path):
         # thin red rule under the logo, as the broadcast header
         add(f"hdr{i}", img, [0, 0, W, H])
 
-    add("hdr_rule", flat(W - 24, 0.6, hexrgba("#FFFFFF", 38)), [12, 26.2, W - 12, 26.8])
+    add("hdr_rule", flat(W - 24, 0.6, hexrgba("#FFFFFF", 38)), [12, 21.6, W - 12, 22.2])
     add("me", flat(W, R, (255, 255, 255, 34)), [0, 0, W, R])
     add("me_edge", flat(1.2, R, (255, 255, 255, 235)), [0, 0, 1.2, R])
-    add("p1", flat(16, 15, hexrgba(C["p1"])), [2, 3.3, 18, 18.3])
-    add("ko", flat(16, 15, hexrgba(C["ko"])), [2, 3.3, 18, 18.3])
+    bh = R - 4.0
+    add("p1", flat(15, bh, hexrgba(C["p1"])), [1.5, 2.0, 16.5, 2.0 + bh])
+    add("ko", flat(15, bh, hexrgba(C["ko"])), [1.5, 2.0, 16.5, 2.0 + bh])
     add("koline", flat(W, 0.8, hexrgba(C["p1"])), [0, 0, W, 0.8])
     add("sep", flat(W - 8, 0.6, (255, 255, 255, 70)), [4, 0, W - 4, 0.6])
     add("dim", flat(W, R, (6, 7, 14, 150)), [0, 0, W, R])
-    add("bar", flat(1.2, 12, (255, 255, 255, 255)), [L["bar_x"], 4.8, L["bar_x"] + 1.2, 16.8])
+    add("bar", flat(1.2, R - 6, (255, 255, 255, 255)), [L["bar_x"], 3.0, L["bar_x"] + 1.2, R - 3.0])
 
     # position arrows
     for name, up, col in (("arr_up", True, C["green"]), ("arr_dn", False, "#E8002D")):
@@ -132,19 +135,21 @@ def make_art(art: Path):
               [(s * 0.08, s * 0.15), (s * 0.92, s * 0.15), (s / 2, s * 0.88)]
         d.polygon(pts, fill=hexrgba(col))
         x = L["pos_x"]
-        add(name, img, [x - 4, 6.8, x + 4, 14.8])
+        add(name, img, [x - 4, R / 2 - 4, x + 4, R / 2 + 4])
 
-    # tyre rings
-    for k, col in C["tyres"].items():
-        n = px(L["tyre_d"]) * 2
-        img = Image.new("RGBA", (n, n), (0, 0, 0, 0))
-        d = ImageDraw.Draw(img)
-        w = n * 0.13
-        d.ellipse([w / 2, w / 2, n - w / 2, n - w / 2], outline=hexrgba(col), width=int(w))
-        img = img.resize((px(L["tyre_d"]), px(L["tyre_d"])), Image.LANCZOS)
-        r = L["tyre_d"] / 2
-        cy = R / 2
-        add(f"ty{k}", img, [L["tyre_x"] - r, cy - r, L["tyre_x"] + r, cy + r])
+    # the frame round the tower while a flag is out (the broadcast's yellow / red outline): a left and a right edge
+    # per piece (header, card, row) and a bottom edge under the last row
+    fw = L["frame"]
+    for k, col in (("y", C["sc"]), ("r", C["red"])):
+        c = hexrgba(col)
+        add(f"fh{k}", flat(fw, H, c), [0, 0, fw, H])
+        add(f"fhr{k}", flat(fw, H, c), [W - fw, 0, W, H])
+        add(f"ft{k}", flat(W, fw, c), [0, 0, W, fw])
+        add(f"fc{k}", flat(fw, L["card"], c), [0, 0, fw, L["card"]])
+        add(f"fcr{k}", flat(fw, L["card"], c), [W - fw, 0, W, L["card"]])
+        add(f"fl{k}", flat(fw, R, c), [0, 0, fw, R])
+        add(f"flr{k}", flat(fw, R, c), [W - fw, 0, W, R])
+        add(f"fb{k}", flat(W, fw, c), [0, R - fw, W, R])
 
     # outside chips: positioned by the side stack, bounds from the chip's own origin
     ch = L["chip"]
@@ -201,32 +206,21 @@ def fit_logo(src: Path, size_px: int):
 
 
 def private_logos(art: Path, logos: Path, sprites: dict):
-    """Team logos and the F1 logo from assets/private/logos (white PNGs). Returns the team indices found."""
+    """The F1 logo for the header from assets/private/logos (private build). Team logos are the game's own since
+    0.2 (they follow logo mods); the HTML preview reads assets/private/logos itself."""
     L = LAYOUT
-    found = []
-    s = L["logo_size"]
-    for i, t in enumerate(TEAMS):
-        src = logos / f"{t}.png"
-        if not src.exists():
-            continue
-        img = fit_logo(src, px(s) * 2)
-        save(img, art / f"tm_{t}.png")
-        x, y = L["logo_x"], L["row"] / 2
-        sprites[f"tm_{t}"] = {"png": f"art/tm_{t}.png", "bounds": [x - s / 2, y - s / 2, x + s / 2, y + s / 2]}
-        found.append(i)
     f1 = logos / "f1.png"
     if f1.exists():
         im = Image.open(f1).convert("RGBA")
         bb = im.getbbox()
         im = im.crop(bb) if bb else im
-        w, h = 46.0, 46.0 * im.size[1] / im.size[0]
-        if h > 16.0:
-            w, h = w * 16.0 / h, 16.0
+        w, h = 40.0, 40.0 * im.size[1] / im.size[0]
+        if h > 12.5:
+            w, h = w * 12.5 / h, 12.5
         out = im.resize((px(w) * 2, px(h) * 2), Image.LANCZOS)
         save(out, art / "f1logo.png")
         x0 = (L["width"] - w) / 2
-        sprites["f1logo"] = {"png": "art/f1logo.png", "bounds": [x0, 5.0, x0 + w, 5.0 + h]}
-    return found
+        sprites["f1logo"] = {"png": "art/f1logo.png", "bounds": [x0, 4.5, x0 + w, 4.5 + h]}
 
 
 # ------------------------------------------------------------------------------------------------- record
@@ -278,69 +272,82 @@ def group(id_, children, visible=None, at=None, repeat=None):
     return e
 
 
+def frame_edges(prefix, left, right, extra=()):
+    """The flag frame's sprites for one piece of the tower: yellow and red copies, each shown by its leaf."""
+    out = []
+    for k, leaf in (("y", "fy"), ("r", "fr")):
+        kids = [sprite(f"{prefix}{k}l", f"{left}{k}", 46), sprite(f"{prefix}{k}r", f"{right}{k}", 46)]
+        for i, (name, vis) in enumerate(extra):
+            kids.append(sprite(f"{prefix}{k}x{i}", f"{name}{k}", 46, visible=vis))
+        out.append(group(f"{prefix}{k}", kids, visible=vm(leaf)))
+    return out
+
+
 def header(flavour, has_f1):
     L = LAYOUT
     W = L["width"]
-    C = L["colours"]
     bgs = [sprite(f"hb{i}", f"hdr{i}", 20, visible=vm(f"bg{i}")) for i in range(3)]
     if has_f1:
         logo = sprite("f1", "f1logo", 26)
     else:
-        logo = {"kind": "unit", "id": "f1", "unit": "series_logo", "at": [W / 2 - 18.0, 5.5], "size": 36.0,
+        logo = {"kind": "unit", "id": "f1", "unit": "series_logo", "at": [W / 2 - 16.0, 4.5], "size": 32.0,
                 "texture": {"screen": "series_logo"}}
-    y = 37.0
+    y = 32.0
+    # "LAP 23/57": the number right-aligned against the slash, "LAP" a fixed space before the widest number
     race = group("race", [
         {"kind": "centre", "id": "lc", "at": [W / 2, y], "children": [
-            text("lw", "OSD_19_regular", "right", 22, 6.2, [-12.0, 0], literal="LAP"),
-            text("ln", "OSD_24_bold", "right", 16, 8.0, [4.0, 0], value=vm("lap")),
-            text("ls", "OSD_19_regular", "centre", 6, 6.2, [7.2, 0], literal="/"),
-            group("lt", [text("ltn", "OSD_19_regular", "left", 16, 6.2, [10.2, 0],
+            text("lw", "OSD_19_regular", "right", 22, 5.8, [-15.5, 0], literal="LAP"),
+            text("ln", "OSD_24_bold", "right", 16, 7.2, [3.0, 0], value=vm("lap")),
+            text("ls", "OSD_19_regular", "centre", 6, 5.8, [6.0, 0], literal="/"),
+            group("lt", [text("ltn", "OSD_19_regular", "left", 16, 5.8, [8.6, 0],
                               value={"path": "#session.number_of_laps", "ty": "si32"})], visible=vm("demo", True, True)),
-            group("ltd", [text("ltdn", "OSD_19_regular", "left", 16, 6.2, [10.2, 0], value=vm("dlaps"))],
+            group("ltd", [text("ltdn", "OSD_19_regular", "left", 16, 5.8, [8.6, 0], value=vm("dlaps"))],
                   visible=vm("demo")),
         ]}], visible=vm("race"))
     timed = group("timed", [
-        text("sess", "OSD_24_bold", "right", 40, 8.0, [W / 2 - 3.0, y], value=vm("sess")),
-        group("clk", [text("clkn", "OSD_24_regular", "left", 40, 8.0, [W / 2 + 3.0, y],
+        text("sess", "OSD_24_bold", "right", 60, 7.2, [W / 2 - 3.0, y], value=vm("sess")),
+        group("clk", [text("clkn", "OSD_24_regular", "left", 40, 7.2, [W / 2 + 3.0, y],
                            value={"session": "time_remaining_str"})], visible=vm("demo", True, True)),
-        group("clkd", [text("clkdn", "OSD_24_regular", "left", 40, 8.0, [W / 2 + 3.0, y], value=vm("dclk"))],
+        group("clkd", [text("clkdn", "OSD_24_regular", "left", 40, 7.2, [W / 2 + 3.0, y], value=vm("dclk"))],
               visible=vm("demo")),
     ], visible=vm("timed"))
-    top = group("top", bgs + [sprite("rule", "hdr_rule", 24), logo, race, timed])
+    top = group("top", bgs + [sprite("rule", "hdr_rule", 24), logo, race, timed] +
+                frame_edges("hf", "fh", "fhr", [("ft", None)]))
 
     cd = L["card"]
-    ty = cd / 2 + 3.4
+    ty = cd / 2 + 3.0
 
-    def card(id_, spr, label, colour="#101010ff", extra=None):
-        kids = [sprite(id_ + "_bg", spr, 21), text(id_ + "_t", "OSD_24_bold", "centre", W - 8, 7.0, [W / 2, ty],
+    def card(id_, spr, label, colour="#101010ff", cap=6.4, framed=True):
+        kids = [sprite(id_ + "_bg", spr, 21), text(id_ + "_t", "OSD_24_bold", "centre", W - 8, cap, [W / 2, ty],
                                                      literal=label, colour=colour)]
-        if extra:
-            kids += extra
+        if framed:
+            kids += frame_edges(id_ + "f", "fc", "fcr")
         return group(id_, kids, visible=vm("c_" + id_))
 
+    # the broadcast's flag states (FOM world feed): a coloured block under the header, the tower framed in its colour
     cards = {"kind": "stack", "id": "cards", "dir": "down", "gap": 0, "children": [
         group("chq", [sprite("chq_bg", "card_chq", 21)], visible=vm("c_chq")),
         card("red", "card_red", "RED FLAG", "#ffffffff"),
-        card("scend", "card_sc", "SAFETY CAR IN THIS LAP"),
+        card("scend", "card_sc", "SAFETY CAR ENDING"),
         card("sc", "card_sc", "SAFETY CAR"),
         card("vsc", "card_sc", "VIRTUAL SAFETY CAR"),
-        card("vscend", "card_sc", "VSC ENDING"),
-        card("clear", "card_clear", "TRACK CLEAR", "#ffffffff"),
+        card("vscend", "card_sc", "VIRTUAL SAFETY CAR ENDING", cap=5.8),
+        card("clear", "card_clear", "TRACK CLEAR", "#ffffffff", framed=False),
         group("yel", [
             sprite("yel_bg", "card_sc", 21),
-            text("yel_t", "OSD_24_bold", "right", 100, 7.0, [W / 2 + 22.0, ty], literal="YELLOW FLAG",
+            text("yel_t", "OSD_24_bold", "right", 100, 6.4, [W / 2 + 22.0, ty], literal="YELLOW FLAG",
                  colour="#101010ff"),
-            text("yel_s", "OSD_24_bold", "left", 40, 7.0, [W / 2 + 26.0, ty], value=vm("ysec"),
+            text("yel_s", "OSD_24_bold", "left", 40, 6.4, [W / 2 + 26.0, ty], value=vm("ysec"),
                  colour="#101010ff"),
-        ], visible=vm("c_yel")),
+        ] + frame_edges("yelf", "fc", "fcr"), visible=vm("c_yel")),
     ]}
     return top, cards
 
 
-def row(flavour, logos_found):
+def row(flavour):
     L = LAYOUT
     C = L["colours"]
-    W, R = L["width"], L["row"]
+    R = L["row"]
     ty = L["text_y"]
     r = "r{NN}_"
     k = []
@@ -351,19 +358,17 @@ def row(flavour, logos_found):
           sprite("kol", "koline", 25, visible=vm(r + "kol"))]
     # position: the arrow replaces the number while it shows
     k += [group("pa", [group("pb", [
-        text("pos", "OSD_24_bold", "centre", 18, L["cap_pos"], [L["pos_x"], ty], value=vm(r + "pos"))
+        text("pos", "OSD_24_bold", "centre", 16, L["cap_pos"], [L["pos_x"], ty], value=vm(r + "pos"))
     ], visible=vm(r + "dn", True, True))], visible=vm(r + "up", True, True))]
     k += [sprite("au", "arr_up", 26, visible=vm(r + "up")), sprite("ad", "arr_dn", 26, visible=vm(r + "dn"))]
 
-    # team logo: private PNG sprites by one-hot, else the game's own badge
-    for i in logos_found:
-        t = TEAMS[i]
-        k.append(sprite(f"tm{i:02d}", f"tm_{t}", 27, visible=vm(r + f"tm{i:02d}")))
+    # team logo: always the game's own badge (broadcast set in colour, or the HUD set), so logo mods show too
     k.append({"kind": "unit", "id": "lg", "unit": "team_logo", "at": [L["logo_x"], R / 2], "size": L["logo_size"],
               "visible": vm(r + "bdg"), "texture": vm(r + "badge")})
 
-    # driver name: the game's own per-car values, one slot per vehicle id
-    slots = group("v", [
+    # driver name: the game's own per-car values, one slot per vehicle id. No parent of these switches turns on
+    # and off with demo mode: the DLL clears the slots (c = -1) in demo, while the row shows.
+    k.append(group("v", [
         group("cd", [text("code", "OSD_24_bold", "left", L["name_box"], L["cap_name"], [L["name_x"], ty],
                           value={"session_car": "driver.name_code", "slot_var": "V"}, wrap="clampwidth",
                           case="upper")], visible=vm("abbr")),
@@ -372,8 +377,7 @@ def row(flavour, logos_found):
                           case="upper")], visible=vm("abbr", True, True)),
         group("cb", [sprite("bar", "bar", 28, tint={"session_car": "nub_colour", "slot_var": "V",
                                                       "default": "#00000000"})], visible=vm("colbar")),
-    ], visible=vm(r + "c{VV}"), repeat={"count": SLOTS, "var": "V"})
-    k.append(group("nm", [slots], visible=vm("demo", True, True)))
+    ], visible=vm(r + "c{VV}"), repeat={"count": SLOTS, "var": "V"}))
     k.append(group("nd", [text("dn", "OSD_24_bold", "left", L["name_box"], L["cap_name"], [L["name_x"], ty],
                                value=vm(r + "nm"), wrap="clampwidth", case="upper")], visible=vm("demo")))
 
@@ -386,33 +390,32 @@ def row(flavour, logos_found):
                   colour=C["purple"] + "ff", visible=vm(r + "gpu")))
     k.append(text("gg", "OSD_24_bold", "right", L["gap_box"], L["cap_gap"], [gx, ty], value=vm(r + "gap"),
                   colour=C["green"] + "ff", visible=vm(r + "gpg")))
-    k.append(text("gl", "OSD_19_regular", "right", L["gap_box"], L["cap_label"], [gx, ty - 0.6],
+    k.append(text("gl", "OSD_19_regular", "right", L["gap_box"], L["cap_label"], [gx, ty - 0.5],
                   value=vm(r + "gap"), colour=C["label"] + "ff", visible=vm(r + "glb")))
 
-    # tyre ring and letter
+    # tyre: the compound's letter in its colour, as on the 2026 broadcast (no ring)
     for t, col in C["tyres"].items():
-        k.append(group(f"t{t}", [
-            sprite("ring", f"ty{t}", 27),
-            text("l", "OSD_19_regular", "centre", 8, 5.4, [L["tyre_x"], R / 2 + 2.7], literal=t, colour=col + "ff"),
-        ], visible=vm(r + f"t{t}")))
+        k.append(text(f"t{t}", "OSD_24_bold", "centre", 10, L["cap_tyre"], [L["tyre_x"], ty], literal=t,
+                      colour=col + "ff", visible=vm(r + f"t{t}")))
 
     # outside chips, laid out left to right by the game's stacker
     ch = L["chip"]
-    side = {"kind": "stack", "id": "side", "dir": "right", "gap": 1.5, "at": [L["side_x"], 0], "children": [
+    side = {"kind": "stack", "id": "side", "dir": "right", "gap": 1.2, "at": [L["side_x"], 0], "children": [
         group("pit", [sprite("pb", "pitbox", 30),
-                      text("pt", "OSD_24_bold", "centre", ch, 7.0, [ch / 2, R / 2 + 3.5], literal="P",
+                      text("pt", "OSD_24_bold", "centre", ch, 6.4, [ch / 2, R / 2 + 3.2], literal="P",
                            colour="#101018ff")], visible=vm(r + "pit")),
         group("pen", [sprite("nb", "penbox", 30),
-                      text("nt", "OSD_19_regular", "centre", 19, 5.6, [9.5, R / 2 + 2.8], value=vm(r + "pent"),
+                      text("nt", "OSD_19_regular", "centre", 19, 5.2, [9.5, R / 2 + 2.6], value=vm(r + "pent"),
                            colour="#101010ff")], visible=vm(r + "pen")),
         group("fl", [sprite("fb", "flbox", 30)], visible=vm(r + "fl")),
         group("chq", [sprite("cb", "chqbox", 30)], visible=vm(r + "chq")),
         group("age", [sprite("ab", "agebox", 30),
-                      text("at", "OSD_19_regular", "centre", ch, 5.6, [ch / 2, R / 2 + 2.8], value=vm(r + "tage"))],
+                      text("at", "OSD_19_regular", "centre", ch, 5.2, [ch / 2, R / 2 + 2.6], value=vm(r + "tage"))],
               visible=vm(r + "tag")),
     ]}
     k.append(side)
     k.append(sprite("dim", "dim", 45, visible=vm(r + "dim")))
+    k += frame_edges("rf", "fl", "flr", [("fb", vm(r + "last"))])
     return group("r", k, visible=vm(r + "on"), repeat={"count": ROWS, "var": "N", "pitch": [0, R]})
 
 
@@ -454,11 +457,11 @@ def unique_ids(elements):
     return elements
 
 
-def record(flavour, sprites, logos_found, has_f1):
+def record(flavour, sprites, has_f1):
     top, cards = header(flavour, has_f1)
-    rows = group("rows", [row(flavour, logos_found)])
-    elements = unique_ids([{"kind": "stack", "id": "stack", "dir": "down", "gap": 0,
-                            "children": [top, cards, rows]}])
+    rows = group("rows", [row(flavour)])
+    elements = unique_ids([group("tower", [{"kind": "stack", "id": "stack", "dir": "down", "gap": 0,
+                                            "children": [top, cards, rows]}], at=[0, LAYOUT["offset_y"]])])
     rec = {
         "$comment": "TV Timing Tower: generated by tools/hudgen.py - edit the generator, not this file.",
         "prefix": "tvtt",
@@ -467,7 +470,7 @@ def record(flavour, sprites, logos_found, has_f1):
         # replays and the spectator screen: off in 0.1.0 (not testable here; see DECISIONES.md D17)
         "sprites": sprites,
         "elements": elements,
-        "clock": {"output": P + "clock", "start": vm("timed")},
+        "clock": {"output": P + "clock", "start": vm("clk")},
         "stock_nodes": [
             {"template": "hud_lap_counter.osd_visibility_option",
              "scene": "eaid://ui_package/art/osd/components/lap_counter/lap_counter.idf",
@@ -494,16 +497,16 @@ def main():
     if art.exists():
         shutil.rmtree(art)
     sprites = make_art(art)
-    found, has_f1 = [], False
+    has_f1 = False
     if a.flavour == "private" and a.logos.exists():
-        found = private_logos(art, a.logos, sprites)
+        private_logos(art, a.logos, sprites)
         has_f1 = "f1logo" in sprites
     (out / "registry").mkdir(parents=True, exist_ok=True)
-    rec = record(a.flavour, sprites, found, has_f1)
+    rec = record(a.flavour, sprites, has_f1)
     (out / "registry" / "tower.json").write_text(json.dumps(rec, indent=1), encoding="utf-8")
-    meta = dict(LAYOUT, flavour=a.flavour, teams=TEAMS, logos=[TEAMS[i] for i in found], f1logo=has_f1)
+    meta = dict(LAYOUT, flavour=a.flavour, teams=TEAMS, f1logo=has_f1, sprites=sprites)
     (out / "layout.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
-    print(f"hudgen: {a.flavour}: {len(sprites)} sprites, {len(found)} team logos, f1 logo {has_f1}")
+    print(f"hudgen: {a.flavour}: {len(sprites)} sprites, f1 logo {has_f1}")
 
 
 if __name__ == "__main__":

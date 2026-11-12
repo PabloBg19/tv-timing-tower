@@ -15,19 +15,20 @@ struct Driver {
     const char *name, *code, *badge;
 };
 
-// 2026 grid (season pack). Badge keys follow the game's "<team>_2026" form; the private logos match by name.
+// 2026 grid (season pack). Badge keys as the game names its 2026 teams (in-game logs: Racing Bulls is
+// "alphatauri_26", Audi "alfa_romeo_26", Cadillac "gm_cadillac_26").
 inline const Driver kGrid[22] = {
-    {"RUSSELL", "RUS", "mercedes_2026"},     {"VERSTAPPEN", "VER", "red_bull_2026"},
-    {"LECLERC", "LEC", "ferrari_2026"},      {"NORRIS", "NOR", "mclaren_2026"},
-    {"HAMILTON", "HAM", "ferrari_2026"},     {"PIASTRI", "PIA", "mclaren_2026"},
-    {"ANTONELLI", "ANT", "mercedes_2026"},   {"HADJAR", "HAD", "red_bull_2026"},
-    {"ALONSO", "ALO", "aston_martin_2026"},  {"ALBON", "ALB", "williams_2026"},
-    {"SAINZ", "SAI", "williams_2026"},       {"GASLY", "GAS", "alpine_2026"},
-    {"LAWSON", "LAW", "racing_bulls_2026"},  {"STROLL", "STR", "aston_martin_2026"},
-    {"HULKENBERG", "HUL", "audi_2026"},      {"OCON", "OCO", "haas_2026"},
-    {"BEARMAN", "BEA", "haas_2026"},         {"LINDBLAD", "LIN", "racing_bulls_2026"},
-    {"BORTOLETO", "BOR", "audi_2026"},       {"COLAPINTO", "COL", "alpine_2026"},
-    {"PEREZ", "PER", "cadillac_2026"},       {"BOTTAS", "BOT", "cadillac_2026"},
+    {"RUSSELL", "RUS", "mercedes_26"},     {"VERSTAPPEN", "VER", "red_bull_26"},
+    {"LECLERC", "LEC", "ferrari_26"},      {"NORRIS", "NOR", "mclaren_26"},
+    {"HAMILTON", "HAM", "ferrari_26"},     {"PIASTRI", "PIA", "mclaren_26"},
+    {"ANTONELLI", "ANT", "mercedes_26"},   {"HADJAR", "HAD", "red_bull_26"},
+    {"ALONSO", "ALO", "aston_martin_26"},  {"ALBON", "ALB", "williams_26"},
+    {"SAINZ", "SAI", "williams_26"},       {"GASLY", "GAS", "alpine_26"},
+    {"LAWSON", "LAW", "alphatauri_26"},  {"STROLL", "STR", "aston_martin_26"},
+    {"HULKENBERG", "HUL", "alfa_romeo_26"},      {"OCON", "OCO", "haas_26"},
+    {"BEARMAN", "BEA", "haas_26"},         {"LINDBLAD", "LIN", "alphatauri_26"},
+    {"BORTOLETO", "BOR", "alfa_romeo_26"},       {"COLAPINTO", "COL", "alpine_26"},
+    {"PEREZ", "PER", "gm_cadillac_26"},       {"BOTTAS", "BOT", "gm_cadillac_26"},
 };
 
 enum Scenario : int {

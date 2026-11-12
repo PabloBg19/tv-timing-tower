@@ -132,3 +132,23 @@ Referencias: la captura aportada (Hungría 2025, FP1), coberturas públicas
 - Tipografía: Formula1 Display (propietaria). El HUD de F1 25 ya usa la familia Formula1 en sus estilos
   `OSD_*`, así que dentro del juego la torre la usa sin distribuir la fuente. No está instalada en este PC;
   el visor de diseño usa Titillium Web (OFL) o la fuente que se ponga en `assets/private/fonts`.
+
+## 5. Segunda ronda (0.2.0): torre 2026 real y estados de bandera
+
+- **Captura real de la torre 2026** (comparativa 2025/2026 de la señal internacional, Australia 2026 P1): cabecera
+  con logo F1 y `P1 29:40`; filas `posición · logo de equipo en color · código (LEC) · tiempo/diferencia · letra del
+  neumático en su color (M amarilla, H blanca) · P blanca fuera de la columna`. Esquinas rectas, fondo azul muy
+  oscuro. El cambio 2025→2026 es mínimo: dos filas más y gaps con un decimal
+  ([GPFans](https://www.gpfans.com/en/f1-news/1078428/f1-2026-tv-broadcast-new-timing-tower-graphic/)).
+- **Estados de bandera**: en la torre FOM la tarjeta de color (SAFETY CAR, VIRTUAL SAFETY CAR, … ENDING, RED FLAG,
+  YELLOW FLAG + sectores, GREEN FLAG/TRACK CLEAR) va pegada a la cabecera y la torre entera queda enmarcada en ese
+  color. No hay en la web una descripción oficial; se ha deducido de capturas de emisiones y de un rediseño público
+  que replica los estados. Project Halo (que reproduce la señal 2026) también los pone en la cabecera.
+- **Logos del juego**: Swofty documenta que `Team_Build_SessionCars` construye
+  `#overrides.osd.timing_tower.team_badges_broadcast.<clave>` y el HUD `…team_badges_hud.<clave>` con la misma clave
+  (`timing_tower_texture_path`). Claves 2026 vistas en logs del juego: `mclaren_26`, `mercedes_26`, `red_bull_26`,
+  `ferrari_26`, `williams_26`, `alphatauri_26`, `aston_martin_26`, `haas_26`, `alfa_romeo_26`, `alpine_26`,
+  `gm_cadillac_26`.
+- **Reloj**: el formateador clonado (`clock_fmt`) se dispara con el flanco 0→1 de su hoja `start`.
+- **Visibilidad**: el log de la prueba no mostró escrituras perdidas (las hojas de Swofty no descartan nada), así
+  que los dos apellidos en una fila se atribuyen al motor de UI (cambio bajo un nodo oculto, D27).

@@ -51,6 +51,11 @@ static void test_format()
     CHECK(team_index("audi_2026") == 10);
     CHECK(team_index("cadillac_2026") == 11);
     CHECK(team_index("aston_martin_2026") == 4);
+    // the 2026 keys the game really uses (in-game logs)
+    CHECK(team_index("alphatauri_26") == 7);
+    CHECK(team_index("alfa_romeo_26") == 10);
+    CHECK(team_index("gm_cadillac_26") == 11);
+    CHECK(team_index("red_bull_26") == 2);
     CHECK(team_index("") == -1);
 }
 
@@ -122,11 +127,16 @@ static void test_quali()
     }
     CHECK(ko == 6 && lines == 1);
     CHECK(v.rows[16].ko_line);
-    // Q2: the six from Q1 are dimmed, the knockout zone is P11-P16
+    // Q2: the six knocked out in Q1 leave the tower (as on TV); the knockout zone is P11-P16
     Tower t2;
     const View &q2 = t2.update(demo::make(demo::quali_q2, 0.5), cfg, 0.5);
-    CHECK(q2.rows[17].elim && !q2.rows[17].ko);
-    CHECK(q2.rows[10].ko_line && q2.rows[15].ko && !q2.rows[16].ko);
+    CHECK(q2.shown == 16 && q2.rows[15].last && !q2.rows[16].on);
+    CHECK(q2.rows[10].ko_line && q2.rows[15].ko && q2.rows[15].pos == "16");
+    // top 10 + me in Q2 with the player knocked out: ten rows, no player
+    Config top = cfg;
+    top.rows = Config::Rows::top10;
+    Tower t2b;
+    CHECK(t2b.update(demo::make(demo::quali_q2, 0.5), top, 0.5).shown == 10);
     // personal best flash (green) for the player after 5 s
     Tower t3;
     t3.update(demo::make(demo::quali_q1, 4.0), cfg, 4.0);
@@ -245,6 +255,9 @@ static void test_live_adapter()
     const View &v = t.update(snap, cfg, 0.0);
     CHECK(v.rows[1].gap == "+1.2" && v.rows[2].gap == "PIT" && v.rows[1].me && v.h.lap == "5");
     CHECK(v.rows[0].team == 1);
+    CHECK(v.rows[0].badge == "#overrides.osd.timing_tower.team_badges_broadcast.ferrari_2026");
+    cfg.logo_colour = false;
+    CHECK(t.update(snap, cfg, 0.1).rows[0].badge == "#overrides.osd.timing_tower.team_badges_hud.ferrari_2026");
 
     fake.session().type = 18; // Time Trial: the game's own board
     CHECK(src.read(snap, 0.016, 0.1) == LiveSource::Why::time_trial);
@@ -255,7 +268,7 @@ static void test_live_adapter()
 static void test_leaves_and_record()
 {
     swofty::fake::Hud core;
-    Publisher pub({1, 8});
+    Publisher pub;
     Tower t;
     Config cfg;
     const View &v = t.update(demo::make(demo::race, 1.0), cfg, 1.0);
@@ -266,11 +279,45 @@ static void test_leaves_and_record()
     CHECK(core.number("view_model_data.hud_tvt_bg1") == 1);
     // demo rows carry their own names; live rows use the game's per-car slots instead
     CHECK(core.text("view_model_data.hud_tvt_r00_nm") == "RUSSELL");
-    // RUSSELL (Mercedes) has no private logo in this list: the game's badge shows; LECLERC (Ferrari) has one
+    // every row: the game's own colour badge
     CHECK(core.number("view_model_data.hud_tvt_r00_bdg") == 1);
-    CHECK(core.number("view_model_data.hud_tvt_r02_tm01") == 1 && core.number("view_model_data.hud_tvt_r02_bdg") == 0);
+    CHECK(core.text("view_model_data.hud_tvt_r00_badge") == "#overrides.osd.timing_tower.team_badges_broadcast.mercedes_26");
+    CHECK(core.number("view_model_data.hud_tvt_r21_last") == 1 && core.number("view_model_data.hud_tvt_r20_last") == 0);
+    CHECK(core.number("view_model_data.hud_tvt_fy") == 0);
+    // demo: no per-car slot on
+    CHECK(core.number("view_model_data.hud_tvt_r00_c00") == 0);
     pub.off();
     CHECK(core.number("view_model_data.hud_tvt_show") == 0);
+
+    // live rows: the per-car slot changes only while the row shows (never under a hidden node)
+    Snapshot live = demo::make(demo::quali_q2, 0.5);
+    live.s.demo = false;
+    Tower tl;
+    const View &lv = tl.update(live, cfg, 0.5);
+    pub.publish(lv, cfg);
+    int vid17 = lv.rows[15].vid;
+    char k[64];
+    std::snprintf(k, sizeof k, "view_model_data.hud_tvt_r15_c%02d", vid17);
+    CHECK(core.number(k) == 1);
+    // a Q3 view has 10 rows: row 15 hides and keeps its slot (no write under the hidden row)
+    Snapshot q3 = live;
+    q3.s.type = 7;
+    Tower t3q;
+    const View &qv = t3q.update(q3, cfg, 1.0);
+    CHECK(qv.shown == 10);
+    pub.publish(qv, cfg);
+    CHECK(core.number("view_model_data.hud_tvt_r15_on") == 0 && core.number(k) == 1);
+
+    // flags: the frame
+    Tower tf;
+    pub.publish(tf.update(demo::make(demo::safety_car, 1.0), cfg, 1.0), cfg);
+    CHECK(core.number("view_model_data.hud_tvt_fy") == 1 && core.number("view_model_data.hud_tvt_c_sc") == 1);
+    Tower tr;
+    pub.publish(tr.update(demo::make(demo::red_flag, 1.0), cfg, 1.0), cfg);
+    CHECK(core.number("view_model_data.hud_tvt_fr") == 1 && core.number("view_model_data.hud_tvt_fy") == 0);
+    pub.clock_pulse(true);
+    pub.L.flush();
+    CHECK(core.number("view_model_data.hud_tvt_clk") == 1);
 
     // every leaf the record binds must be declared, with the record's {NN}/{VV} expanded
     std::set<std::string> declared;

@@ -1,4 +1,32 @@
-# Resumen — TV Timing Tower 0.1.0
+# Resumen — TV Timing Tower
+
+## 0.2.0 (12-11-2026, tras la primera prueba en el juego)
+
+La 0.1.0 se vio en el juego: la torre, los nombres, las P de boxes, las tarjetas y la demo funcionaban. Cambios a
+partir de las capturas y del log:
+
+| Problema visto | Cambio |
+|---|---|
+| La torre no cabía entera | Filas más bajas (18 u) y torre subida al hueco del contador de vueltas (D22) |
+| Logos incorrectos y blancos | Escudos del propio juego en color, `team_badges_broadcast` (siguen a los mods de logos) (D23) |
+| Neumático con círculo | Solo la letra en su color, como en 2026 (D24) |
+| SC / bandera roja distintos de TV | Tarjeta bajo la cabecera + marco de color en toda la torre, textos FOM (D25) |
+| Eliminados en gris en Q2/Q3 | Salen de la torre (D26) |
+| Dos apellidos en una fila tras la demo | Los nombres solo cambian con la fila visible (D27) |
+| Reloj de libres/qualy vacío | Pulso de la hoja de arranque del reloj (D28) |
+| `LAP23 /57` pegado, apellidos largos sobre el tiempo | Espaciado corregido, nombres limitados a su caja |
+
+El cierre del juego de las 15:31 que dejó un informe de crash fue el propio juego terminando al salir
+(`TerminateProcess` durante el cierre, sin el addon en la pila).
+
+Verificado aquí: compila, tests en host (incluidos los nuevos: 16 filas en Q2, 10 en Q3, logos en color, marco,
+nombres que no cambian bajo una fila oculta, pulso del reloj), `swofty hud compose` de las dos builds contra los
+ficheros del juego (~4.700 enlaces) y el visor HTML. **Sin ver en el juego**: los escudos en color
+(`team_badges_broadcast`), el reloj con pulso, el marco y la nueva posición.
+
+---
+
+## 0.1.0
 
 ## Entregado
 

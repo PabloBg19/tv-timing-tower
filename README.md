@@ -9,18 +9,20 @@ una app externa, ni overlay de Electron/OBS/SimHub, ni usa telemetría UDP).
 ## Qué hace
 
 - **Cabecera** con el logo de F1 y la sesión: `P1 33:56`, `Q2 08:12`, `SQ1 05:40` o `LAP 23/57`.
-- **Una fila por piloto**: posición (P1 en caja roja), logo de equipo, apellido en mayúsculas (o abreviatura de 3
-  letras), dato a la derecha y neumático actual.
+- **Una fila por piloto**: posición (P1 en caja roja), logo de equipo **en color del propio juego** (si tienes un
+  mod de logos, sale el del mod), apellido en mayúsculas (o abreviatura de 3 letras), dato a la derecha y la letra
+  del neumático en su color (como en 2026).
 - **Libres**: orden del juego, mejor vuelta del líder y diferencia del resto, `P` blanca cuando el coche está en
   boxes o en el garaje.
 - **Clasificación y clasificación sprint** (Q1/Q2/Q3, SQ1/SQ2/SQ3): cronómetro de la sesión, zona de eliminación
-  con las posiciones en rojo y línea roja, eliminados de la ronda anterior atenuados, tiempos en verde (mejor
-  personal) o morado (mejor de la sesión) durante 3 s.
+  con las posiciones en rojo y línea roja, los eliminados de la ronda anterior desaparecen de la torre (Q2: 16
+  filas, Q3: 10), tiempos en verde (mejor personal) o morado (mejor de la sesión) durante 3 s.
 - **Carrera y sprint**: `LAP X/Y`, intervalo al de delante con un decimal (formato 2026) y gap al líder en momentos
   puntuales (como en TV), `+1 LAP`, `PIT`, `DNF` / `OUT` / `DSQ` / `NC`, penalizaciones (`+5s`, `DT`, `SG`),
   vuelta rápida en morado, flechas de posición y bandera a cuadros al final.
-- **Estados de carrera dentro de la torre**: `YELLOW FLAG S2`, `VIRTUAL SAFETY CAR`, `VSC ENDING`, `SAFETY CAR`,
-  `SAFETY CAR IN THIS LAP`, `RED FLAG`, `TRACK CLEAR` y bandera a cuadros, con sus colores.
+- **Estados de carrera como en la señal de FOM**: tarjeta de color bajo la cabecera y la torre entera enmarcada en
+  ese color: `YELLOW FLAG S2`, `SAFETY CAR`, `SAFETY CAR ENDING`, `VIRTUAL SAFETY CAR`, `VIRTUAL SAFETY CAR ENDING`,
+  `RED FLAG` (marco rojo); `TRACK CLEAR` y bandera a cuadros.
 - **Modo demo** con datos simulados de todos esos casos, y un **visor HTML** para revisar el diseño sin el juego.
 - Si el addon no puede leer la sesión (otra build del juego, core sin estado en vivo), **vuelve la torre original**
   y lo deja escrito en `swofty/loader.log` con el prefijo `[tv-tower]`.
@@ -53,6 +55,7 @@ una app externa, ni overlay de Electron/OBS/SimHub, ni usa telemetría UDP).
 | Vueltas del neumático | No | Vueltas con el juego actual (contadas desde la última parada vista) |
 | Fondo | TV | Sólido / TV / Translúcido (opacidad del fondo) |
 | Flechas de posición | Sí | Flecha verde/roja 3 s al ganar o perder posiciones (solo carrera) |
+| Logos de equipo en color | Sí | Escudos en color del propio juego (y de cualquier mod de logos); No: los blancos del HUD |
 | Barra de color de equipo | No | Fina barra con el color del equipo |
 | Resaltar mi coche | Sí | Tu fila más clara |
 | En libres / clasificación / clasificación sprint / carrera | Sí | Activar por tipo de sesión |
@@ -62,7 +65,8 @@ una app externa, ni overlay de Electron/OBS/SimHub, ni usa telemetría UDP).
 | Log detallado | No | Coste por fotograma y cambios de estado en `swofty/loader.log` |
 
 **Escala, posición y opacidad general** se ajustan como cualquier elemento del HUD: Ajustes → HUD →
-Personalizar (o desde la pausa en sesión), seleccionando el elemento de posiciones. Por defecto está a la izquierda.
+Personalizar (o desde la pausa en sesión), seleccionando el elemento de posiciones. Por defecto está arriba a la
+izquierda, en el hueco del contador de vueltas (que se oculta), y con 22 coches cabe entera.
 
 ## Modo demo
 
@@ -81,6 +85,8 @@ siguiente. Fuera del juego: `python tools/build.py` y abre `preview/index.html` 
   seguridad entra al pit lane; VSC → al terminar el VSC.
 - En **Contrarreloj**, repeticiones y modo espectador se ve la torre del juego.
 - Mi Equipo: su logo puede quedar vacío (el juego no da clave de escudo para él).
+- Si el propio juego oculta el tablero (garaje, menús) mientras cambia el orden, podría verse un apellido repetido en
+  una fila hasta el siguiente cambio de esa fila; si lo ves, apunta cuándo.
 - Parrillas de más de 24 coches (mods) no caben.
 - Animaciones de deslizamiento de filas: no incluidas en 0.1.0.
 
@@ -111,11 +117,13 @@ An addon for **Swofty Launcher** (F1 25, PC, Steam) that replaces the game's sta
 overlay, no UDP telemetry).
 
 **What it does:** header with the F1 logo and `P1 33:56` / `Q2 08:12` / `LAP 23/57`; one row per driver with
-position (red box for P1), team logo, surname in capitals (or 3-letter code), data on the right and current tyre.
+position (red box for P1), the game's own colour team logo (logo mods show too), surname in capitals (or 3-letter
+code), data on the right and the tyre compound letter in its colour.
 Practice: best lap and gaps, white `P` in the pits. Qualifying and sprint qualifying: session clock, knockout zone,
-knocked-out cars dimmed, green/purple lap time flashes. Races: `LAP X/Y`, one-decimal intervals with the gap to the
+cars knocked out earlier leave the tower, green/purple lap time flashes. Races: `LAP X/Y`, one-decimal intervals with the gap to the
 leader at times (as on TV), `+1 LAP`, `PIT`, `DNF/OUT/DSQ/NC`, penalties, purple fastest lap, arrows, chequered
-flag. Race states inside the tower: yellow flag, VSC, VSC ENDING, safety car, SC IN THIS LAP, red flag, track clear.
+flag. Flag states as on the FOM world feed: a colour card under the header and the whole tower framed in yellow
+(yellow flag, SC, VSC and their ENDING) or red (red flag); track clear.
 If the session cannot be read the game's own board comes back and `[tv-tower]` explains why in `swofty/loader.log`.
 
 **Requirements:** F1 25 Steam build 25251167 + 2026 Season Pack, Swofty Launcher 1.9.x, offline sessions, and the
@@ -126,7 +134,7 @@ enable it, play.
 
 **Settings** (ADDON SETTINGS under Career, or in the launcher): tower on/off, rows (all / top 10 + me / compact),
 names (surname / code), race gaps (auto / interval / leader), tyres, tyre age, background opacity, position arrows,
-team colour bar, highlight my car, per-session switches, show/hide key (F8; Ctrl+F8 demo; Shift+F8 next scenario),
+team logos in colour, team colour bar, highlight my car, per-session switches, show/hide key (F8; Ctrl+F8 demo; Shift+F8 next scenario),
 demo mode and scenario, verbose log. Size, position and overall opacity: the game's HUD editor.
 
 **Demo:** in a practice session press Ctrl+F8. Outside the game: `python tools/build.py`, then serve `preview/`

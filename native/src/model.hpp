@@ -17,7 +17,7 @@ namespace tvt {
 
 constexpr int kRows = 22;    // rows the HUD record composes
 constexpr int kSlots = 24;   // per-car name slots per row (#session.cars.car0 ... car23)
-constexpr int kTeams = 12;   // private team logo sprites
+constexpr int kTeams = 12;   // team identities (preview logos)
 
 // ---------------------------------------------------------------------------------------------- session kinds
 enum class Kind { none, practice, quali, sprint_quali, race, time_trial };
@@ -127,7 +127,7 @@ inline std::string fmt_clock(double seconds)
 }
 
 // --------------------------------------------------------------------------------------------- team mapping
-// Private logo sprites, one per team identity. The game's badge keys look like "ferrari_2026"; we match by
+// Team identity for the HTML preview's logos (the game draws its own badges). The game's badge keys look like "ferrari_2026"; we match by
 // substring so new keys of the same team keep working.
 inline const char *team_name(int i)
 {
@@ -165,6 +165,8 @@ inline int team_index(const std::string &badge)
         return 8;
     if (has("audi"))
         return 10;
+    if (has("alfaromeo26") || has("alfaromeo2026"))
+        return 10; // the game keeps Sauber's old key for Audi in 2026
     if (has("sauber") || has("kick") || has("alfa"))
         return 9;
     if (has("cadillac") || has("andretti") || has("gm"))
@@ -226,6 +228,7 @@ struct Config {
     bool arrows = true;
     bool colbar = false;       // team colour bar
     bool highlight = true;     // player's row highlighted
+    bool logo_colour = true;   // the game's broadcast badges (colour) instead of the HUD ones (white)
     int bg = 1;                // background: 0 solid, 1 broadcast (slightly translucent), 2 light
     bool en_practice = true, en_quali = true, en_sprint_quali = true, en_race = true;
     int compact_around = 1;    // compact: P1-P3 plus this many rows either side of the player
@@ -255,10 +258,11 @@ struct Row {
     bool out = false;          // retired / DNF / DSQ / NC: dimmed
     bool ko = false;           // in the knockout zone
     bool ko_line = false;      // first row of the knockout zone: red line above
-    bool elim = false;         // knocked out in an earlier segment: dimmed
+    bool elim = false;         // knocked out in an earlier segment (not shown since 0.2: kept for tests)
     bool sep = false;          // rows above are not contiguous (top10 / compact): separator line
     bool me = false;
-    int team = -1;             // private logo index
+    bool last = false;         // last row shown: the tower's frame closes under it
+    int team = -1;             // team identity (preview only)
     std::string badge;         // texture path for the game's own logo unit, "" none
     std::string name;          // demo only
 };
@@ -273,6 +277,7 @@ struct Header {
     bool demo = false;
     int card = card_none;
     std::string ysec;          // "S2", "S1 S3"
+    int frame = 0;             // coloured frame around the tower: 0 none, 1 yellow (SC, VSC, yellow), 2 red
     bool lead = false;         // gaps are to the leader
 };
 
@@ -331,6 +336,7 @@ public:
         }
 
         h.card = flag_card(s, h.race, now);
+        h.frame = frame_of(h.card);
         h.ysec = yellow_text(s.yellow);
         h.lead = lead_mode(cfg, snap, now);
 
@@ -354,6 +360,8 @@ public:
             slot++;
         }
         v.shown = slot;
+        if (slot > 0)
+            v.rows[size_t(slot - 1)].last = true;
         return v;
     }
 
@@ -397,8 +405,10 @@ private:
             if (snap.cars[size_t(i)].me)
                 me = i;
         std::vector<int> out;
+        // Q2/Q3 (SQ2/SQ3): as on TV, the cars knocked out earlier leave the tower
+        auto gone = [&](int i) { return knocked_out(snap.cars[size_t(i)], i, snap.s.type); };
         auto add = [&](int i) {
-            if (i >= 0 && i < n && std::find(out.begin(), out.end(), i) == out.end())
+            if (i >= 0 && i < n && !gone(i) && std::find(out.begin(), out.end(), i) == out.end())
                 out.push_back(i);
         };
         switch (cfg.rows) {
@@ -407,15 +417,15 @@ private:
                 add(i);
             break;
         case Config::Rows::top10:
-            for (int i = 0; i < n && i < 10; i++)
+            for (int i = 0; i < n && int(out.size()) < 10; i++)
                 add(i);
             add(me);
             break;
         case Config::Rows::compact: {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < n && int(out.size()) < 3; i++)
                 add(i);
-            if (me < 0) {
-                for (int i = 3; i < 6; i++)
+            if (me < 0 || gone(me)) {
+                for (int i = 3; i < n && int(out.size()) < 6; i++)
                     add(i);
             } else {
                 int k = cfg.compact_around < 0 ? 0 : cfg.compact_around;
@@ -427,6 +437,26 @@ private:
         }
         std::sort(out.begin(), out.end());
         return out;
+    }
+
+    bool knocked_out(const CarIn &c, int idx, int type) const
+    {
+        int seg = knockout_segment(type);
+        if (seg < 2)
+            return false;
+        int pos = c.pos > 0 ? c.pos : idx + 1;
+        int field = std::max(field_, 1);
+        int prev_cut = seg == 2 ? knockout_cut(1, field) : knockout_cut(2, field);
+        return field > prev_cut && pos > prev_cut;
+    }
+
+    static int frame_of(int card)
+    {
+        switch (card) {
+        case card_sc: case card_vsc: case card_sc_end: case card_vsc_end: case card_yellow: return 1;
+        case card_red: return 2;
+        default: return 0;
+        }
     }
 
     // ---- one row
@@ -441,7 +471,10 @@ private:
         r.pos = std::to_string(pos);
         r.p1 = pos == 1;
         r.me = cfg.highlight && c.me;
-        r.badge = c.badge.empty() ? "" : "#overrides.osd.timing_tower.team_badges_hud." + c.badge;
+        // the game's own badge for the car's team: the broadcast set is in colour (and follows logo mods)
+        r.badge = c.badge.empty() ? "" : std::string(cfg.logo_colour ? "#overrides.osd.timing_tower.team_badges_broadcast."
+                                                                      : "#overrides.osd.timing_tower.team_badges_hud.") +
+                                             c.badge;
         r.team = team_index(c.badge);
         r.name = c.name.empty() ? "" : (cfg.abbr && !c.code.empty() ? c.code : c.name);
 

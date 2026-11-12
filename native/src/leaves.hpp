@@ -23,15 +23,15 @@ struct RowLeaves {
     hud::TextLeaf tage;
     hud::BoolLeaf tag, pit, pen;
     hud::TextLeaf pent;
-    hud::BoolLeaf fl, chq;
+    hud::BoolLeaf fl, chq, last;
     hud::TextLeaf nm, badge;
     hud::BoolLeaf bdg;
-    hud::OneHot tm, car;
+    hud::OneHot car;
 };
 
 class Publisher {
 public:
-    explicit Publisher(std::vector<int> private_teams = {}) : teams_(std::move(private_teams))
+    Publisher()
     {
         // the first three change together: show first so the stock board and ours swap in one tick
         show = L.boolean("show");
@@ -55,6 +55,9 @@ public:
         c_clear = L.boolean("c_clear");
         c_yel = L.boolean("c_yel");
         ysec = L.text("ysec", 24);
+        fy = L.boolean("fy");
+        fr = L.boolean("fr");
+        clk = L.boolean("clk");
         rows = L.rows<RowLeaves>("r", kRows, 2, [](hud::Leaves &l, int) {
             RowLeaves r;
             r.on = l.boolean("on");
@@ -87,21 +90,26 @@ public:
             r.nm = l.text("nm", 24);
             r.badge = l.text("badge", 96);
             r.bdg = l.boolean("bdg");
-            // private logos: one leaf per team the record has a sprite for (tm00..tm11 by team index)
-            r.tm = l.one_hot("tm", kTeams, 2);
+            r.last = l.boolean("last");
             r.car = l.one_hot("c", kSlots, 2);
             return r;
         });
     }
 
-    // Tower off: our leaves say so, the stock board comes back.
+    // Tower off: our leaves say so, the stock board comes back. The rows keep their leaves: under a hidden node the
+    // game drops visibility changes, so rows change only while the tower shows (see publish).
     void off()
     {
         L.set(show, false);
         L.set(on, false);
-        for (int i = 0; i < kRows; i++)
-            L.set(rows[i].on, false);
         L.flush();
+    }
+
+    // The game re-formats the session clock each time `clk` goes from false to true (the record's clock start), so
+    // the caller pulses it a few times a second while a timed session shows.
+    void clock_pulse(bool on)
+    {
+        L.set(clk, on);
     }
 
     void publish(const View &v, const Config &cfg)
@@ -128,6 +136,8 @@ public:
         L.set(c_clear, h.card == card_clear);
         L.set(c_yel, h.card == card_yellow);
         L.set(ysec, h.ysec);
+        L.set(fy, h.frame == 1);
+        L.set(fr, h.frame == 2);
 
         for (int i = 0; i < kRows; i++) {
             const Row &r = v.rows[size_t(i)];
@@ -135,9 +145,11 @@ public:
             hud::Leaves::Atomic group(L);
             L.set(x.on, r.on);
             if (!r.on) {
-                L.set(x.car, -1);
-                L.set(x.tm, -1);
+                // The per-car name slots keep their value while the row is hidden: the game does not apply a
+                // visibility change under a hidden node, so a slot cleared now could show again with the row
+                // (two names in one row). They change only while the row shows.
                 L.set(x.bdg, false);
+                L.set(x.last, false);
                 L.set(x.pit, false);
                 L.set(x.pen, false);
                 L.set(x.fl, false);
@@ -171,11 +183,10 @@ public:
             L.set(x.pent, r.pen_text);
             L.set(x.fl, r.fl);
             L.set(x.chq, r.chq);
+            L.set(x.last, r.last);
             L.set(x.nm, r.name);
-            bool has_private = r.team >= 0 && has_team(r.team);
-            L.set(x.tm, has_private ? r.team : -1);
-            L.set(x.badge, has_private ? std::string() : r.badge);
-            L.set(x.bdg, !has_private && !r.badge.empty());
+            L.set(x.badge, r.badge);
+            L.set(x.bdg, !r.badge.empty());
             L.set(x.car, r.vid >= 0 && r.vid < kSlots && !h.demo ? r.vid : -1);
         }
         L.flush();
@@ -187,17 +198,8 @@ public:
     hud::TextLeaf sess, lap, dlaps, dclk;
     hud::BoolLeaf c_chq, c_red, c_scend, c_sc, c_vsc, c_vscend, c_clear, c_yel;
     hud::TextLeaf ysec;
+    hud::BoolLeaf fy, fr, clk;
     hud::Leaves::Rows<RowLeaves> rows;
-
-private:
-    bool has_team(int t) const
-    {
-        for (int x : teams_)
-            if (x == t)
-                return true;
-        return false;
-    }
-    std::vector<int> teams_;
 };
 
 } // namespace tvt

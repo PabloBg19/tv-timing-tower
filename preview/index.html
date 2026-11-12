@@ -51,7 +51,7 @@
   <label>t <input type="range" id="t" min="0" max="28" step="1" value="0"><span id="tv">0.0 s</span></label>
 </header>
 <div id="wrap"><div id="stage"><div class="kerb"></div><div class="track"></div><div id="tower"></div><img id="bcast" alt=""></div></div>
-<div id="note">Mismo modelo C++ que el DLL (<code>native/src/model.hpp</code>) y mismos sprites y medidas que el registro HUD
+<div id="note">Logos: dentro del juego salen los escudos en color del propio juego; aquí se usan los de assets/private/logos como aproximación. Mismo modelo C++ que el DLL (<code>native/src/model.hpp</code>) y mismos sprites y medidas que el registro HUD
 (<code>tools/hudgen.py</code>). Dentro del juego el texto usa la fuente del propio HUD de F1 25; aquí, la fuente Formula1 si está en
 <code>assets/private/fonts</code>, si no Titillium Web.</div>
 <script src="data/layout.js"></script>
@@ -60,7 +60,7 @@
 (() => {
   const L = window.TVT_LAYOUT, F = window.TVT_FRAMES;
   if (!L || !F) { document.getElementById('note').textContent = 'Falta preview/data: ejecuta python tools/build.py'; return; }
-  const C = L.colours, W = L.width, R = L.row, H = L.header, CARD = L.card;
+  const C = L.colours, W = L.width, R = L.row, H = L.header, CARD = L.card, S = L.sprites || {};
   const tower = document.getElementById('tower');
   const $ = id => document.getElementById(id);
   const fontFamily = '"F1Local", "Titillium Web", sans-serif';
@@ -74,9 +74,10 @@
     Object.assign(e.style, { left: b[0] + 'px', top: b[1] + 'px', width: (b[2] - b[0]) + 'px', height: (b[3] - b[1]) + 'px', zIndex: z || 20 });
     return e;
   }
+  // a sprite of the record, at its own bounds (from tools/hudgen.py), moved by dx/dy
   function spr(name, dx, dy, z) {
-    const s = L.sprites ? L.sprites[name] : null; const b = SPR[name]; if (!b) return null;
-    return img('art/' + name + '.png', [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy], z);
+    const s = S[name]; if (!s) return null; const b = s.bounds;
+    return img(s.png, [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy], z);
   }
   // text: x anchor by align, y = baseline, cap = cap height (units)
   function txt(s, x, y, cap, align, colour, weight, box) {
@@ -85,51 +86,47 @@
     Object.assign(e.style, { fontSize: fs + 'px', top: (y - fs * 0.86) + 'px', color: colour || '#fff',
       fontWeight: weight || 700, fontFamily, zIndex: 40, letterSpacing: '0.02em' });
     if (align === 'right') { e.style.left = x + 'px'; e.style.transform = 'translateX(-100%)'; }
-    else if (align === 'centre') { e.style.left = (x - 50) + 'px'; e.style.width = '100px'; e.style.textAlign = 'center'; }
+    else if (align === 'centre') { e.style.left = (x - 60) + 'px'; e.style.width = '120px'; e.style.textAlign = 'center'; }
     else { e.style.left = x + 'px'; if (box) { e.style.maxWidth = box + 'px'; e.style.overflow = 'hidden'; } }
     return e;
   }
   const Wtot = W + 80;
-  // sprite bounds come from the generated record (layout.json has the geometry; bounds are re-derived here)
-  const SPR = {};
-  const tyreR = L.tyre_d / 2, ch = L.chip, ctop = (R - ch) / 2;
-  [0, 1, 2].forEach(i => { SPR['row' + i] = [0, 0, W, R]; SPR['hdr' + i] = [0, 0, W, H]; });
-  Object.assign(SPR, { hdr_rule: [12, 26.2, W - 12, 26.8], me: [0, 0, W, R], me_edge: [0, 0, 1.2, R], p1: [2, 3.3, 18, 18.3], ko: [2, 3.3, 18, 18.3],
-    koline: [0, 0, W, 0.8], sep: [4, 0, W - 4, 0.6], dim: [0, 0, W, R], bar: [L.bar_x, 4.8, L.bar_x + 1.2, 16.8],
-    arr_up: [L.pos_x - 4, 6.8, L.pos_x + 4, 14.8], arr_dn: [L.pos_x - 4, 6.8, L.pos_x + 4, 14.8],
-    pitbox: [0, ctop, ch, ctop + ch], penbox: [0, ctop, 19, ctop + ch], agebox: [0, ctop, ch, ctop + ch], flbox: [0, ctop, ch, ctop + ch], chqbox: [0, ctop, 16, ctop + ch],
-    card_sc: [0, 0, W, CARD], card_red: [0, 0, W, CARD], card_clear: [0, 0, W, CARD], card_chq: [0, 0, W, CARD] });
-  ['S', 'M', 'H', 'I', 'W'].forEach(k => SPR['ty' + k] = [L.tyre_x - tyreR, R / 2 - tyreR, L.tyre_x + tyreR, R / 2 + tyreR]);
-  L.logos.forEach(tn => { const s = L.logo_size; SPR['tm_' + tn] = [L.logo_x - s / 2, R / 2 - s / 2, L.logo_x + s / 2, R / 2 + s / 2]; });
-
-  const CARDS = { 1: ['card_sc', 'SAFETY CAR', '#101010'], 2: ['card_sc', 'VIRTUAL SAFETY CAR', '#101010'], 3: ['card_red', 'RED FLAG', '#fff'],
-    4: ['card_chq', '', ''], 5: ['card_sc', 'YELLOW FLAG', '#101010'], 6: ['card_sc', 'SAFETY CAR IN THIS LAP', '#101010'],
-    7: ['card_sc', 'VSC ENDING', '#101010'], 8: ['card_clear', 'TRACK CLEAR', '#fff'] };
+  const CARDS = { 1: ['card_sc', 'SAFETY CAR', '#101010', 6.4], 2: ['card_sc', 'VIRTUAL SAFETY CAR', '#101010', 6.4],
+    3: ['card_red', 'RED FLAG', '#fff', 6.4], 4: ['card_chq', '', '', 0], 5: ['card_sc', 'YELLOW FLAG', '#101010', 6.4],
+    6: ['card_sc', 'SAFETY CAR ENDING', '#101010', 6.4], 7: ['card_sc', 'VIRTUAL SAFETY CAR ENDING', '#101010', 5.8],
+    8: ['card_clear', 'TRACK CLEAR', '#fff', 6.4] };
+  // the game draws its own colour badges; the preview stands in with the logos of assets/private/logos
+  function teamLogo(team) {
+    const tn = L.teams[team]; if (!tn) return null;
+    const s = L.logo_size, e = img('logos/' + tn + '.png', [L.logo_x - s / 2, R / 2 - s / 2, L.logo_x + s / 2, R / 2 + s / 2], 27);
+    e.style.objectFit = 'contain'; e.onerror = () => e.remove(); return e;
+  }
 
   function draw() {
     const variant = $('variant').value, bg = +$('bg').value, showTyres = $('tyres').checked, logos = $('logos').checked;
     const frames = F.scenarios[sc.value][variant];
     const fr = frames[Math.min(frames.length - 1, Math.round(t / F.step))];
     tower.innerHTML = '';
-    tower.style.transform = `translate(48px, 40px) scale(${$('scale').value * 1.0})`;
-    const h = fr.h;
+    tower.style.transform = `translate(48px, 24px) scale(${$('scale').value * 1.0})`;
+    const h = fr.h, fk = h.frame === 1 ? 'y' : h.frame === 2 ? 'r' : '';
     // header
-    tower.append(img('art/hdr' + bg + '.png', [0, 0, W, H], 20), spr('hdr_rule', 0, 0, 24));
-    if (logos && L.f1logo) { const b = L.sprites_f1 || null; }
-    const f1 = document.createElement('img'); f1.className = 'el'; f1.src = 'data/art/f1logo.png';
-    f1.onerror = () => { f1.replaceWith(txt('F1', W / 2, 19, 11, 'centre', '#fff', 700)); };
-    Object.assign(f1.style, { left: (W / 2 - 22) + 'px', top: '5px', height: '16px', zIndex: 26 }); tower.append(f1);
+    tower.append(spr('hdr' + bg, 0, 0, 20), spr('hdr_rule', 0, 0, 24));
+    if (S.f1logo) tower.append(spr('f1logo', 0, 0, 26));
+    else tower.append(txt('F1', W / 2, 16, 10, 'centre', '#fff', 700));
+    const y0 = 32;
     if (h.race) {
-      tower.append(txt('LAP', W / 2 - 12, 37, 6.2, 'right', '#fff', 400), txt(h.lap, W / 2 + 4, 37, 8, 'right', '#fff', 700),
-        txt('/' + (h.laps || '57'), W / 2 + 5.5, 37, 6.2, 'left', '#fff', 400));
+      tower.append(txt('LAP', W / 2 - 15.5, y0, 5.8, 'right', '#fff', 400), txt(h.lap, W / 2 + 3, y0, 7.2, 'right', '#fff', 700),
+        txt('/', W / 2 + 6, y0, 5.8, 'centre', '#fff', 400), txt(h.laps || '57', W / 2 + 8.6, y0, 5.8, 'left', '#fff', 400));
     } else {
-      tower.append(txt(h.sess, W / 2 - 3, 37, 8, 'right', '#fff', 700), txt(h.clock, W / 2 + 3, 37, 8, 'left', '#fff', 400));
+      tower.append(txt(h.sess, W / 2 - 3, y0, 7.2, 'right', '#fff', 700), txt(h.clock, W / 2 + 3, y0, 7.2, 'left', '#fff', 400));
     }
+    if (fk) tower.append(spr('fh' + fk, 0, 0, 46), spr('fhr' + fk, 0, 0, 46), spr('ft' + fk, 0, 0, 46));
     let y = H;
     if (h.card) {
-      const [s, label, col] = CARDS[h.card];
-      tower.append(img('art/' + s + '.png', [0, y, W, y + CARD], 21));
-      if (label) tower.append(txt(label + (h.card === 5 && h.ysec ? '  ' + h.ysec : ''), W / 2, y + CARD / 2 + 3.4, 7, 'centre', col, 700));
+      const [s, label, col, cap] = CARDS[h.card];
+      tower.append(spr(s, 0, y, 21));
+      if (label) tower.append(txt(label + (h.card === 5 && h.ysec ? '  ' + h.ysec : ''), W / 2, y + CARD / 2 + 3.0, cap, 'centre', col, 700));
+      if (fk) tower.append(spr('fc' + fk, 0, y, 46), spr('fcr' + fk, 0, y, 46));
       y += CARD;
     }
     // rows
@@ -137,7 +134,7 @@
       const yy = y + i * R;
       const g = document.createElement('div'); g.className = 'el'; g.style.left = '0'; g.style.top = yy + 'px'; g.style.width = Wtot + 'px'; g.style.height = R + 'px';
       const add = e => e && g.append(e);
-      add(img('art/row' + bg + '.png', [0, 0, W, R], 20));
+      add(spr('row' + bg, 0, 0, 20));
       if (r.me) { add(spr('me', 0, 0, 22)); add(spr('me_edge', 0, 0, 23)); }
       if (r.sep) add(spr('sep', 0, 0, 23));
       if (r.p1 && !r.ko) add(spr('p1', 0, 0, 24));
@@ -145,23 +142,24 @@
       if (r.kol) add(spr('koline', 0, 0, 25));
       if (r.up) add(spr('arr_up', 0, 0, 26)); else if (r.dn) add(spr('arr_dn', 0, 0, 26));
       else add(txt(r.pos, L.pos_x, L.text_y, L.cap_pos, 'centre', '#fff', 700));
-      const tn = L.teams[r.team];
-      if (logos && r.team >= 0 && L.logos.includes(tn)) add(spr('tm_' + tn, 0, 0, 27));
+      if (logos && r.team >= 0) add(teamLogo(r.team));
       const nm = variant === 'codes' ? r.code : r.name;
       add(txt(nm, L.name_x, L.text_y, L.cap_name, 'left', '#fff', 700, L.name_box));
       if (r.gap) {
         const col = r.purple ? C.purple : r.green ? C.green : r.label ? C.label : C.gap;
-        add(txt(r.gap, L.gap_right, r.label ? L.text_y - 0.6 : L.text_y, r.label ? L.cap_label : L.cap_gap, 'right', col, (r.purple || r.green) ? 700 : 400));
+        add(txt(r.gap, L.gap_right, r.label ? L.text_y - 0.5 : L.text_y, r.label ? L.cap_label : L.cap_gap, 'right', col, (r.purple || r.green) ? 700 : 400));
       }
-      if (showTyres && r.tyre) { add(spr('ty' + r.tyre, 0, 0, 27)); add(txt(r.tyre, L.tyre_x, R / 2 + 2.7, 5.4, 'centre', C.tyres[r.tyre], 400)); }
+      if (showTyres && r.tyre) add(txt(r.tyre, L.tyre_x, L.text_y, L.cap_tyre, 'centre', C.tyres[r.tyre], 700));
       let sx = L.side_x;
-      const chip = (name, w, label, col) => { add(spr(name, sx, 0, 30)); if (label) add(txt(label, sx + w / 2, R / 2 + (name === 'pitbox' ? 3.5 : 2.8), name === 'pitbox' ? 7 : 5.6, 'centre', col, name === 'pitbox' ? 700 : 400)); sx += w + 1.5; };
+      const ch = L.chip;
+      const chip = (name, w, label, col) => { add(spr(name, sx, 0, 30)); if (label) add(txt(label, sx + w / 2, R / 2 + (name === 'pitbox' ? 3.2 : 2.6), name === 'pitbox' ? 6.4 : 5.2, 'centre', col, name === 'pitbox' ? 700 : 400)); sx += w + 1.2; };
       if (r.pit) chip('pitbox', ch, 'P', '#101018');
       if (r.pen) chip('penbox', 19, r.pen, '#101010');
       if (r.fl) chip('flbox', ch);
       if (r.chq) chip('chqbox', 16);
       if (r.age) chip('agebox', ch, r.age, '#fff');
       if (r.out || r.elim) add(spr('dim', 0, 0, 45));
+      if (fk) { add(spr('fl' + fk, 0, 0, 46)); add(spr('flr' + fk, 0, 0, 46)); if (r.last) add(spr('fb' + fk, 0, 0, 46)); }
       tower.append(g);
     });
     $('tv').textContent = t.toFixed(1) + ' s';
