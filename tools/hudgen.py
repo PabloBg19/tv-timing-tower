@@ -222,7 +222,14 @@ def make_art(art: Path):
     ch = L["chip"]
     top = (R - ch) / 2
     add("pitbox", flat(ch, ch, (255, 255, 255, 255)), [0, top, ch, top + ch])
-    add("penbox", flat(ch * 1.6, ch, hexrgba("#F5B400")), [0, top, ch * 1.6, top + ch])
+    # a penalty: the broadcast's red square with a white "!" (sampled: #C8201F)
+    n = px(ch) * 4
+    img = Image.new("RGBA", (n, n), hexrgba("#C8201F"))
+    d = ImageDraw.Draw(img)
+    bw = n * 0.16
+    d.rectangle([n / 2 - bw / 2, n * 0.16, n / 2 + bw / 2, n * 0.62], fill=(255, 255, 255, 255))
+    d.rectangle([n / 2 - bw / 2, n * 0.72, n / 2 + bw / 2, n * 0.86], fill=(255, 255, 255, 255))
+    add("penbox", img.resize((px(ch), px(ch)), Image.LANCZOS), [0, top, ch, top + ch])
     add("agebox", flat(ch, ch, (24, 23, 35, 235)), [0, top, ch, top + ch])
     n = px(ch) * 4
     img = Image.new("RGBA", (n, n), hexrgba(C["purple"]))
@@ -457,8 +464,7 @@ def header(flavour, sprites):
                     literal="PIT STOPS")], visible=vm("pstops")),
         band("tyv", "TYRES", "tyrev"),
         band("sty", "STARTING TYRES", "stty"),
-        group("chq", [sprite("chq_bg", "blk_chq", 21)], visible=vm("c_chq")),
-        band("fcl", "FINAL CLASSIFICATION", "fcls"),
+
         block("red", "red", ["RED", "FLAG"], "#FFFFFFff", fia="w"),
         block("scend", "sc", ["SAFETY CAR", "IN THIS", "LAP"]),
         block("sc", "sc", ["SAFETY", "CAR"]),
@@ -539,9 +545,7 @@ def row(flavour, logos_found):
         group("pit", [sprite("pb", "pitbox", 30),
                       text("pt", "OSD_24_bold", "centre", ch, u(7.0), [ch / 2, R / 2 + u(3.5)], literal="P",
                            colour="#101018ff")], visible=vm(r + "pit")),
-        group("pen", [sprite("nb", "penbox", 30),
-                      text("nt", "OSD_24_bold", "centre", ch * 1.6, u(5.4), [ch * 0.8, R / 2 + u(2.7)],
-                           value=vm(r + "pent"), colour="#101010ff")], visible=vm(r + "pen")),
+        group("pen", [sprite("nb", "penbox", 30)], visible=vm(r + "pen")),
         group("fl", [sprite("fb", "flbox", 30)], visible=vm(r + "fl")),
         group("chq", [sprite("cb", "chqbox", 30)], visible=vm(r + "chq")),
         group("age", [sprite("ab", "agebox", 30),

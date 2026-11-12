@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.7.0
+# Checklist de pruebas en el juego — TV Timing Tower 0.7.1
 
 Antes de empezar: instala `dist/tv-timing-tower-PRIVATE.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.7.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.7.1 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -61,7 +61,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Parada en boxes: `PIT` mientras está en el pit lane; cambia el icono de neumático al salir.
 - [ ] Vueltas del neumático (ajuste) se reinician tras la parada.
 - [ ] Adelantamiento: flecha verde/roja 3 s en los dos coches implicados.
-- [ ] Penalización de 5 s: chip amarillo `+5s`. Drive-through: `DT`.
+- [ ] Penalización (tiempo, drive-through, stop & go): cuadrado rojo con «!».
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
 - [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
@@ -70,7 +70,9 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Parrilla y vuelta de formación: banda `STARTING TYRES`, apellidos y letra del neumático; desaparece al apagarse
       los semáforos.
 - [ ] Vuelta 7 (y 17, 27…): banda `TYRES` 10 s, con las vueltas de cada juego de neumáticos.
-- [ ] Al ganar el líder: banda `FINAL CLASSIFICATION` y diferencias en meta (`+0.8`, `+1 Lap`, `Out`).
+- [ ] Al acabar: la torre igual que en la emisión, con `Leader`, diferencias en meta (`+6.2`, `+1 Lap`), bandera a
+      cuadros en cada coche que termina y `Out` atenuado. Sin banda ni tira bajo la cabecera.
+- [ ] Un coche con sanción: cuadrado rojo con «!» a la derecha de su fila.
 - [ ] ADDON SETTINGS: cada ajuste en `English / Español`.
 
 ## 4c. Novedades 0.6.0

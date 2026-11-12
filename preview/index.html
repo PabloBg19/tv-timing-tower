@@ -131,7 +131,7 @@
     if (h.tyv) bandLine('TYRES');
     if (h.sty) bandLine('STARTING TYRES');
     if (h.card === 4) { tower.append(spr('blk_chq', 0, y, 21)); y += L.chq_h; }
-    if (h.fcl) bandLine('FINAL CLASSIFICATION');
+
     else if (h.card) {
       const [col, lines, ink, fia] = BLOCKS[h.card], n = lines.length, hb = L['block' + n];
       tower.append(spr(`blk${n}_${col}`, 0, y, 21));
@@ -167,7 +167,7 @@
       const ch = L.chip;
       const chip = (name, w, label, col) => { add(spr(name, sx, 0, 30)); if (label) add(txt(label, sx + w / 2, R / 2 + (name === 'pitbox' ? 2.85 : 2.2), name === 'pitbox' ? 5.7 : 4.4, 'centre', col, 700)); sx += w + 1.2; };
       if (r.pit) chip('pitbox', ch, 'P', '#101018');
-      if (r.pen) chip('penbox', ch * 1.6, r.pen, '#101010');
+      if (r.pen) chip('penbox', ch);
       if (r.fl) chip('flbox', ch);
       if (r.chq) chip('chqbox', ch * 1.3);
       if (r.age) chip('agebox', ch, r.age, '#fff');

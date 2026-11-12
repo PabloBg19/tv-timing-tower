@@ -313,7 +313,7 @@ sigue a la derecha). En Automático sale 10 s cuando el líder empieza las vuelt
 de *Diferencias en carrera*. Las vueltas se cuentan desde la última parada vista: si se entra a mitad de carrera, se
 cuentan desde ese momento.
 
-**D53 — FINAL CLASSIFICATION.** Cuando el ganador cruza con la bandera a cuadros, la banda pasa a
+**D53 — (corregida en D55) FINAL CLASSIFICATION.** Cuando el ganador cruza con la bandera a cuadros, la banda pasa a
 `FINAL CLASSIFICATION` y cada coche que termina muestra su diferencia en la meta con el ganador. El addon la mide en
 el momento en que cada coche cambia a «terminado»; la precisión es de una actualización, unos 0,03 s. Los doblados
 muestran `+1 Lap` y los retirados `Out`.
@@ -322,3 +322,15 @@ muestran `+1 Lap` y los retirados `Out`.
 cada etiqueta y descripción lleva inglés y español (`Rows / Filas`), y `python tools/build.py --lang es` (o `en`)
 genera el paquete en un solo idioma. Swofty no acepta textos de más de 255 bytes; `build.py` lo comprueba y la
 prueba de build de perfil lo detectó.
+
+## 0.7.1 (captura real del final de carrera, vuelta 78/78)
+
+**D55 — El final de carrera, como en la emisión.** En la emisión, al acabar la carrera la torre no cambia: no hay
+banda `FINAL CLASSIFICATION` ni tira a cuadros bajo la cabecera. Sigue `LAP 78 / 78`, `Leader`, las diferencias
+con el ganador y la bandera a cuadros en cada coche que termina; los retirados salen atenuados con `Out`. Se quitan
+la banda y la tira. Se mantienen las diferencias en meta medidas por el addon (D53).
+
+**D56 — Sanción: cuadrado rojo con «!».** En la emisión, una sanción es un cuadrado rojo (#C8201F) con una «!»
+blanca fuera de la fila; el amarillo es una investigación. Sustituye al chip amarillo `+5s`, y se usa para tiempo,
+drive-through y stop & go. El amarillo de investigación no se puede hacer porque el juego no expone
+investigaciones.

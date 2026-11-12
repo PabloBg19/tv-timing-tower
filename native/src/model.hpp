@@ -294,7 +294,7 @@ struct Header {
     bool pitstops = false;     // the "PIT STOPS" view
     bool tyres = false;        // the "TYRES" view: laps on the current set
     bool start_tyres = false;  // "STARTING TYRES": on the grid and the formation lap
-    bool final_cls = false;    // "FINAL CLASSIFICATION": the winner has taken the flag
+    bool final_cls = false;    // the winner has taken the flag: gaps at the line (the tower stays as on TV)
     bool formation = false;    // "FORMATION LAP" in place of the lap line
     std::string sub;           // the line under the logo: "SPRINT" or ""
     bool lead = false;         // gaps are to the leader
@@ -758,8 +758,9 @@ private:
             clear_at_ = -1;
         }
 
+        // the chequered flag: no header block on the broadcast, each finisher gets its flag on its row
         if (race && s.chequered)
-            return card_chq;
+            return card_none;
         if (s.red)
             return card_red;
         if (sc == 1)

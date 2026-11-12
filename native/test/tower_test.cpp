@@ -172,7 +172,7 @@ static void test_cards()
     {
         Tower t;
         const View &v = t.update(demo::make(demo::finish, 5), cfg, 5);
-        CHECK(v.h.card == card_chq && v.rows[0].chq && v.rows[21].gap == "Out" && v.rows[20].gap == "DSQ");
+        CHECK(v.h.card == card_none && v.rows[0].chq && v.rows[21].gap == "Out" && v.rows[20].gap == "DSQ");
     }
     {
         Config off;

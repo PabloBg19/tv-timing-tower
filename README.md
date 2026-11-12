@@ -26,9 +26,9 @@ tiempos de la retransmisión de F1 2026. **La dibuja el propio HUD del juego**: 
 - **Carrera y sprint:**
   - intervalos con un decimal, como en 2026; la diferencia con el líder en las vueltas 5, 15, 25…;
   - `STARTING TYRES` en parrilla, `GAINED / LOST` al empezar la vuelta 2, `TYRES` (vueltas de cada juego) en las
-    vueltas 7, 17…, `PIT STOPS` en las 10, 20… y `FINAL CLASSIFICATION` con las diferencias en meta;
+    vueltas 7, 17…, `PIT STOPS` en las 10, 20… y, al acabar, las diferencias en meta con la bandera a cuadros en cada coche;
   - `IN PIT` en verde menta, `+1 Lap`, `Out`/`DSQ`/`NC`;
-  - penalizaciones (`+5s`, `DT`, `SG`), vuelta rápida en morado, triángulos de posición y bandera a cuadros;
+  - sanciones con el cuadrado rojo «!», vuelta rápida en morado, triángulos de posición y bandera a cuadros;
   - en los adelantamientos, las filas se desvanecen y vuelven con el orden nuevo.
 - **Banderas como en la señal de FOM:** bloque de color con el logo FIA para `SAFETY CAR`, `VIRTUAL SAFETY CAR`,
   `SAFETY CAR IN THIS LAP`, `VSC ENDING`, `YELLOW FLAG` + sector, `RED FLAG` y `TRACK CLEAR`. Con Safety Car o
@@ -120,8 +120,8 @@ broadcast timing tower, **drawn by the game's own HUD**: no external app, no ove
 - **Qualifying:** the session clock and gaps to P1; the knockout zone shows the gap to the last car through, and
   cars knocked out earlier leave the tower.
 - **Races:** STARTING TYRES on the grid; one-decimal intervals and the gap to the leader on laps 5, 15, 25…;
-  GAINED / LOST as lap 2 starts; TYRES (laps on the set) on laps 7, 17…; PIT STOPS on laps 10, 20…; FINAL
-  CLASSIFICATION with the gaps at the line; mint `IN PIT`; penalties, fastest lap, position triangles, chequered flag and row
+  GAINED / LOST as lap 2 starts; TYRES (laps on the set) on laps 7, 17…; PIT STOPS on laps 10, 20…; the gaps at the
+  line and a chequered flag per finisher at the end; penalties as the red "!" square; mint `IN PIT`; penalties, fastest lap, position triangles, chequered flag and row
   fades on overtakes.
 - **Flags:** FOM-style blocks with the FIA logo. Names only under the safety car or a red flag.
 

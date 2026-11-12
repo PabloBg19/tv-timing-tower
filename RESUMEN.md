@@ -1,5 +1,14 @@
 # Resumen — TV Timing Tower
 
+## 0.7.1 (12-11-2026)
+
+- Final de carrera como en la emisión: sin banda ni tira a cuadros; diferencias en meta y bandera en cada coche
+  (D55).
+- Sanciones: cuadrado rojo con «!» (D56).
+
+---
+
+
 ## 0.7.0 (12-11-2026)
 
 - `STARTING TYRES` en parrilla y en la vuelta de formación (D51).
