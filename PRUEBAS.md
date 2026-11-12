@@ -112,7 +112,6 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 7. Logos (solo PRIVATE)
 - [ ] Logo F1 real en la cabecera (los de equipo son los del juego en las dos builds).
-- [ ] Con la build PUBLIC: logo de serie del juego en la cabecera y sin logo de cadena.
 
 ## 8. Fallo seguro
 - [ ] Desactiva el addon: vuelve el tablero nativo intacto.
