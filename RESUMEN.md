@@ -1,5 +1,15 @@
 # Resumen — TV Timing Tower
 
+## 0.4.1 (12-11-2026)
+
+- Arreglo del error al pulsar Jugar con la 0.4.0 (`os error 3`): los sprites desde textura del juego rompían el
+  build de perfil de Swofty (D37).
+- `build.py` hace un build de perfil completo de cada paquete en un directorio temporal.
+- Reinstalado en tu perfil; `swofty build` del perfil `default` termina bien.
+
+---
+
+
 ## 0.4.0 (12-11-2026, réplica de las capturas 2026)
 
 - La geometría está medida sobre las capturas: torre de 6,3 filas de ancho (antes 10,3) y columnas, cabecera,

@@ -111,7 +111,7 @@ LAYOUT = {
     },
 }
 
-FIA_TEX = "eaid://ui_package/art/osd/textures/message_system/ms_fia_logo.tif"
+# (0.4.0 drew the public build's FIA badge from the game's ms_fia_logo.tif; Swofty's profile build refused it)
 
 
 # ------------------------------------------------------------------------------------------------- sprites
@@ -403,14 +403,16 @@ def header(flavour, sprites):
         n = len(lines)
         hb = L[f"block{n}"]
         kids = [sprite(id_ + "_bg", f"blk{n}_{colour_key}", 21)]
+        x = tx
         if f"fia_{fia}{n}" in sprites:
             kids.append(sprite(id_ + "_f", f"fia_{fia}{n}", 23))
-        else:  # public build: the game's own FIA badge, tinted
-            x0, w = L["fia_box"]
-            kids.append(sprite(id_ + "_f", f"fiatex_{fia}", 23, at=[x0 + w / 2, L["block_gap"] + (hb - L["block_gap"]) / 2]))
+        else:
+            # public build: no FIA badge (no mark is shipped, and a sprite drawn from a game texture stops
+            # Swofty's profile build, DECISIONES.md D37): the text starts at the block's left margin
+            x = u(8.0)
         for k, (line, base) in enumerate(zip(lines, L[f"base{n}"])):
-            e = text(f"{id_}_t{k}", "OSD_24_bold", "left", W - tx - 2, cap if line is not None else cap * 0.8,
-                     [tx, base], literal=line, colour=ink)
+            e = text(f"{id_}_t{k}", "OSD_24_bold", "left", W - x - 2, cap if line is not None else cap * 0.8,
+                     [x, base], literal=line, colour=ink)
             if line is None:
                 e.pop("literal", None)
                 e["value"] = value
@@ -597,10 +599,9 @@ def main():
     found = []
     if a.flavour == "private" and a.logos.exists():
         found = private_art(art, a.logos, sprites)
-    # the game's own FIA badge for the flag blocks wherever no private one exists (always in the public build)
-    x0, w = LAYOUT["fia_box"]
-    sprites["fiatex_k"] = {"texture": FIA_TEX, "fit": [w, u(30.0)], "tint": "#000000"}
-    sprites["fiatex_w"] = {"texture": FIA_TEX, "fit": [w, u(30.0)]}
+    # every sprite must be a PNG of the addon: Swofty 1.9.14's profile build reads each sprite's file and stops with
+    # "os error 3" on one drawn from a game texture (`texture`), although `swofty hud compose` accepts it
+    assert all("png" in s for s in sprites.values()), "texture sprites break the profile build"
     (out / "registry").mkdir(parents=True, exist_ok=True)
     rec = record(a.flavour, sprites, found)
     (out / "registry" / "tower.json").write_text(json.dumps(rec, indent=1), encoding="utf-8")

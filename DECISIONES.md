@@ -200,3 +200,18 @@ alturas de mayúscula en las dos), así que se mantiene la fuente del juego, con
 - `IN PIT` en rojo.
 
 El visor HTML usa Titillium Web, más estrecha, así que ahí el texto se ve algo más pequeño que en el juego.
+
+**D37 — Ningún sprite desde textura del juego (0.4.1).** La 0.4.0 se instaló pero el botón Jugar falló: `the wrapper
+exited (exit code: 1) ... addons\pablo.tv-timing-tower\: El sistema no puede encontrar la ruta especificada (os
+error 3)`. Lo reproduje en un directorio de datos temporal. La causa son los dos sprites dibujados desde una textura
+del juego (`"texture": ".../ms_fia_logo.tif"`, el escudo FIA de la build PUBLIC): `swofty hud compose` los acepta,
+pero el build de perfil de Swofty 1.9.14 busca un fichero para cada sprite y falla. Sin ellos, el build termina.
+
+Cambios:
+- PRIVATE usa sus PNG del logo FIA. PUBLIC no lleva escudo en los bloques y el texto empieza en el margen.
+- `hudgen.py` impide los sprites sin PNG.
+- `build.py` hace ahora un build de perfil completo de cada paquete (instalar, activar, `swofty build`) en
+  `build/<sabor>/swofty-data`, así que un paquete que rompa Jugar no llega a `dist/`.
+
+En tu instalación faltaba además `swofty.json` en la carpeta del addon, tras el fallo. Al reinstalar con
+`swofty addons install` quedó completa, y `swofty build` del perfil `default` terminó bien.

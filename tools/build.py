@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.4.0"
+VERSION = "0.4.1"
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
 
@@ -272,6 +272,29 @@ def compose_check(stage, flavour):
     run([exe, "hud", "compose", str(stage), "registry/tower.json", "--id", aid, "--out", str(out)])
 
 
+def profile_check(archive, flavour):
+    """Install the packaged addon in a scratch Swofty data dir, enable it and run a full profile build, as Play
+    does. `hud compose` alone is not enough: 0.4.0 composed but its profile build stopped (os error 3). Your own
+    Swofty data dir and the game folder are not touched."""
+    exe = swofty_exe()
+    if not exe:
+        print("profile check skipped: swofty.exe not found")
+        return
+    data = BUILD / flavour / "swofty-data"
+    if data.exists():
+        shutil.rmtree(data)
+    data.mkdir(parents=True)
+    aid = manifest(flavour)["id"]
+    base = [exe, "--data-dir", str(data)]
+    run(base + ["addons", "install", str(archive)], capture_output=True)
+    run(base + ["addons", "enable", aid], capture_output=True)
+    r = subprocess.run(base + ["build"], capture_output=True, text=True)
+    if r.returncode:
+        print((r.stdout + r.stderr)[-3000:])
+        sys.exit(f"profile build failed with the {flavour} package")
+    print(f"profile check: {flavour} package installs and builds")
+
+
 def package(name, stage):
     DIST.mkdir(exist_ok=True)
     folder = DIST / name
@@ -354,6 +377,8 @@ def main():
         if not a.no_compose:
             compose_check(stage, "private" if "PRIVATE" in name else "public")
         package(name, stage)
+        if not a.no_compose:
+            profile_check(DIST / f"{name}.swoftyaddon", "private" if "PRIVATE" in name else "public")
     preview_assets(staged[0][1], staged[0][2])
     print("done")
 
