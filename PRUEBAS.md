@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.7.2
+# Checklist de pruebas en el juego — TV Timing Tower 0.8.0
 
 Antes de empezar: instala `dist/tv-timing-tower-PRIVATE.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -65,6 +65,17 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
 - [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
+
+## 4e. Novedades 0.8.0 (arreglos reportados)
+- [ ] Libres y clasificación: salen tiempos en casi todos los coches (antes se quedaban en blanco con frecuencia).
+- [ ] Clasificación con 22 coches: Q2 muestra **16 filas** (no se corta en el 13), Q3 muestra 10.
+- [ ] Clasificación sprint con 20 coches: SQ2 muestra 15 filas.
+- [ ] Carrera: un coche que entra a boxes muestra `IN PIT` **siempre**, también si la torre está en ese momento en
+      `GAINED / LOST`, `PIT STOPS` o `TYRES`.
+- [ ] Safety Car real: al terminar aparece primero `SC` / `ENDING` 4 s (con el escudo FIA) y luego `TRACK CLEAR`,
+      igual que ya hacía el VSC.
+- [ ] Mi Equipo con 24 coches, filas = Todas: la torre sube un poco más que con una parrilla normal. Si se corta
+      por arriba (tapa otro elemento del HUD) o sigue sin caber por abajo, dilo con una captura.
 
 ## 4d. Novedades 0.7.0
 - [ ] Parrilla y vuelta de formación: banda `STARTING TYRES`, apellidos y letra del neumático; desaparece al apagarse

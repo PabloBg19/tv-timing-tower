@@ -53,6 +53,7 @@ public:
         c_sc = L.boolean("c_sc");
         c_vsc = L.boolean("c_vsc");
         c_vscend = L.boolean("c_vscend");
+        c_scending = L.boolean("c_scending");
         c_clear = L.boolean("c_clear");
         c_yel = L.boolean("c_yel");
         ysec = L.text("ysec", 24);
@@ -65,6 +66,7 @@ public:
         stty = L.boolean("stty");
 
         form = L.boolean("form");
+        wide = L.boolean("wide");
         gained = L.boolean("gained");
         rows = L.rows<RowLeaves>("r", kRows, 2, [](hud::Leaves &l, int) {
             RowLeaves r;
@@ -142,6 +144,7 @@ public:
         L.set(c_sc, h.card == card_sc);
         L.set(c_vsc, h.card == card_vsc);
         L.set(c_vscend, h.card == card_vsc_end);
+        L.set(c_scending, h.card == card_sc_ending);
         L.set(c_clear, h.card == card_clear);
         L.set(c_yel, h.card == card_yellow);
         L.set(ysec, h.ysec);
@@ -152,6 +155,7 @@ public:
         L.set(stty, h.start_tyres);
 
         L.set(form, h.on && h.race && h.formation);
+        L.set(wide, h.on && h.wide);
 
         // Row change fades: only for a few rows at a time (a start or a restart reshuffles the field: snap) and at
         // most once a second per row
@@ -245,11 +249,11 @@ public:
     hud::BoolLeaf show, on, timed, race, demo, abbr, colbar;
     hud::OneHot bg;
     hud::TextLeaf sess, lap, dlaps, dclk;
-    hud::BoolLeaf c_chq, c_red, c_scend, c_sc, c_vsc, c_vscend, c_clear, c_yel;
+    hud::BoolLeaf c_chq, c_red, c_scend, c_sc, c_vsc, c_vscend, c_scending, c_clear, c_yel;
     hud::TextLeaf ysec;
     hud::TextLeaf clock;
     hud::OneHot ld;
-    hud::BoolLeaf gained, sprint, pstops, form, tyrev, stty;
+    hud::BoolLeaf gained, sprint, pstops, form, tyrev, stty, wide;
     hud::Leaves::Rows<RowLeaves> rows;
 
     static constexpr double kFadeHold = 0.16; // the row's fade out (generic_fade_on) before the swap

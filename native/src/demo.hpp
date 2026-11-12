@@ -135,10 +135,12 @@ inline Snapshot make(int sc, double t)
             snap.cars[21].status = t > 11.0 ? 4 : 2; // a retirement near the end
             s.yellow = t > 11.0 ? 0x2 : 0;
         } else if (sc == safety_car) {
-            s.sc = 1;
-            s.sc_in = t > 8.0;
+            // SC, "SAFETY CAR IN THIS LAP" the lap before it comes in, then the model shows SC ENDING and
+            // TRACK CLEAR by itself, the same shape as VSC below
+            s.sc = t < 5.0 ? 1 : 0;
+            s.sc_in = t > 3.0 && t < 5.0;
             for (int i = 0; i < 4; i++)
-                snap.cars[size_t(4 + i * 3)].in_pit = t > 2.0 && t < 6.0;
+                snap.cars[size_t(4 + i * 3)].in_pit = t > 1.0 && t < 4.0;
             s.fastest_vid = int(snap.cars[2].vid);
             s.fastest_ms = 78120;
         } else if (sc == vsc) {

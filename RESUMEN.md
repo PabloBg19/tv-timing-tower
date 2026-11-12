@@ -1,5 +1,19 @@
 # Resumen — TV Timing Tower
 
+## 0.8.0 (12-11-2026, reportes tras 100 descargas)
+
+- Arreglado el corte mal hecho en Q2/Q3 (se cortaba en el piloto 13 en vez de donde correspondía): `field_` no se
+  reinicia entre rondas de la misma clasificación (D58).
+- Arreglados los tiempos que no salían en libres y clasificación: si el filtro de coherencia no encuentra nada,
+  se muestra el tiempo real del coche en vez de dejarlo en blanco (D59).
+- Arreglado IN PIT para que salga siempre, también durante GAINED/LOST, PIT STOPS o TYRES (D60).
+- Añadido SC ENDING, igual que VSC ENDING, para el Safety Car real (D61).
+- La torre sube un poco más con 24 coches (Mi Equipo); cantidad estimada, pendiente de confirmar en el juego (D62).
+- Tests nuevos para los cuatro arreglos y para el caso de 24 coches.
+- Verificado: tests, compose y build de perfil completo. Sin ver en el juego.
+
+---
+
 ## 0.7.2 (12-11-2026)
 
 - Fuera el logo de la cadena (DAZN) y la función `overlay` (D57).

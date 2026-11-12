@@ -131,8 +131,11 @@ public:
             if (race) {
                 ci.best_ms = clock_.best_ms(vid);
             } else {
-                // never faster than a car the game ranks higher (see LapClock::best_at_least)
-                ci.best_ms = clock_.best_at_least(vid, floor_ms);
+                // prefer a time that doesn't put this car ahead of one the game ranks higher (see
+                // LapClock::best_at_least), but showing a gap beats showing nothing: fall back to the car's own
+                // best lap (even if it doesn't fit that order) rather than leaving the row blank
+                int coherent = clock_.best_at_least(vid, floor_ms);
+                ci.best_ms = coherent > 0 ? coherent : clock_.best_ms(vid);
                 if (ci.best_ms > 0)
                     floor_ms = ci.best_ms;
             }

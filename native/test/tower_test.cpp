@@ -149,13 +149,53 @@ static void test_quali()
     CHECK(green);
 }
 
+// A plain classified snapshot: n cars at positions 1..n, type `type`, racers `racers` (as the live state may
+// report fewer once a knockout round has reduced who's still classified).
+static Snapshot make_timed(int type, int n, int racers)
+{
+    Snapshot s;
+    s.s.type = type;
+    s.s.racers = racers;
+    s.s.track_m = 4500.f;
+    for (int i = 0; i < n; i++) {
+        CarIn c;
+        c.vid = uint32_t(i);
+        c.pos = i + 1;
+        c.status = 2;
+        c.best_ms = 78000 + i * 150;
+        s.cars.push_back(c);
+    }
+    return s;
+}
+
+static void test_field_persists_across_quali_segments()
+{
+    Config cfg;
+    Tower t;
+    t.update(make_timed(5, 22, 22), cfg, 0.0); // Q1: 22 classified, cut at 16 (10 + (22-10)/2)
+    // Q2: the live state may now report only the 16 who went through (not the original 22); the Q1 cut used to
+    // decide who left the tower must still come from the field Q1 started with, not this smaller count
+    const View &q2 = t.update(make_timed(6, 16, 16), cfg, 1.0);
+    CHECK(q2.shown == 16);
+    for (int i = 0; i < q2.shown; i++)
+        CHECK(!q2.rows[i].elim);
+    // the same for sprint qualifying (SQ1 -> SQ2, types 10 -> 11)
+    Tower t2;
+    t2.update(make_timed(10, 20, 20), cfg, 0.0); // a 20-car SQ1: cut at 15 (10 + (20-10)/2)
+    const View &sq2 = t2.update(make_timed(11, 15, 15), cfg, 1.0);
+    CHECK(sq2.shown == 15);
+}
+
 static void test_cards()
 {
     Config cfg;
     {
         Tower t;
         CHECK(t.update(demo::make(demo::safety_car, 1), cfg, 1).h.card == card_sc);
-        CHECK(t.update(demo::make(demo::safety_car, 9), cfg, 9).h.card == card_sc_end);
+        CHECK(t.update(demo::make(demo::safety_car, 4), cfg, 4).h.card == card_sc_end);   // SAFETY CAR IN THIS LAP
+        CHECK(t.update(demo::make(demo::safety_car, 6), cfg, 6).h.card == card_sc_ending); // "SC" / "ENDING"
+        CHECK(t.update(demo::make(demo::safety_car, 10), cfg, 10).h.card == card_clear);
+        CHECK(t.update(demo::make(demo::safety_car, 14), cfg, 14).h.card == card_none);
     }
     {
         Tower t;
@@ -217,6 +257,24 @@ static void test_lap_clock()
     // best_at_least
     CHECK(c.best_at_least(0, 0) == c.best_ms(0));
     CHECK(c.best_at_least(0, 200000) == -1);
+
+    // order-coherence fallback (source_live.hpp): our own clock can rank two cars differently from the game by a
+    // few ms; a car whose real best lap doesn't fit the floor set by one the game ranks higher must still show
+    // its own time (not a blank gap) once best_at_least rejects it
+    LapClock oc;
+    float oc_d0 = 4000.f, oc_d1 = 4000.f;
+    for (int i = 0; i < 60 * 150; i++) { // past the partial joining lap and one full lap each (~120 s)
+        oc_d0 += 49.9f * float(dt); // car 0: ~100.2 s/lap
+        oc_d1 += 50.1f * float(dt); // car 1: ~99.8 s/lap, genuinely faster
+        int l0 = int(oc_d0 / len), l1 = int(oc_d1 / len);
+        oc.step(dt, len, {LapSample{0, l0, oc_d0 - float(l0) * len, false, 0},
+                          LapSample{1, l1, oc_d1 - float(l1) * len, false, 0}});
+    }
+    CHECK(oc.best_ms(0) > 0 && oc.best_ms(1) > 0 && oc.best_ms(1) < oc.best_ms(0));
+    CHECK(oc.best_at_least(1, oc.best_ms(0)) < 0); // the floor rejects car 1's (faster) time
+    int fallback = oc.best_at_least(1, oc.best_ms(0));
+    fallback = fallback > 0 ? fallback : oc.best_ms(1); // source_live.hpp's own fallback expression
+    CHECK(fallback == oc.best_ms(1) && fallback > 0);
 
     // practice / qualifying: another car going back to the garage (its distance jumps back) must not void the laps
     // of the others (0.5 voided everyone's lap then, so no time ever showed)
@@ -285,6 +343,10 @@ static void test_session_views()
     const View &bv = tb.update(big, cfg, 1.0);
     CHECK(bv.shown == 24 && bv.rows[23].on && bv.rows[23].vid == 23 && bv.rows[23].badge.empty());
     CHECK(knockout_cut(1, 24) == 17);
+    CHECK(bv.h.wide); // 24 rows: slide the tower further up
+    // a normal 22-car field (the demo's own race grid) does not trigger it
+    Tower tn;
+    CHECK(!tn.update(demo::make(demo::race, 1.0), cfg, 1.0).h.wide);
 
     // pit stops view: fixed mode shows each car's count
     Config pc = cfg;
@@ -295,6 +357,16 @@ static void test_session_views()
     Tower ts;
     const View &sv = ts.update(st, pc, 1.0);
     CHECK(sv.h.pitstops && sv.rows[2].gap == std::to_string(st.cars[2].vid % 3));
+    // a car in the pits always shows IN PIT, even while PIT STOPS or TYRES has the tower (and normally)
+    for (Config::Gap mode : {Config::Gap::autoswitch, Config::Gap::pitstops, Config::Gap::tyres}) {
+        Snapshot pit = demo::make(demo::race, 1.0);
+        pit.cars[5].in_pit = true;
+        Config pcfg = cfg;
+        pcfg.gap = mode;
+        Tower tip;
+        const View &iv = tip.update(pit, pcfg, 1.0);
+        CHECK(iv.rows[5].gap == "IN PIT" && iv.rows[5].gap_inpit);
+    }
     // starting tyres: on the grid every car stands, names and tyre letters, no gaps
     Tower tg;
     const View &gv = tg.update(demo::make(demo::grid, 1.0), cfg, 1.0);
@@ -534,6 +606,7 @@ int main()
     test_race_rows();
     test_leader_mode_and_rows();
     test_quali();
+    test_field_persists_across_quali_segments();
     test_cards();
     test_lap_clock();
     test_session_views();

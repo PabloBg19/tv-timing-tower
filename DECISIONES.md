@@ -341,3 +341,43 @@ investigaciones.
 España. Se quitan el ajuste *Broadcaster logo*, el dibujo con el overlay, la imagen del paquete y su descarga en
 `fetch_assets.py`. El addon ya no usa la función experimental `overlay`, así que el Addon Browser deja de
 mostrarlo con la etiqueta *Draws over the game*; solo usa `telemetry`.
+
+## 0.8.0 (reportes tras 100 descargas en OverTake)
+
+**D58 — Q2/Q3 se cortaba en una posición equivocada.** Causa encontrada: `field_` (el tamaño de la parrilla que
+decide el corte de eliminación) se reiniciaba a 0 en cada cambio de `s.type`, y Q1→Q2→Q3 (o SQ1→SQ2→SQ3) cambian de
+`type` aunque sean la misma clasificación. Si el estado en vivo da en Q2 un número de clasificados ya reducido
+(los 16 que pasaron, no los 22 de salida), `field_` se recalculaba con ese 16 y el corte de Q1 usado para saber
+quién sale de la torre en Q2 salía mal: 10 + (16−10)/2 = 13 en vez de 10 + (22−10)/2 = 16. Por eso la tabla se
+cortaba en el piloto 13. Arreglo: `field_` ya no se reinicia si el cambio de `type` es dentro de la misma
+clasificación (incluida la sprint); sí se reinicia al cambiar de tipo de sesión de verdad (libres→clasificación,
+clasificación→carrera). Tests nuevos reproducen el caso con 22→16 (y 20→15 en sprint) y comprueban que no se corta.
+
+**D59 — Tiempos que no salían en libres y clasificación.** El filtro que evita que el reloj propio ponga a un
+coche por delante de otro que el juego clasifica mejor (D5) dejaba el hueco en blanco cuando ningún tiempo del
+coche cumplía esa condición, en vez de mostrar igualmente la vuelta medida. Con IAs que entran y salen de boxes
+constantemente en libres, esto podía dejar sin tiempo a bastantes coches. Ahora, si el filtro no encuentra ningún
+tiempo que respete el orden del juego, se muestra el mejor tiempo real del coche de todas formas: enseñar un
+tiempo que puede estar algo descolocado es mejor que no enseñar nada.
+
+**D60 — IN PIT no salía siempre.** El aviso de boxes se comprobaba después de las vistas automáticas (GAINED/LOST,
+PIT STOPS, TYRES), así que mientras la torre rotaba por una de esas vistas, un coche que entraba a boxes en ese
+momento no lo mostraba hasta que la vista cambiase. Ahora IN PIT se comprueba primero (solo por detrás de
+nombres-solamente, abandono y bandera roja) y gana siempre a esas vistas, igual que en la retransmisión.
+
+**D61 — SC ENDING, igual que VSC ENDING.** El Safety Car real solo tenía la fase «entrando en boxes»
+(`SAFETY CAR IN THIS LAP`, D8) antes de desactivarse, y al desactivarse pasaba directamente a `TRACK CLEAR` sin una
+fase de transición, a diferencia del VSC, que sí la tiene (`VSC ENDING` 4 s y luego `TRACK CLEAR`). Se añade la
+misma transición para el SC real: al pasar de activo a desactivado aparece un bloque `SC` / `ENDING` 4 s (mismo
+color y escudo FIA que los demás bloques amarillos) y después `TRACK CLEAR`, igual que el VSC.
+
+**D62 — Mi Equipo con 24 coches: la torre sube un poco más.** Con más de 22 filas visibles (23 o 24, solo posible
+con Mi Equipo y sus 12 equipos) la torre es más alta que con una parrilla normal de 20-22, porque las filas que se
+muestran sí ocupan sitio (las ocultas no). Como el compositor de Swofty no permite que la posición de un elemento
+dependa de un valor en tiempo real, salvo con una animación (`motion`) disparada por una hoja booleana, se añade
+una hoja `wide` (true con más de 22 filas) y una animación de deslizamiento que sube la torre 24 unidades extra
+mientras está activa. La cantidad (24 unidades, algo menos de 1,5 filas) es una estimación prudente: no se ha
+podido medir en el juego cuánto margen hay realmente por encima antes de chocar con otro elemento del HUD; si la
+torre se corta por arriba o sigue saliéndose por abajo con 24 coches, hay que avisar para ajustar
+`extra_up` en `tools/hudgen.py`. Esta animación es del mismo tipo que la de los adelantamientos (D41), cuyo
+funcionamiento en el juego aún está por confirmar del todo.

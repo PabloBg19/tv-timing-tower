@@ -245,7 +245,7 @@ struct Config {
 
 // ---------------------------------------------------------------------------------------------- outputs
 enum Card : int { card_none = 0, card_sc = 1, card_vsc = 2, card_red = 3, card_chq = 4, card_yellow = 5,
-                  card_sc_end = 6, card_vsc_end = 7, card_clear = 8 };
+                  card_sc_end = 6, card_vsc_end = 7, card_clear = 8, card_sc_ending = 9 };
 
 struct Row {
     bool on = false;
@@ -296,6 +296,7 @@ struct Header {
     bool start_tyres = false;  // "STARTING TYRES": on the grid and the formation lap
     bool final_cls = false;    // the winner has taken the flag: gaps at the line (the tower stays as on TV)
     bool formation = false;    // "FORMATION LAP" in place of the lap line
+    bool wide = false;         // more than 22 rows shown (23-24: a My Team grid): slide the tower further up
     std::string sub;           // the line under the logo: "SPRINT" or ""
     bool lead = false;         // gaps are to the leader
 };
@@ -320,7 +321,10 @@ public:
         const Kind kind = kind_of(s.type);
 
         if (s.type != last_type_) {
-            reset_session();
+            // Q1 -> Q2 -> Q3 (and SQ1 -> SQ2 -> SQ3) are the same weekend segment: keep the field size, or the
+            // Q2 cut is computed from Q2's own (already-reduced) car count instead of the field that started Q1.
+            bool same_segment = kind_of(last_type_) == kind && kind != Kind::none;
+            reset_session(same_segment);
             last_type_ = s.type;
         }
 
@@ -413,15 +417,19 @@ public:
             slot++;
         }
         v.shown = slot;
+        h.wide = slot > 22;
         return v;
     }
 
     const View &view() const { return view_; }
 
-    void reset_session()
+    // keep_field: true on a Q1->Q2->Q3 (or SQ1->SQ2->SQ3) move, so the knockout cut still uses the field size
+    // from the start of the weekend segment, not the smaller count left after a round's eliminations.
+    void reset_session(bool keep_field = false)
     {
         seen_.fill(Seen{});
-        field_ = 0;
+        if (!keep_field)
+            field_ = 0;
         last_sc_ = 0;
         trans_card_ = card_none;
         trans_until_ = 0;
@@ -625,6 +633,16 @@ private:
             r.fl = snap.s.fastest_vid >= 0 && uint32_t(snap.s.fastest_vid) == c.vid;
             if (h.bare) {
                 // names only
+            } else if (retired) {
+                r.gap = c.status == 5 ? "DSQ" : c.status == 6 ? "NC" : "Out";
+            } else if (snap.s.red) {
+                r.gap = ""; // red flag: the field waits in the pit lane, no live gaps
+            } else if (c.in_pit && c.status != 3) {
+                // a car in the pits always shows it, even while GAINED/LOST, PIT STOPS or TYRES has the tower
+                r.gap = "IN PIT";        // spans the data and tyre columns, as on the broadcast
+                r.gap_inpit = true;
+                r.tyre = 0;
+                r.tyre_age.clear();
             } else if (h.gained) {
                 int g = c.vid < grid_.size() ? grid_[c.vid] : 0;
                 if (g > 0) {
@@ -635,7 +653,7 @@ private:
             } else if (h.pitstops) {
                 if (c.pit_stops >= 0)
                     r.gap = std::to_string(c.pit_stops);
-            } else if (h.tyres && !retired) {
+            } else if (h.tyres) {
                 if (c.tyre_age >= 0)
                     r.gap = std::to_string(c.tyre_age);
             } else if (h.final_cls && c.status == 3) {
@@ -651,15 +669,6 @@ private:
                 } else if (tw >= 0 && tc >= tw) {
                     r.gap = fmt_gap_race(int(std::lround((tc - tw) * 1000.0)));
                 }
-            } else if (retired) {
-                r.gap = c.status == 5 ? "DSQ" : c.status == 6 ? "NC" : "Out";
-            } else if (snap.s.red) {
-                r.gap = ""; // red flag: the field waits in the pit lane, no live gaps
-            } else if (c.in_pit && c.status != 3) {
-                r.gap = "IN PIT";        // spans the data and tyre columns, as on the broadcast
-                r.gap_inpit = true;
-                r.tyre = 0;
-                r.tyre_age.clear();
             } else if (idx == 0) {
                 r.gap = lead ? "Leader" : "Interval";
                 r.gap_label = true;
@@ -739,20 +748,20 @@ private:
     {
         int sc = race ? s.sc : 0;
         if (last_sc_ == 2 && sc == 0 && !s.red) {
-            trans_card_ = card_vsc_end;
+            trans_card_ = card_vsc_end;    // "VSC" / "ENDING" for 4 s, then TRACK CLEAR
             trans_until_ = now + 4.0;
             clear_at_ = now + 4.0;
         } else if (last_sc_ == 1 && sc == 0 && !s.red) {
-            trans_card_ = card_clear;
-            trans_until_ = now + 5.0;
-            clear_at_ = -1;
+            trans_card_ = card_sc_ending;  // "SC" / "ENDING" for 4 s, then TRACK CLEAR (same shape as the VSC one)
+            trans_until_ = now + 4.0;
+            clear_at_ = now + 4.0;
         }
         if (sc != 0) {
             trans_card_ = card_none;
             clear_at_ = -1;
         }
         last_sc_ = sc;
-        if (trans_card_ == card_vsc_end && now >= trans_until_ && clear_at_ >= 0) {
+        if ((trans_card_ == card_vsc_end || trans_card_ == card_sc_ending) && now >= trans_until_ && clear_at_ >= 0) {
             trans_card_ = card_clear;
             trans_until_ = now + 4.0;
             clear_at_ = -1;
