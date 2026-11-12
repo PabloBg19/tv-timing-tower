@@ -1,0 +1,117 @@
+[B]TV Timing Tower[/B] replaces F1 25's standings board with the timing tower from the 2026 F1 world feed. It isn't an overlay or an external app: the tower is [B]drawn by the game's own HUD[/B], so it uses the game's fonts, sits where the standings board sits, and can be moved and scaled in the game's HUD editor.
+
+[SIZE=5][B]What it shows[/B][/SIZE]
+[B]Header[/B]
+[LIST]
+[*]F1 logo with [I]FIA Formula 1 World Championship[/I] (or [I]SPRINT[/I])
+[*][ICODE]LAP 23 / 57[/ICODE], [ICODE]FORMATION LAP[/ICODE], [ICODE]Q2 08:12[/ICODE] or [ICODE]P1 33:56[/ICODE] with the session clock
+[/LIST]
+
+[B]Every car (up to 24, My Team included)[/B]
+[LIST]
+[*]Position, with P1 in the red box
+[*]The 2026 broadcast team icons (or the game's own badges, so logo mods show too)
+[*]The three-letter code beside the data, the full surname when there is none
+[*]Data column and the tyre compound letter in its colour
+[/LIST]
+
+[B]Practice[/B]
+[LIST]
+[*]Best lap for P1, gaps to P1 for the rest
+[*]White [ICODE]P[/ICODE] box for cars in the pits
+[/LIST]
+
+[B]Qualifying and sprint qualifying[/B]
+[LIST]
+[*]Gaps to P1; the knockout zone shows the gap to the last car through
+[*]Cars knocked out earlier leave the tower
+[*]Green and purple lap flashes
+[/LIST]
+
+[B]Races, cycling like the TV[/B]
+[LIST]
+[*][B]STARTING TYRES[/B] on the grid
+[*]One-decimal intervals
+[*][B]GAINED / LOST[/B] as lap 2 starts
+[*]Gap to the leader on laps 5, 15, 25…
+[*][B]TYRES[/B] (laps on the set) on laps 7, 17…
+[*][B]PIT STOPS[/B] on laps 10, 20…
+[*]At the flag: the gaps at the line and a chequered flag on each finisher
+[/LIST]
+
+[B]Race states[/B]
+[LIST]
+[*][ICODE]IN PIT[/ICODE] in mint
+[*]Penalties as the red [B]![/B] square
+[*]Fastest lap in purple
+[*]Green and red triangles when places change
+[*][ICODE]+1 Lap[/ICODE], [ICODE]Out[/ICODE], [ICODE]DSQ[/ICODE]
+[*]Rows fade when cars swap places
+[/LIST]
+
+[B]Flags, as on the FOM world feed[/B]
+[LIST]
+[*]Yellow, VSC, Safety Car, [I]SAFETY CAR IN THIS LAP[/I], [I]VSC ENDING[/I], red flag and [I]TRACK CLEAR[/I] blocks with the FIA logo
+[*]Under the Safety Car or a red flag the tower shows the names only
+[/LIST]
+
+Everything comes from the game: drivers, names, teams, colours, badges, order and status. It works in Grand Prix, career, My Team with 24 cars, and with team or logo mods.
+
+[SIZE=5][B]Requirements[/B][/SIZE]
+[LIST]
+[*]F1 25 on Steam (build 25251167) with the 2026 Season Pack
+[*][URL=https://swofty.net]Swofty Launcher[/URL] 1.9.x (tested up to 1.9.21)
+[*]The game's [B]Position[/B] HUD element switched on: the tower lives inside it
+[/LIST]
+
+[SIZE=5][B]Installation[/B][/SIZE]
+[LIST=1]
+[*]Open Swofty Launcher → [B]Addons[/B].
+[*]Drag [ICODE]tv-timing-tower.swoftyaddon[/ICODE] onto the page.
+[*]Enable it in your profile and press [B]Play[/B].
+[/LIST]
+
+[SIZE=5][B]Settings (ADDON SETTINGS, in game or in the launcher)[/B][/SIZE]
+[LIST]
+[*]Rows: all / top 10 + me / compact
+[*]Names: auto / surname / code
+[*]Race gaps: auto (as on TV) / interval / leader / gained-lost / pit stops / tyres
+[*]Team logos: TV icons / game badges / game white badges
+[*]Tyres, tyre age, background opacity, position arrows, animations, team colour bar, highlight my car
+[*]On or off per session type
+[*]Show/hide key (F8). [B]Ctrl+F8[/B] runs a demo with every state; [B]Shift+F8[/B] goes to the next scenario.
+[/LIST]
+
+Size, position and opacity: the game's HUD editor (Settings → HUD → Customise).
+
+[SIZE=5][B]Offline only[/B][/SIZE]
+The addon makes [B]no network connections[/B], uses [B]no UDP telemetry[/B] and touches [B]nothing online or anti-cheat related[/B]. It reads the session from Swofty's live state, inside the game.
+
+[SIZE=5][B]Performance[/B][/SIZE]
+The tower updates 30 times a second and writes only the values that change: about 20 µs per update.
+
+[SIZE=5][B]Known limits[/B][/SIZE]
+[LIST]
+[*]Practice and qualifying lap times are measured by the addon, because Swofty's live state doesn't provide them
+[/LIST]
+
+yet. Expect a few hundredths of difference.
+
+[LIST]
+[*][I]SAFETY CAR IN THIS LAP[/I] and [I]VSC ENDING[/I] are inferred.
+[*]Time Trial, replays and the spectator camera keep the game's own board.
+[*]The TV slides rows on overtakes; here they fade, which is what Swofty's HUD composer allows.
+[*]With 24 cars and a flag block, scale the tower down a little in the HUD editor if it touches the bottom of the
+[/LIST]
+
+screen.
+
+[SIZE=5][B]Credits[/B][/SIZE]
+[LIST]
+[*]Swofty Launcher and its SDK (MIT)
+[*]Per-car rows, the knockout rule and the session clock method from [B]Project Halo[/B] by nyannoying
+[*]F1, FIA and team logos belong to their owners
+[/LIST]
+
+[SIZE=5][B]Feedback[/B][/SIZE]
+Found a bug? Turn on [B]Verbose log[/B] in the settings, play the session, and post the [ICODE][tv-tower][/ICODE] lines from [ICODE]swofty/loader.log[/ICODE] with a screenshot.
