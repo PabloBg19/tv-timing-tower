@@ -451,7 +451,7 @@ private:
         r.chq = race && c.status == 3;
 
         // arrows
-        if (cfg.arrows && c.vid < seen_.size()) {
+        if (cfg.arrows && race && c.vid < seen_.size()) { // TV shows place changes in races only
             const Seen &sn = seen_[c.vid];
             r.up = now < sn.up_until;
             r.dn = !r.up && now < sn.dn_until;
@@ -482,6 +482,8 @@ private:
             r.fl = snap.s.fastest_vid >= 0 && uint32_t(snap.s.fastest_vid) == c.vid;
             if (retired) {
                 r.gap = c.status == 5 ? "DSQ" : c.status == 6 ? "NC" : c.status == 4 ? "DNF" : "OUT";
+            } else if (snap.s.red) {
+                r.gap = ""; // red flag: the field waits in the pit lane, no live gaps
             } else if (c.in_pit && c.status != 3) {
                 r.gap = "PIT";
             } else if (idx == 0) {

@@ -166,7 +166,7 @@ inline Snapshot make(int sc, double t)
         if (sc == practice)
             ms += 900;
         if (vid == kPlayer && t > 5.0)
-            ms -= 820;                 // personal best that moves the player up
+            ms -= 430;                 // personal best that moves the player up
         if (vid == 4 && t > 9.0)
             ms = 78650;                // session best: purple flash
         if ((sc == quali_q1 || sc == practice) && vid == 21)

@@ -464,10 +464,7 @@ def record(flavour, sprites, logos_found, has_f1):
         "prefix": "tvtt",
         "screen": "standings",
         "show": vm("show"),
-        "also": {
-            "replay": {"show": vm("on")},
-            "spectator": {"show": vm("on")},
-        },
+        # replays and the spectator screen: off in 0.1.0 (not testable here; see DECISIONES.md D17)
         "sprites": sprites,
         "elements": elements,
         "clock": {"output": P + "clock", "start": vm("timed")},

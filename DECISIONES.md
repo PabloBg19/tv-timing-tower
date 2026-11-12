@@ -69,3 +69,23 @@ manifiesto lo declara en `description` y en `network: "none"`.
 
 **D16 — Licencias.** Código MIT. SDK de Swofty (MIT) vendorizado en `native/include`. Las ideas de Project
 Halo (contrato de filas, regla de eliminación) están reimplementadas; se acredita en README.
+
+**D17 — Solo el HUD de sesión en 0.1.0 (sin repeticiones ni modo espectador).** El compositor puede poner la
+misma torre en la pantalla de repeticiones y en la de espectador (`also`), pero en este PC el build avisa de que
+esas pantallas cambian de layout y tienen que ir "built into the game files", y no hay forma de probarlas sin
+jugar. Para minimizar riesgo quedan fuera; en esas pantallas se ve la torre del juego. Reactivar: añadir
+`"also": {"replay": {"show": vm("on")}, "spectator": {"show": vm("on")}}` en `tools/hudgen.py`.
+
+**D18 — Un único id para los dos sabores** (`pablo.tv-timing-tower`): instalar uno sustituye al otro y nunca hay
+dos torres compitiendo por el mismo tablero. PRIVATE lleva textos de ajustes en español; PUBLIC en inglés.
+
+**D19 — "Permisos" del manifiesto.** El formato de Swofty no tiene campo de permisos y rechaza campos
+desconocidos (`deny_unknown_fields`). Lo equivalente son `kind: ["ui","native"]` (etiqueta *Code*) y
+`experimental_features: ["telemetry","overlay"]` (etiquetas *Reads live race data* y *Draws over the game*).
+La declaración "solo offline, sin red, sin antitrampas" va en `description`.
+
+**D20 — Flechas de posición solo en carrera** (en TV no se usan en libres/qualy) y, con bandera roja, sin
+diferencias en la columna derecha (los coches esperan en el pit lane).
+
+**D21 — Modo demo: mejor en una sesión de libres.** En Contrarreloj el juego enseña su propio tablero de
+tiempos, no el de posiciones, así que la torre (que vive dentro de este) puede no verse allí.

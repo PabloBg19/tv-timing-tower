@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TV Timing Tower — visor de diseño</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Formula1 font: used when you put it in assets/private/fonts (copied to preview/data/fonts by the build) */
+  @font-face { font-family: "F1Local"; src: url("data/fonts/Formula1-Bold.ttf"), url("data/fonts/Formula1-Bold.otf"),
+               url("data/fonts/Formula1-Display-Bold.ttf"), url("data/fonts/Formula1-Display-Bold.otf"); font-weight: 700; }
+  @font-face { font-family: "F1Local"; src: url("data/fonts/Formula1-Regular.ttf"), url("data/fonts/Formula1-Regular.otf"),
+               url("data/fonts/Formula1-Display-Regular.ttf"), url("data/fonts/Formula1-Display-Regular.otf"); font-weight: 400; }
+  :root { --ui-bg: #0d0f1a; --ui-fg: #e6e8f0; --ui-dim: #8a90a8; --accent: #e10600; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ui-bg); color: var(--ui-fg); font: 14px/1.4 "Titillium Web", system-ui, sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #23263a; }
+  header h1 { font-size: 16px; margin: 0 12px 0 0; font-weight: 700; letter-spacing: .5px; }
+  label { color: var(--ui-dim); font-size: 12px; display: flex; gap: 6px; align-items: center; }
+  select, input, button { font: inherit; background: #171a2b; color: var(--ui-fg); border: 1px solid #2c3050; border-radius: 4px; padding: 3px 6px; }
+  button { cursor: pointer; }
+  #wrap { padding: 16px; overflow: auto; }
+  #stage { position: relative; width: 1280px; height: 720px; overflow: hidden; border-radius: 6px;
+           background: radial-gradient(ellipse at 70% 60%, #5d6a4a 0%, #3c4a33 35%, #262f22 70%, #161b14 100%); }
+  #stage .track { position: absolute; left: 0; right: 0; top: 54%; height: 120px; transform: skewY(-4deg);
+                  background: linear-gradient(#55585e, #3e4045); box-shadow: 0 -6px 0 #2a8f3a, 0 6px 0 #2a8f3a; }
+  #stage .kerb { position: absolute; left: 0; right: 0; top: 52%; height: 10px; transform: skewY(-4deg);
+                 background: repeating-linear-gradient(90deg, #d22 0 40px, #eee 40px 80px); }
+  #tower { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  #tower .el { position: absolute; }
+  #tower img.el { image-rendering: auto; }
+  #tower .tx { position: absolute; white-space: nowrap; line-height: 1; color: #fff; }
+  #bcast { position: absolute; right: 45px; top: 25px; height: 30px; opacity: .9; }
+  #note { color: var(--ui-dim); font-size: 12px; padding: 0 16px 16px; }
+  #note code { color: #c9cde0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>TV TIMING TOWER · visor</h1>
+  <label>Escenario <select id="sc"></select></label>
+  <label>Filas <select id="variant">
+    <option value="all">Todas</option><option value="top10">Top 10 + yo</option>
+    <option value="compact">Compacta</option><option value="codes">Abreviaturas + edad neum.</option></select></label>
+  <label>Fondo <select id="bg"><option value="0">Sólido</option><option value="1" selected>TV</option><option value="2">Translúcido</option></select></label>
+  <label><input type="checkbox" id="tyres" checked> Neumáticos</label>
+  <label><input type="checkbox" id="logos" checked> Logos</label>
+  <label>Escala <input type="range" id="scale" min="0.8" max="2.4" step="0.05" value="1.25"></label>
+  <button id="play">⏸</button>
+  <label>t <input type="range" id="t" min="0" max="28" step="1" value="0"><span id="tv">0.0 s</span></label>
+</header>
+<div id="wrap"><div id="stage"><div class="kerb"></div><div class="track"></div><div id="tower"></div><img id="bcast" alt=""></div></div>
+<div id="note">Mismo modelo C++ que el DLL (<code>native/src/model.hpp</code>) y mismos sprites y medidas que el registro HUD
+(<code>tools/hudgen.py</code>). Dentro del juego el texto usa la fuente del propio HUD de F1 25; aquí, la fuente Formula1 si está en
+<code>assets/private/fonts</code>, si no Titillium Web.</div>
+<script src="data/layout.js"></script>
+<script src="data/frames.js"></script>
+<script>
+(() => {
+  const L = window.TVT_LAYOUT, F = window.TVT_FRAMES;
+  if (!L || !F) { document.getElementById('note').textContent = 'Falta preview/data: ejecuta python tools/build.py'; return; }
+  const C = L.colours, W = L.width, R = L.row, H = L.header, CARD = L.card;
+  const tower = document.getElementById('tower');
+  const $ = id => document.getElementById(id);
+  const fontFamily = '"F1Local", "Titillium Web", sans-serif';
+  const sc = $('sc'); Object.keys(F.scenarios).forEach(k => sc.add(new Option(k, k)));
+  const bc = $('bcast'); bc.src = 'data/broadcaster.png'; bc.onerror = () => bc.remove();
+  let t = 0, playing = true;
+  $('t').max = Math.round(F.seconds / F.step);
+
+  function img(src, b, z) {
+    const e = document.createElement('img'); e.className = 'el'; e.src = 'data/' + src;
+    Object.assign(e.style, { left: b[0] + 'px', top: b[1] + 'px', width: (b[2] - b[0]) + 'px', height: (b[3] - b[1]) + 'px', zIndex: z || 20 });
+    return e;
+  }
+  function spr(name, dx, dy, z) {
+    const s = L.sprites ? L.sprites[name] : null; const b = SPR[name]; if (!b) return null;
+    return img('art/' + name + '.png', [b[0] + dx, b[1] + dy, b[2] + dx, b[3] + dy], z);
+  }
+  // text: x anchor by align, y = baseline, cap = cap height (units)
+  function txt(s, x, y, cap, align, colour, weight, box) {
+    const e = document.createElement('div'); e.className = 'tx'; e.textContent = s;
+    const fs = cap / 0.7;
+    Object.assign(e.style, { fontSize: fs + 'px', top: (y - fs * 0.86) + 'px', color: colour || '#fff',
+      fontWeight: weight || 700, fontFamily, zIndex: 40, letterSpacing: '0.02em' });
+    if (align === 'right') { e.style.left = x + 'px'; e.style.transform = 'translateX(-100%)'; }
+    else if (align === 'centre') { e.style.left = (x - 50) + 'px'; e.style.width = '100px'; e.style.textAlign = 'center'; }
+    else { e.style.left = x + 'px'; if (box) { e.style.maxWidth = box + 'px'; e.style.overflow = 'hidden'; } }
+    return e;
+  }
+  const Wtot = W + 80;
+  // sprite bounds come from the generated record (layout.json has the geometry; bounds are re-derived here)
+  const SPR = {};
+  const tyreR = L.tyre_d / 2, ch = L.chip, ctop = (R - ch) / 2;
+  [0, 1, 2].forEach(i => { SPR['row' + i] = [0, 0, W, R]; SPR['hdr' + i] = [0, 0, W, H]; });
+  Object.assign(SPR, { hdr_rule: [12, 26.2, W - 12, 26.8], me: [0, 0, W, R], me_edge: [0, 0, 1.2, R], p1: [2, 3.3, 18, 18.3], ko: [2, 3.3, 18, 18.3],
+    koline: [0, 0, W, 0.8], sep: [4, 0, W - 4, 0.6], dim: [0, 0, W, R], bar: [L.bar_x, 4.8, L.bar_x + 1.2, 16.8],
+    arr_up: [L.pos_x - 4, 6.8, L.pos_x + 4, 14.8], arr_dn: [L.pos_x - 4, 6.8, L.pos_x + 4, 14.8],
+    pitbox: [0, ctop, ch, ctop + ch], penbox: [0, ctop, 19, ctop + ch], agebox: [0, ctop, ch, ctop + ch], flbox: [0, ctop, ch, ctop + ch], chqbox: [0, ctop, 16, ctop + ch],
+    card_sc: [0, 0, W, CARD], card_red: [0, 0, W, CARD], card_clear: [0, 0, W, CARD], card_chq: [0, 0, W, CARD] });
+  ['S', 'M', 'H', 'I', 'W'].forEach(k => SPR['ty' + k] = [L.tyre_x - tyreR, R / 2 - tyreR, L.tyre_x + tyreR, R / 2 + tyreR]);
+  L.logos.forEach(tn => { const s = L.logo_size; SPR['tm_' + tn] = [L.logo_x - s / 2, R / 2 - s / 2, L.logo_x + s / 2, R / 2 + s / 2]; });
+
+  const CARDS = { 1: ['card_sc', 'SAFETY CAR', '#101010'], 2: ['card_sc', 'VIRTUAL SAFETY CAR', '#101010'], 3: ['card_red', 'RED FLAG', '#fff'],
+    4: ['card_chq', '', ''], 5: ['card_sc', 'YELLOW FLAG', '#101010'], 6: ['card_sc', 'SAFETY CAR IN THIS LAP', '#101010'],
+    7: ['card_sc', 'VSC ENDING', '#101010'], 8: ['card_clear', 'TRACK CLEAR', '#fff'] };
+
+  function draw() {
+    const variant = $('variant').value, bg = +$('bg').value, showTyres = $('tyres').checked, logos = $('logos').checked;
+    const frames = F.scenarios[sc.value][variant];
+    const fr = frames[Math.min(frames.length - 1, Math.round(t / F.step))];
+    tower.innerHTML = '';
+    tower.style.transform = `translate(48px, 40px) scale(${$('scale').value * 1.0})`;
+    const h = fr.h;
+    // header
+    tower.append(img('art/hdr' + bg + '.png', [0, 0, W, H], 20), spr('hdr_rule', 0, 0, 24));
+    if (logos && L.f1logo) { const b = L.sprites_f1 || null; }
+    const f1 = document.createElement('img'); f1.className = 'el'; f1.src = 'data/art/f1logo.png';
+    f1.onerror = () => { f1.replaceWith(txt('F1', W / 2, 19, 11, 'centre', '#fff', 700)); };
+    Object.assign(f1.style, { left: (W / 2 - 22) + 'px', top: '5px', height: '16px', zIndex: 26 }); tower.append(f1);
+    if (h.race) {
+      tower.append(txt('LAP', W / 2 - 12, 37, 6.2, 'right', '#fff', 400), txt(h.lap, W / 2 + 4, 37, 8, 'right', '#fff', 700),
+        txt('/' + (h.laps || '57'), W / 2 + 5.5, 37, 6.2, 'left', '#fff', 400));
+    } else {
+      tower.append(txt(h.sess, W / 2 - 3, 37, 8, 'right', '#fff', 700), txt(h.clock, W / 2 + 3, 37, 8, 'left', '#fff', 400));
+    }
+    let y = H;
+    if (h.card) {
+      const [s, label, col] = CARDS[h.card];
+      tower.append(img('art/' + s + '.png', [0, y, W, y + CARD], 21));
+      if (label) tower.append(txt(label + (h.card === 5 && h.ysec ? '  ' + h.ysec : ''), W / 2, y + CARD / 2 + 3.4, 7, 'centre', col, 700));
+      y += CARD;
+    }
+    // rows
+    fr.rows.forEach((r, i) => {
+      const yy = y + i * R;
+      const g = document.createElement('div'); g.className = 'el'; g.style.left = '0'; g.style.top = yy + 'px'; g.style.width = Wtot + 'px'; g.style.height = R + 'px';
+      const add = e => e && g.append(e);
+      add(img('art/row' + bg + '.png', [0, 0, W, R], 20));
+      if (r.me) { add(spr('me', 0, 0, 22)); add(spr('me_edge', 0, 0, 23)); }
+      if (r.sep) add(spr('sep', 0, 0, 23));
+      if (r.p1 && !r.ko) add(spr('p1', 0, 0, 24));
+      if (r.ko) add(spr('ko', 0, 0, 24));
+      if (r.kol) add(spr('koline', 0, 0, 25));
+      if (r.up) add(spr('arr_up', 0, 0, 26)); else if (r.dn) add(spr('arr_dn', 0, 0, 26));
+      else add(txt(r.pos, L.pos_x, L.text_y, L.cap_pos, 'centre', '#fff', 700));
+      const tn = L.teams[r.team];
+      if (logos && r.team >= 0 && L.logos.includes(tn)) add(spr('tm_' + tn, 0, 0, 27));
+      const nm = variant === 'codes' ? r.code : r.name;
+      add(txt(nm, L.name_x, L.text_y, L.cap_name, 'left', '#fff', 700, L.name_box));
+      if (r.gap) {
+        const col = r.purple ? C.purple : r.green ? C.green : r.label ? C.label : C.gap;
+        add(txt(r.gap, L.gap_right, r.label ? L.text_y - 0.6 : L.text_y, r.label ? L.cap_label : L.cap_gap, 'right', col, (r.purple || r.green) ? 700 : 400));
+      }
+      if (showTyres && r.tyre) { add(spr('ty' + r.tyre, 0, 0, 27)); add(txt(r.tyre, L.tyre_x, R / 2 + 2.7, 5.4, 'centre', C.tyres[r.tyre], 400)); }
+      let sx = L.side_x;
+      const chip = (name, w, label, col) => { add(spr(name, sx, 0, 30)); if (label) add(txt(label, sx + w / 2, R / 2 + (name === 'pitbox' ? 3.5 : 2.8), name === 'pitbox' ? 7 : 5.6, 'centre', col, name === 'pitbox' ? 700 : 400)); sx += w + 1.5; };
+      if (r.pit) chip('pitbox', ch, 'P', '#101018');
+      if (r.pen) chip('penbox', 19, r.pen, '#101010');
+      if (r.fl) chip('flbox', ch);
+      if (r.chq) chip('chqbox', 16);
+      if (r.age) chip('agebox', ch, r.age, '#fff');
+      if (r.out || r.elim) add(spr('dim', 0, 0, 45));
+      tower.append(g);
+    });
+    $('tv').textContent = t.toFixed(1) + ' s';
+    $('t').value = Math.round(t / F.step);
+  }
+  ['sc', 'variant', 'bg', 'tyres', 'logos', 'scale'].forEach(id => $(id).addEventListener('input', () => { if (id === 'sc') t = 0; draw(); }));
+  $('t').addEventListener('input', e => { t = e.target.value * F.step; playing = false; $('play').textContent = '▶'; draw(); });
+  $('play').onclick = () => { playing = !playing; $('play').textContent = playing ? '⏸' : '▶'; };
+  const q = new URLSearchParams(location.search);
+  if (q.get('sc')) sc.value = q.get('sc');
+  if (q.get('rows')) $('variant').value = q.get('rows');
+  if (q.get('scale')) $('scale').value = q.get('scale');
+  if (q.get('bg')) $('bg').value = q.get('bg');
+  if (q.get('t')) { t = +q.get('t'); playing = false; $('play').textContent = '▶'; }
+  setInterval(() => { if (playing) { t += F.step; if (t > F.seconds) t = 0; draw(); } }, 500);
+  draw();
+})();
+</script>
+</body>
+</html>

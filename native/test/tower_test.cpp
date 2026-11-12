@@ -155,7 +155,7 @@ static void test_cards()
     {
         Tower t;
         const View &v = t.update(demo::make(demo::red_flag, 1), cfg, 1);
-        CHECK(v.h.card == card_red && v.rows[3].gap == "PIT");
+        CHECK(v.h.card == card_red && v.rows[3].gap.empty() && v.rows[20].gap == "OUT");
     }
     {
         Tower t;
