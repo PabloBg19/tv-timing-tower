@@ -17,8 +17,8 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 P = "view_model_data.hud_tvt_"   # leaf prefix (must match native/src/leaves.hpp)
-ROWS = 22
-SLOTS = 24
+ROWS = 24          # a career with 12 teams runs 24 cars
+SLOTS = 30         # vehicle ids up to 29 (a My Team grid)
 TEAMS = ["mercedes", "ferrari", "redbull", "mclaren", "astonmartin", "alpine",
          "williams", "racingbulls", "haas", "sauber", "audi", "cadillac"]
 PX = 4  # sprite pixels per HUD unit
@@ -197,6 +197,12 @@ def make_art(art: Path):
     add("ko", flat(L["pos_w"], R - 2 * ci, hexrgba(C["ko"])), [0, ci, L["pos_w"], R - ci])
     add("koline", flat(W, 0.8, hexrgba(C["p1"])), [0, 0, W, 0.8])
     add("sep", flat(W - 8, 0.6, (255, 255, 255, 70)), [4, 0, W - 4, 0.6])
+    cw, chh = u(12.0), u(9.0)
+    img = flat(cw, chh, (0, 0, 0, 0))
+    ImageDraw.Draw(img).rounded_rectangle([0, 0, img.size[0] - 1, img.size[1] - 1], radius=img.size[1] // 4,
+                                          fill=(255, 255, 255, 255))
+    lx = L["logo_x"]
+    add("teamchip", img, [lx - cw / 2, R / 2 - chh / 2, lx + cw / 2, R / 2 + chh / 2])
     add("dim", flat(W, R, (8, 8, 14, 150)), [0, 0, W, R])
     bx = L["pos_w"] + 0.6
     add("bar", flat(1.0, R - 6, (255, 255, 255, 255)), [bx, 3.0, bx + 1.0, R - 3.0])
@@ -381,12 +387,12 @@ def header(flavour, sprites):
     ln = L["cap_lapnum"]
     # "LAP 26 / 71": one line per digit count of the lap (ld1..ld3), so "LAP", the number and "/ 71" keep the
     # broadcast's spacing; the game's own centring (eCentre) centres the whole line
-    digit = u(7.4)            # one bold digit at the lap number's size
+    digit = u(8.4)            # one bold digit at the lap number's size (measured in game)
     def lap_line(nd):
         wn = digit * nd
         x_num = u(6.0)
-        x_sl = x_num + wn + u(3.0)
-        x_tot = x_sl + u(6.5)
+        x_sl = x_num + wn + u(5.0)
+        x_tot = x_sl + u(8.0)
         return group(f"ld{nd}", [{"kind": "centre", "id": f"lc{nd}", "at": [W / 2, y], "children": [
             text(f"lw{nd}", "OSD_19_regular", "right", u(30), lw, [0, 0], literal="LAP", colour=C["lapword"] + "ff"),
             text(f"ln{nd}", "OSD_24_bold", "left", u(30), ln, [x_num, 0], value=vm("lap")),
@@ -397,7 +403,10 @@ def header(flavour, sprites):
             group(f"ltd{nd}", [text(f"ltdn{nd}", "OSD_19_regular", "left", u(24), lw, [x_tot, 0], value=vm("dlaps"),
                                     colour=C["lapword"] + "ff")], visible=vm("demo")),
         ]}], visible=vm(f"ld{nd}"))
-    race = group("race", [lap_line(1), lap_line(2), lap_line(3)], visible=vm("race"))
+    laps = group("laps", [lap_line(1), lap_line(2), lap_line(3)], visible=vm("form", True, True))
+    form = group("formg", [text("formt", "OSD_24_bold", "centre", W, ln * 0.9, [W / 2, y], literal="FORMATION LAP")],
+                 visible=vm("form"))
+    race = group("race", [laps, form], visible=vm("race"))
     timed = group("timed", [
         {"kind": "centre", "id": "tc", "at": [W / 2, y], "children": [
             text("sess", "OSD_24_bold", "right", u(60), ln, [-u(3.0), 0], value=vm("sess")),
@@ -437,6 +446,9 @@ def header(flavour, sprites):
         group("gain", [sprite(f"gain_bg{i}", f"gainbg{i}", 21, visible=vm(f"bg{i}")) for i in range(3)] +
               [text("gain_t", "OSD_24_bold", "centre", W, L["cap_gainword"], [W / 2, L["gain_base"]],
                     literal="GAINED / LOST")], visible=vm("gained")),
+        group("pits", [sprite(f"pits_bg{i}", f"gainbg{i}", 21, visible=vm(f"bg{i}")) for i in range(3)] +
+              [text("pits_t", "OSD_24_bold", "centre", W, L["cap_gainword"], [W / 2, L["gain_base"]],
+                    literal="PIT STOPS")], visible=vm("pstops")),
         group("chq", [sprite("chq_bg", "blk_chq", 21)], visible=vm("c_chq")),
         block("red", "red", ["RED", "FLAG"], "#FFFFFFff", fia="w"),
         block("scend", "sc", ["SAFETY CAR", "IN THIS", "LAP"]),
@@ -483,23 +495,25 @@ def row(flavour, logos_found):
                           case="upper")], visible=vm("abbr", True, True)),
         group("cb", [sprite("bar", "bar", 28, tint={"session_car": "nub_colour", "slot_var": "V",
                                                       "default": "#00000000"})], visible=vm("colbar")),
+        group("nb", [sprite("chip", "teamchip", 27, tint={"session_car": "nub_colour", "slot_var": "V",
+                                                           "default": "#00000000"})], visible=vm(r + "nob")),
     ], visible=vm(r + "c{VV}"), repeat={"count": SLOTS, "var": "V"}))
     k.append(group("nd", [text("dn", "OSD_24_bold", "left", L["name_box"], L["cap_name"], [L["name_x"], ty],
                                value=vm(r + "nm"), wrap="clampwidth", case="upper")], visible=vm("demo")))
 
     # data column: white (gap / time), purple, green, grey label (Interval / Leader), red (IN PIT)
     gx = L["gap_right"]
-    k.append(group("gw", [text("g", "OSD_24_regular", "right", L["gap_box"], L["cap_gap"], [gx, ty],
-                               value=vm(r + "gap"), colour=C["gap"] + "ff", case="none")],
+    k.append(group("gw", [text("g", "OSD_24_regular", "right", u(52), L["cap_gap"], [gx, ty],
+                               value=vm(r + "gap"), colour=C["gap"] + "ff", case="none", wrap="clampwidth")],
                    visible=vm(r + "gsp", True, True)))
     k.append(text("gp", "OSD_24_bold", "right", L["gap_box"], L["cap_gap"], [gx, ty], value=vm(r + "gap"),
                   colour=C["purple"] + "ff", visible=vm(r + "gpu")))
     k.append(text("gg", "OSD_24_bold", "right", L["gap_box"], L["cap_gap"], [gx, ty], value=vm(r + "gap"),
                   colour=C["green"] + "ff", visible=vm(r + "gpg")))
-    k.append(text("gl", "OSD_24_regular", "right", L["gap_box"], L["cap_label"], [gx, ty], value=vm(r + "gap"),
-                  colour=C["label"] + "ff", visible=vm(r + "glb"), case="none"))
-    k.append(text("gi", "OSD_24_bold", "right", L["gap_box"], u(6.6), [gx, ty], value=vm(r + "gap"),
-                  colour=C["inpit"] + "ff", visible=vm(r + "gip")))
+    k.append(text("gl", "OSD_24_regular", "right", u(40), L["cap_label"], [gx, ty], value=vm(r + "gap"),
+                  colour=C["label"] + "ff", visible=vm(r + "glb"), case="none", wrap="clampwidth"))
+    k.append(text("gi", "OSD_24_bold", "right", u(46), u(6.6), [L["tyre_x"] + u(4), ty], value=vm(r + "gap"),
+                  colour=C["inpit"] + "ff", visible=vm(r + "gip"), wrap="clampwidth"))
 
     # places gained / lost: the mark, then the white number (the gap text)
     k += [sprite("gu", "gup", 27, visible=vm(r + "gu")), sprite("gd", "gdn", 27, visible=vm(r + "gd")),
@@ -529,7 +543,9 @@ def row(flavour, logos_found):
     k.append(sprite("dim", "dim", 45, visible=vm(r + "dim")))
     # a change of car on the row: the content fades out, the DLL swaps it while hidden, and it fades back in
     # (rNN_fx false -> true). The background stays. Off with the Animations setting.
-    bg, content = k[:3], k[3:]
+    static_ids = {"bg0", "bg1", "bg2", "me", "sep", "p1", "ko", "kol", "pa", "au", "ad"}
+    bg = [e for e in k if e["id"] in static_ids]
+    content = [e for e in k if e["id"] not in static_ids]
     rc = group("rc", content)
     rc["motion"] = {"id": "fx", "keys": [[0, 0.0], [0.16, 1.0]], "curve": "generic_fade_on",
                     "play_on": vm(r + "fx")}

@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.5.0
+# Checklist de pruebas en el juego — TV Timing Tower 0.6.0
 
 Antes de empezar: instala `dist/tv-timing-tower-PRIVATE.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.5.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.6.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -65,6 +65,17 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
 - [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
+
+## 4c. Novedades 0.6.0
+- [ ] Libres: aparecen tiempos (P1 su vuelta, los demás `+0.xxx` respecto a P1) aunque las IA entren y salgan del
+      garaje.
+- [ ] Clasificación: P1 con su tiempo y los demás con la diferencia con P1; en la zona de eliminación, la diferencia
+      con el último que pasa (P16 en Q1).
+- [ ] Carrera: `PIT STOPS` en la vuelta 10 (si alguien ha parado). `FORMATION LAP` en la vuelta de formación.
+- [ ] Adelantamientos: fundido solo de la parte del coche; en la salida, sin fundidos.
+- [ ] `Interval` no pisa la abreviatura. `LAP 1 / 5` bien separado.
+- [ ] Mi Equipo (24 coches): 24 filas, tu equipo con una ficha de su color en lugar del logo, y los nombres bien.
+- [ ] FPS: el informe de rendimiento (`perf.log`) da a `pablo.tv-timing-tower` muy por debajo de 11 ms/s.
 
 ## 4b. Novedades 0.5.0
 - [ ] En cada fila, el nombre, el número, el logo y el neumático están a la misma altura.

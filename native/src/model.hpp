@@ -15,8 +15,8 @@
 
 namespace tvt {
 
-constexpr int kRows = 22;    // rows the HUD record composes
-constexpr int kSlots = 24;   // per-car name slots per row (#session.cars.car0 ... car23)
+constexpr int kRows = 24;    // rows the HUD record composes (a career with 12 teams has 24 cars)
+constexpr int kSlots = 30;   // per-car name slots per row (vehicle ids up to 29: a My Team grid, as Project Halo found)
 constexpr int kTeams = 12;   // team identities (preview logos)
 
 // ---------------------------------------------------------------------------------------------- session kinds
@@ -190,6 +190,7 @@ struct CarIn {
     int gap_ahead_ms = -1;    // -1 invalid
     int gap_leader_ms = -1;
     int grid = 0;             // starting position when the source knows it (demo); 0: the tower records it
+    int pit_stops = -1;       // the game's own count, -1 unknown
     int best_ms = -1;         // best valid lap
     int last_ms = -1;         // last completed lap
     bool me = false;
@@ -225,7 +226,7 @@ struct Config {
     enum class Rows { all, top10, compact } rows = Rows::all;
     // autoswitch: as on TV (intervals, the leader gaps now and then, places gained after lap 1, names only on
     // lap 1 and under the safety car / red flag)
-    enum class Gap { autoswitch, interval, leader, gained } gap = Gap::autoswitch;
+    enum class Gap { autoswitch, interval, leader, gained, pitstops } gap = Gap::autoswitch;
     // auto: codes beside data (gaps, times), full surnames when the data column is empty (as on TV)
     enum class Names { autoswitch, surname, code } names = Names::autoswitch;
     bool tyres = true;
@@ -289,6 +290,8 @@ struct Header {
     bool abbr = false;         // three-letter codes in the rows (else full surnames)
     bool bare = false;         // names only: no data column, no tyres (lap 1, safety car, red flag)
     bool gained = false;       // the "GAINED / LOST" view
+    bool pitstops = false;     // the "PIT STOPS" view
+    bool formation = false;    // "FORMATION LAP" in place of the lap line
     std::string sub;           // the line under the logo: "SPRINT" or ""
     bool lead = false;         // gaps are to the leader
 };
@@ -354,11 +357,13 @@ public:
         h.lead = lead_mode(cfg, snap, now);
         if (h.race) {
             record_grid(snap);
+            h.formation = s.formation;
             h.gained = gained_mode(cfg, snap, now);
-            // TV: lap 1, the safety car and the red flag show the names alone
+            h.pitstops = !h.gained && pitstops_mode(cfg, snap, now);
+            // TV: the safety car, the red flag and the formation lap show the names alone
             h.bare = cfg.gap == Config::Gap::autoswitch && !h.gained && !s.chequered &&
-                     (s.sc == 1 || s.red);
-            if (h.bare || h.gained)
+                     (s.sc == 1 || s.red || s.formation);
+            if (h.bare || h.gained || h.pitstops)
                 h.lead = false;
         }
         bool any_data = h.race ? !h.bare : false;
@@ -372,6 +377,16 @@ public:
 
         best_flash(snap, kind, now);
         fastest_flash(snap, kind, now);
+
+        // qualifying: the knockout zone shows the gap to the last car through (as on TV)
+        cut_best_ = -1;
+        int seg = knockout_segment(s.type);
+        if (seg == 1 || seg == 2) {
+            int cut = knockout_cut(seg, field_);
+            for (const CarIn &c : snap.cars)
+                if (c.pos == cut)
+                    cut_best_ = c.best_ms;
+        }
 
         remember(snap, now);
         std::vector<int> pick = pick_rows(snap, cfg);
@@ -409,6 +424,8 @@ public:
         fastest_flash_until_ = 0;
         grid_.fill(0);
         grid_state_ = 0;
+        last_pit_lap_ = -1;
+        pit_until_ = -1;
         gained_until_ = -1;
         gained_shown_ = false;
     }
@@ -601,6 +618,9 @@ private:
                     r.gain_on = true;
                     r.gap = std::to_string(r.gain < 0 ? -r.gain : r.gain);
                 }
+            } else if (h.pitstops) {
+                if (c.pit_stops >= 0)
+                    r.gap = std::to_string(c.pit_stops);
             } else if (retired) {
                 r.gap = c.status == 5 ? "DSQ" : c.status == 6 ? "NC" : "Out";
             } else if (snap.s.red) {
@@ -624,7 +644,7 @@ private:
                     r.gap = "";
             }
             // a new fastest lap flashes the lap time in purple
-            if (!h.bare && !h.gained && fastest_flash_vid_ == int(c.vid) && now < fastest_flash_until_ &&
+            if (!h.bare && !h.gained && !h.pitstops && fastest_flash_vid_ == int(c.vid) && now < fastest_flash_until_ &&
                 fastest_ms_ > 0) {
                 r.gap = fmt_lap(fastest_ms_);
                 r.gap_purple = true;
@@ -635,17 +655,6 @@ private:
             r.pit = c.in_pit;
             int best = c.best_ms;
             int lead_best = leader.best_ms;
-            if (best > 0) {
-                if (idx == 0 || lead_best <= 0)
-                    r.gap = fmt_lap(best);
-                else
-                    r.gap = fmt_gap_ms(best - lead_best);
-            }
-            if (c.vid < flash_.size() && now < flash_[c.vid].until && flash_[c.vid].ms > 0) {
-                r.gap = fmt_lap(flash_[c.vid].ms);
-                r.gap_purple = flash_[c.vid].purple;
-                r.gap_green = !flash_[c.vid].purple;
-            }
             // knockout zone
             int seg = knockout_segment(snap.s.type);
             if (seg == 1 || seg == 2) {
@@ -660,6 +669,20 @@ private:
             } else if (seg == 3) {
                 if (pos > 10)
                     r.elim = true;
+            }
+            // P1 its lap time; the rest the gap to P1; the knockout zone the gap to the last car through
+            if (best > 0) {
+                if (idx == 0 || lead_best <= 0)
+                    r.gap = fmt_lap(best);
+                else if (r.ko && cut_best_ > 0 && best >= cut_best_)
+                    r.gap = fmt_gap_ms(best - cut_best_);
+                else
+                    r.gap = fmt_gap_ms(best - lead_best);
+            }
+            if (c.vid < flash_.size() && now < flash_[c.vid].until && flash_[c.vid].ms > 0) {
+                r.gap = fmt_lap(flash_[c.vid].ms);
+                r.gap_purple = flash_[c.vid].purple;
+                r.gap_green = !flash_[c.vid].purple;
             }
         }
     }
@@ -737,6 +760,24 @@ private:
         return t;
     }
 
+    // ---- pit stops view: fixed, or (auto) 10 s each time the leader starts a lap that is a multiple of 10 once
+    // a car has stopped (the leader view takes the other multiples of 5)
+    bool pitstops_mode(const Config &cfg, const Snapshot &snap, double now)
+    {
+        if (cfg.gap == Config::Gap::pitstops)
+            return true;
+        if (cfg.gap != Config::Gap::autoswitch)
+            return false;
+        int ll = snap.cars.front().lap;
+        bool stopped = false;
+        for (const CarIn &c : snap.cars)
+            stopped = stopped || c.pit_stops > 0;
+        if (stopped && last_pit_lap_ >= 0 && ll != last_pit_lap_ && ll > 0 && (ll % 10) == 0)
+            pit_until_ = now + 10.0;
+        last_pit_lap_ = ll;
+        return now < pit_until_;
+    }
+
     // ---- interval / leader
     bool lead_mode(const Config &cfg, const Snapshot &snap, double now)
     {
@@ -745,7 +786,7 @@ private:
         if (cfg.gap == Config::Gap::interval || kind_of(snap.s.type) != Kind::race)
             return false;
         int ll = snap.cars.front().lap;
-        if (last_leader_lap_ >= 0 && ll != last_leader_lap_ && ll > 0 && (ll % 5) == 0)
+        if (last_leader_lap_ >= 0 && ll != last_leader_lap_ && ll > 0 && (ll % 5) == 0 && (ll % 10) != 0)
             lead_until_ = now + 8.0;
         last_leader_lap_ = ll;
         return now < lead_until_;
@@ -823,6 +864,9 @@ private:
     int fastest_flash_vid_ = -1;
     double fastest_flash_until_ = 0;
     std::array<int, 32> grid_{};
+    int cut_best_ = -1;
+    int last_pit_lap_ = -1;
+    double pit_until_ = -1;
     int grid_state_ = 0;       // 0 none, 1 recording, 2 frozen
     double gained_until_ = -1;
     bool gained_shown_ = false;

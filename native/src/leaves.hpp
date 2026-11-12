@@ -23,7 +23,7 @@ struct RowLeaves {
     hud::TextLeaf tage;
     hud::BoolLeaf tag, pit, pen;
     hud::TextLeaf pent;
-    hud::BoolLeaf fl, chq, gu, gd, g0, fx;
+    hud::BoolLeaf fl, chq, gu, gd, g0, fx, nob;
     hud::TextLeaf nm, badge;
     hud::BoolLeaf bdg;
     hud::OneHot tm, car;
@@ -60,6 +60,8 @@ public:
         L.set(clock, "");
         ld = L.one_hot("ld", 3, 0, 1); // ld1..ld3: digits of the lap number
         sprint = L.boolean("sprint");
+        pstops = L.boolean("pstops");
+        form = L.boolean("form");
         gained = L.boolean("gained");
         rows = L.rows<RowLeaves>("r", kRows, 2, [](hud::Leaves &l, int) {
             RowLeaves r;
@@ -98,6 +100,7 @@ public:
             r.gd = l.boolean("gd");
             r.g0 = l.boolean("g0");
             r.fx = l.boolean("fx");
+            r.nob = l.boolean("nob");
             r.tm = l.one_hot("tm", kTeams, 2);
             r.car = l.one_hot("c", kSlots, 2);
             return r;
@@ -141,13 +144,27 @@ public:
         L.set(ysec, h.ysec);
         L.set(sprint, !h.sub.empty());
         L.set(gained, h.gained);
+        L.set(pstops, h.pitstops);
+        L.set(form, h.on && h.race && h.formation);
+
+        // Row change fades: only for a few rows at a time (a start or a restart reshuffles the field: snap) and at
+        // most once a second per row
+        int changing = 0;
+        if (anim)
+            for (int i = 0; i < kRows; i++) {
+                const Row &r = v.rows[size_t(i)];
+                if (r.on && was_on_[i] && shown_vid_[i] != r.vid)
+                    changing++;
+            }
+        const bool fade_now = anim && changing > 0 && changing <= kMaxFades;
 
         for (int i = 0; i < kRows; i++) {
             const Row &r = v.rows[size_t(i)];
             RowLeaves &x = rows[i];
             hud::Leaves::Atomic group(L);
             L.set(x.on, r.on);
-            if (r.on && anim && was_on_[i] && shown_vid_[i] != r.vid) {
+            if (r.on && was_on_[i] && shown_vid_[i] != r.vid && (hold_until_[i] > 0 ||
+                                                                 (fade_now && now >= next_fade_[i]))) {
                 // a new car on this row: fade the old content out, keep it for kFadeHold, then swap and fade in
                 if (hold_until_[i] <= 0) {
                     L.set(x.fx, false);
@@ -156,13 +173,13 @@ public:
                 }
                 if (now < hold_until_[i])
                     continue;
+                next_fade_[i] = now + 1.0;
             }
             hold_until_[i] = 0;
             was_on_[i] = r.on;
             if (r.on) {
                 shown_vid_[i] = r.vid;
-                if (anim)
-                    L.set(x.fx, true);
+                L.set(x.fx, true); // always back on, also when Animations was switched off during a fade
             }
             if (!r.on) {
                 // The per-car name slots keep their value while the row is hidden: the game does not apply a
@@ -211,6 +228,8 @@ public:
             L.set(x.tm, icon ? r.team : -1);
             L.set(x.badge, icon ? std::string() : r.badge);
             L.set(x.bdg, !icon && !r.badge.empty());
+            // no badge from the game (My Team, a custom team): a chip in the team's own colour
+            L.set(x.nob, !icon && r.badge.empty() && !h.demo);
             L.set(x.car, r.vid >= 0 && r.vid < kSlots && !h.demo ? r.vid : -1);
         }
         L.flush();
@@ -224,15 +243,17 @@ public:
     hud::TextLeaf ysec;
     hud::TextLeaf clock;
     hud::OneHot ld;
-    hud::BoolLeaf gained, sprint;
+    hud::BoolLeaf gained, sprint, pstops, form;
     hud::Leaves::Rows<RowLeaves> rows;
 
-    static constexpr double kFadeHold = 0.22; // the row's fade out (generic_fade_on) before the swap
+    static constexpr double kFadeHold = 0.16; // the row's fade out (generic_fade_on) before the swap
+    static constexpr int kMaxFades = 4;       // more rows changing at once: no fade (a start, a restart)
 
 private:
     std::array<int, kRows> shown_vid_ = filled(-1);
     std::array<bool, kRows> was_on_{};
     std::array<double, kRows> hold_until_{};
+    std::array<double, kRows> next_fade_{};
     static std::array<int, kRows> filled(int v)
     {
         std::array<int, kRows> a{};

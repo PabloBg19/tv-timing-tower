@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.5.0"
+#define TVT_VERSION "0.6.0"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -59,7 +59,8 @@ tvt::Config read_config()
                                                                        : tvt::Config::Names::autoswitch;
     std::string_view g = gap_mode;
     c.gap = g == "interval" ? tvt::Config::Gap::interval : g == "leader" ? tvt::Config::Gap::leader
-          : g == "gained"   ? tvt::Config::Gap::gained   : tvt::Config::Gap::autoswitch;
+          : g == "gained"   ? tvt::Config::Gap::gained
+          : g == "pitstops" ? tvt::Config::Gap::pitstops : tvt::Config::Gap::autoswitch;
     c.tyres = tyres;
     c.tyre_age = tyre_age;
     std::string_view b = background;
@@ -157,11 +158,38 @@ const char *why_name(tvt::LiveSource::Why w)
     return "?";
 }
 
+// Settings are read through the core's API (a lookup by name each); they change only from ADDON SETTINGS, so the
+// frame callback reads them four times a second, not every frame.
+struct Settings {
+    tvt::Config cfg;
+    bool enabled = true, demo = false, debug = false, anim = true, bcast = true;
+    int vk = 0;
+    int scenario = -1;
+};
+
+Settings load_settings()
+{
+    Settings s;
+    s.cfg = read_config();
+    s.enabled = enabled;
+    s.demo = demo;
+    s.debug = debug_log;
+    s.anim = animations;
+    s.bcast = broadcaster_logo;
+    s.vk = vk_from_name(std::string_view(hotkey));
+    s.scenario = scenario_from_setting();
+    return s;
+}
+
 struct State {
     tvt::Publisher *pub = nullptr;
     tvt::Tower tower;
     tvt::LiveSource src;
+    Settings set;
+    double next_settings = 0;
     double now = 0;
+    double acc = 0;             // time since the last tower tick
+    bool ticked = false;
     bool hidden = false;        // hotkey
     bool demo_key = false;      // Ctrl + hotkey
     int demo_pick = -2;         // Shift + hotkey steps scenarios; -2 follows the setting
@@ -177,11 +205,16 @@ struct State {
 
 State *g = nullptr;
 std::atomic<bool> g_tower_visible{false};
+std::atomic<bool> g_bcast_on{true};
 bool g_logo_loaded = false;
+
+// The tower's data is read, modelled and published 30 times a second: smoother than the board needs, and the
+// game's own HUD refreshes its values at that order. The hotkey is polled every frame.
+constexpr double kTick = 1.0 / 30.0;
 
 void handle_keys()
 {
-    int vk = vk_from_name(std::string_view(hotkey));
+    int vk = g->set.vk;
     if (!vk || !game_in_front()) {
         g->key_prev = 0;
         return;
@@ -201,6 +234,7 @@ void handle_keys()
             g->hidden = !g->hidden;
             swofty::log("%s tower %s (hotkey)", kTag, g->hidden ? "hidden" : "shown");
         }
+        g->acc = kTick; // apply at once
     }
     g->key_prev = down;
 }
@@ -209,23 +243,34 @@ void frame(double dt, void *)
 {
     if (!g || !g->pub)
         return;
+    if (dt < 0 || dt > 1.0)
+        dt = 0.0;
+    g->now += dt;
+    if (g->now >= g->next_settings) {
+        g->set = load_settings();
+        g->next_settings = g->now + 0.25;
+        g_bcast_on = g->set.bcast;
+    }
+    handle_keys();
+    g->acc += dt;
+    if (g->ticked && g->acc < kTick)
+        return;
+    const double step = g->acc;
+    g->acc = 0;
+    g->ticked = true;
+
     LARGE_INTEGER f, t0, t1;
     QueryPerformanceFrequency(&f);
     QueryPerformanceCounter(&t0);
 
-    if (dt < 0 || dt > 1.0)
-        dt = 0.0;
-    g->now += dt;
-    handle_keys();
-
-    tvt::Config cfg = read_config();
+    tvt::Config cfg = g->set.cfg;
     tvt::Snapshot snap;
-    bool demo_on = demo || g->demo_key;
+    bool demo_on = g->set.demo || g->demo_key;
     bool have = false;
 
     if (demo_on) {
         // the demo draws wherever the game shows its HUD (any session, Time Trial included)
-        int sc = g->demo_pick >= 0 ? g->demo_pick : scenario_from_setting();
+        int sc = g->demo_pick >= 0 ? g->demo_pick : g->set.scenario;
         double t = g->now - g->demo_t0;
         if (sc < 0) { // cycle
             int k = int(g->now / tvt::demo::kScenarioSeconds) % tvt::demo::count;
@@ -251,7 +296,7 @@ void frame(double dt, void *)
             g->tower.reset_session();
             g->last_scenario = -99;
         }
-        tvt::LiveSource::Why why = g->src.read(snap, dt, g->now);
+        tvt::LiveSource::Why why = g->src.read(snap, step, g->now);
         if (why != g->last_why) {
             swofty::log("%s source: %s", kTag, why_name(why));
             g->last_why = why;
@@ -259,19 +304,18 @@ void frame(double dt, void *)
         have = why == tvt::LiveSource::Why::ok;
     }
 
-    bool show = enabled && !g->hidden && have;
+    bool show = g->set.enabled && !g->hidden && have;
     if (show) {
         const tvt::View &v = g->tower.update(snap, cfg, g->now);
         show = v.h.on;
-        if (show) {
-            g->pub->publish(v, cfg, g->now, animations);
-        }
+        if (show)
+            g->pub->publish(v, cfg, g->now, g->set.anim);
     }
     if (!show && g->was_on)
         g->pub->off();
     else if (!show && !g->was_on && g->cost_n == 0)
-        g->pub->off(); // first frame: make sure the stock board is the one shown
-    if (show != g->was_on && debug_log)
+        g->pub->off(); // first tick: make sure the stock board is the one shown
+    if (show != g->was_on && g->set.debug)
         swofty::log("%s tower %s", kTag, show ? "on" : "off");
     g->was_on = show;
     g_tower_visible = show;
@@ -282,19 +326,19 @@ void frame(double dt, void *)
     g->cost_max = us > g->cost_max ? us : g->cost_max;
     g->cost_n++;
     if (g->now >= g->next_cost_log) {
-        if (debug_log)
-            swofty::log("%s frame cost %.0f us mean, %.0f us max over %d frames", kTag, g->cost_sum / g->cost_n,
-                        g->cost_max, g->cost_n);
+        if (g->set.debug)
+            swofty::log("%s tick cost %.0f us mean, %.0f us max over %d ticks (30 a second)", kTag,
+                        g->cost_sum / g->cost_n, g->cost_max, g->cost_n);
         g->cost_sum = g->cost_max = 0;
         g->cost_n = 1;
         g->next_cost_log = g->now + 60;
     }
 }
 
-// The broadcaster's logo in the top right corner, as on TV (private build only: the image ships only there).
+// The broadcaster's logo in the top right corner, as on TV.
 void paint(SwoftyPaint *p, void *)
 {
-    if (!g_logo_loaded || !broadcaster_logo || !g_tower_visible)
+    if (!g_logo_loaded || !g_bcast_on || !g_tower_visible)
         return;
     namespace ov = swofty::overlay;
     float iw = 0, ih = 0;

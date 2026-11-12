@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TV Timing Tower - build everything and package both flavours into dist/.
+"""TV Timing Tower - build everything and package the addon into dist/.
 
     python tools/build.py            # art, record, DLL, tests, compose check, preview data, packages
     python tools/build.py test       # host tests only
@@ -8,9 +8,8 @@
 Needs: Python 3.10+ with Pillow, Zig 0.16 (.tools/ or PATH), and for the compose check Swofty Launcher's
 swofty.exe (found automatically in %LOCALAPPDATA%\\Programs\\SwoftyLauncher\\bin).
 Outputs:
-    dist/tv-timing-tower-PRIVATE/            the addon folder (real logos when assets/private has them)
-    dist/tv-timing-tower-PRIVATE.swoftyaddon drop this on Swofty's Addons page
-    dist/tv-timing-tower-PUBLIC/  and  .swoftyaddon   without any real logo, font or broadcaster mark
+    dist/tv-timing-tower/              the addon folder (team icons, F1 and FIA logos from assets/private)
+    dist/tv-timing-tower.swoftyaddon   drop this on Swofty's Addons page
 """
 import argparse
 import json
@@ -24,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
 
@@ -103,10 +102,11 @@ OPTIONS = [
     ("gap_mode", "choice", "Diferencias en carrera", "Race gaps",
      "Automático (como en TV): solo nombres en la vuelta 1 y con Safety Car o bandera roja, posiciones ganadas/perdidas "
      "al empezar la vuelta 2, intervalos y, a ratos, gap al líder.",
-     "Auto (as on TV): names only on lap 1 and under the safety car or red flag, places gained/lost as lap 2 starts, "
-     "intervals and, at times, the gap to the leader.",
+     "Auto (as on TV): intervals; names only under the safety car or red flag; places gained/lost as lap 2 starts; "
+     "the gap to the leader on laps 5, 15, 25...; pit stops on laps 10, 20, 30... once a car has stopped.",
      {"values": [("auto", "Automático", "Auto"), ("interval", "Intervalo", "Interval"),
-                 ("leader", "Al líder", "To leader"), ("gained", "Ganadas/perdidas", "Gained/lost")],
+                 ("leader", "Al líder", "To leader"), ("gained", "Ganadas/perdidas", "Gained/lost"),
+                 ("pitstops", "Paradas", "Pit stops")],
       "default": "auto"}),
     ("tyres", "toggle", "Neumáticos", "Tyres", "Muestra el compuesto actual de cada coche.",
      "Shows each car's current compound.", {"default": True}),
@@ -124,7 +124,8 @@ OPTIONS = [
     ("logos", "choice", "Logos de equipo", "Team logos",
      "TV: los iconos de la retransmisión 2026 (solo build personal). Juego: los escudos en color del propio juego "
      "(siguen a los mods de logos). Juego blanco: los del HUD del juego.",
-     "The game's own colour badges (they follow logo mods), or the white HUD ones.",
+     "TV: the 2026 broadcast's team icons. Game: the game's own colour badges (they follow logo mods). "
+     "Game white: the game's white HUD badges. A team without a TV icon always shows the game's badge.",
      {"values": [("tv", "TV", "TV"), ("game", "Juego", "Game"), ("game_white", "Juego blanco", "Game white")],
       "default": "tv", "public_values": ["game", "game_white"], "public_default": "game"}),
     ("animations", "toggle", "Animaciones", "Animations",
@@ -171,7 +172,7 @@ OPTIONS = [
 
 
 def manifest(flavour):
-    es = flavour == "private"
+    es = False  # one package for everyone since 0.6: English settings (Swofty has no translations)
     opts = []
     for oid, typ, les, len_, des, den, extra in OPTIONS:
         if extra.get("private") and flavour != "private":
@@ -191,7 +192,6 @@ def manifest(flavour):
     desc_es = ("Torre de tiempos estilo retransmisión F1 TV/DAZN dibujada con el propio HUD del juego, en lugar del "
                "tablero de posiciones. Solo offline: lee el estado en vivo desde la memoria del juego (sin UDP), "
                "sin conexiones de red ni nada relacionado con el online o el antitrampas.")
-    desc_es += " Versión PRIVATE (logos reales, uso personal)."
     desc_en = ("Broadcast-style F1 TV timing tower drawn with the game's own HUD in place of the standings board. "
                "Offline only: reads the live state from the game's memory (no UDP), makes no network connections "
                "and touches nothing online or anti-cheat related.")
@@ -236,7 +236,7 @@ def make_icon(path):
 
 
 def build_flavour(flavour, dll_path, logos):
-    name = f"tv-timing-tower-{flavour.upper()}"
+    name = "tv-timing-tower"
     stage = BUILD / flavour / "addon"
     if stage.exists():
         shutil.rmtree(stage)
@@ -366,22 +366,23 @@ def main():
     logos = ROOT / "assets" / "private" / "logos"
 
     if a.what == "test":
-        for fl in ("public", "private"):
-            build_flavour(fl, BUILD / DLL if (BUILD / DLL).exists() else ROOT / "LICENSE", logos)
+        build_flavour("private", BUILD / DLL if (BUILD / DLL).exists() else ROOT / "LICENSE", logos)
         tests()
         return
 
     dll = BUILD / DLL
     cxx(dll, ROOT / "native" / "src" / "addon.cpp", shared=True)
     run([sys.executable, str(ROOT / "tools" / "pe_imports.py"), str(dll)])
-    staged = [build_flavour(fl, dll, logos) for fl in ("private", "public")]
+    staged = [build_flavour("private", dll, logos)]
+    for old in DIST.glob("tv-timing-tower-*"):  # the PRIVATE / PUBLIC packages before 0.6
+        shutil.rmtree(old) if old.is_dir() else old.unlink()
     tests()
     for name, stage, layout in staged:
         if not a.no_compose:
-            compose_check(stage, "private" if "PRIVATE" in name else "public")
+            compose_check(stage, "private")
         package(name, stage)
         if not a.no_compose:
-            profile_check(DIST / f"{name}.swoftyaddon", "private" if "PRIVATE" in name else "public")
+            profile_check(DIST / f"{name}.swoftyaddon", "private")
     preview_assets(staged[0][1], staged[0][2])
     print("done")
 

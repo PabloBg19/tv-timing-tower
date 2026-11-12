@@ -117,12 +117,17 @@
     Object.assign(line.style, { left: (W / 2) + 'px', top: (y0 - cn / 0.7 * 0.86) + 'px', transform: 'translateX(-50%)', zIndex: 40,
       fontFamily, color: C.lapword, whiteSpace: 'nowrap' });
     const part = (s, cap, wt, col, ml) => `<span style="font-size:${cap / 0.7}px;font-weight:${wt};color:${col};margin-left:${ml}px">${s}</span>`;
-    if (h.race) line.innerHTML = part('LAP', cw, 400, C.lapword, 0) + part(h.lap, cn, 700, '#fff', 4) + part('/', cw, 400, C.lapword, 3) + part(h.laps || '57', cw, 400, C.lapword, 3);
+    if (h.race && h.form) line.innerHTML = part('FORMATION LAP', cn * 0.9, 700, '#fff', 0);
+    else if (h.race) line.innerHTML = part('LAP', cw, 400, C.lapword, 0) + part(h.lap, cn, 700, '#fff', 4) + part('/', cw, 400, C.lapword, 3) + part(h.laps || '57', cw, 400, C.lapword, 3);
     else line.innerHTML = part(h.sess, cn, 700, '#fff', 0) + part(h.clock, cn, 400, '#fff', 4);
     tower.append(line);
     let y = H;
     if (h.gained) {
       tower.append(spr('gainbg' + bg, 0, y, 21), txt('GAINED / LOST', W / 2, y + L.gain_base, L.cap_gainword, 'centre', '#fff', 700));
+      y += L.gainbar;
+    }
+    if (h.pits) {
+      tower.append(spr('gainbg' + bg, 0, y, 21), txt('PIT STOPS', W / 2, y + L.gain_base, L.cap_gainword, 'centre', '#fff', 700));
       y += L.gainbar;
     }
     if (h.card === 4) { tower.append(spr('blk_chq', 0, y, 21)); y += L.chq_h; }

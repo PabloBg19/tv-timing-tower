@@ -171,3 +171,23 @@ Hallazgos que cambian el diseño:
 Recursos descargados (solo PRIVATE, en `assets/private/logos`, fuera de git):
 - Iconos `2026<equipo>logo.webp` y `…logowhite.webp` de formula1.com.
 - `FIA logo (black).png` y `FIA logo (white).png` de Wikimedia Commons.
+
+## 7. Grafismos de la emisión que faltaban (0.6.0)
+
+La torre de la emisión cambia la columna de datos según lo que quiera contar la realización: intervalos, gap al
+líder, posiciones ganadas/perdidas, paradas en boxes, vuelta rápida y estado de boxes (`IN PIT` / `OUT`).
+Fuentes: [Matt Birkett, F1 TV graphics](http://mattbirkett.co.uk/wp/project/f1-tv-graphics/),
+[The Field F1, cómo leer la torre](https://www.thefieldf1.com/charts/how-to-read-timing-screen) y el vídeo de la
+emisión 2026 aportado por Pablo (adelantamientos e `IN PIT`).
+
+| Elemento | Estado |
+|---|---|
+| Intervalo / Leader | Hecho (D7) |
+| GAINED / LOST | Hecho (D31) |
+| PIT STOPS | **Nuevo en 0.6** (contador de paradas del juego) |
+| IN PIT (menta) | Hecho (D40) |
+| FORMATION LAP | **Nuevo en 0.6** |
+| Diferencias de clasificación por zona | **Nuevo en 0.6** (D45) |
+| FINAL LAP | No: el DLL no conoce las vueltas totales |
+| Deslizamiento de filas | No: el `motion` del compositor se reproduce al revés al reiniciarse (D41); se usa un fundido |
+| Rendimiento del neumático, estrategia, batallas, sectores | Fuera de la torre o sin datos en `live` |

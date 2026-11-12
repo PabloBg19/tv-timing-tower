@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <fstream>
 #include <regex>
+#include <chrono>
 #include <set>
 #include <sstream>
 #include <string>
@@ -216,6 +217,109 @@ static void test_lap_clock()
     // best_at_least
     CHECK(c.best_at_least(0, 0) == c.best_ms(0));
     CHECK(c.best_at_least(0, 200000) == -1);
+
+    // practice / qualifying: another car going back to the garage (its distance jumps back) must not void the laps
+    // of the others (0.5 voided everyone's lap then, so no time ever showed)
+    LapClock q;
+    float d0 = 4000.f, d1 = 3000.f;
+    for (int i = 0; i < 60 * 260; i++) {
+        d0 += 50.f * float(dt);
+        d1 += 50.f * float(dt);
+        if (i % (60 * 20) == 0)
+            d1 -= 1500.f; // car 1 teleports back every 20 s
+        int l0 = int(d0 / len), l1 = int(std::max(0.f, d1) / len);
+        q.step(dt, len, {LapSample{0, l0, d0 - float(l0) * len, false, 0},
+                         LapSample{1, l1, std::max(0.f, d1) - float(l1) * len, false, 0},
+                         LapSample{2, 0, 10.f, true, 0}, LapSample{3, 0, 20.f, true, 0}});
+    }
+    CHECK(q.best_ms(0) > 99950 && q.best_ms(0) < 100050);
+    CHECK(q.best_ms(1) < 0); // its own laps are void
+    // a flashback (most of the field goes back at once) voids every lap in progress
+    LapClock fb;
+    float e[4] = {4000.f, 3900.f, 3800.f, 3700.f};
+    for (int i = 0; i < 60 * 150; i++) {
+        for (float &x : e)
+            x += 50.f * float(dt);
+        if (i == 60 * 60)
+            for (float &x : e)
+                x -= 800.f;
+        std::vector<LapSample> v;
+        for (uint32_t k = 0; k < 4; k++) {
+            int l = int(e[k] / len);
+            v.push_back(LapSample{k, l, e[k] - float(l) * len, false, 0});
+        }
+        fb.step(dt, len, v);
+    }
+    CHECK(fb.best_ms(0) < 0); // the lap with the flashback in it is not timed
+}
+
+static void test_session_views()
+{
+    Config cfg;
+    // qualifying: P1 its time, the others the gap to P1, the knockout zone the gap to the last car through
+    Tower t;
+    const View &q = t.update(demo::make(demo::quali_q1, 0.5), cfg, 0.5);
+    CHECK(q.rows[0].gap.find(':') != std::string::npos);
+    const Snapshot qs = demo::make(demo::quali_q1, 0.5);
+    int cut_best = qs.cars[15].best_ms, lead_best = qs.cars[0].best_ms;
+    CHECK(q.rows[16].ko && q.rows[16].gap == fmt_gap_ms(qs.cars[16].best_ms - cut_best));
+    CHECK(!q.rows[14].ko && q.rows[14].gap == fmt_gap_ms(qs.cars[14].best_ms - lead_best));
+    // practice: everyone to P1
+    Tower tp;
+    const View &pv = tp.update(demo::make(demo::practice, 0.5), cfg, 0.5);
+    const Snapshot ps = demo::make(demo::practice, 0.5);
+    CHECK(pv.rows[3].gap == fmt_gap_ms(ps.cars[3].best_ms - ps.cars[0].best_ms));
+
+    // 24 cars (a career with 12 teams): 24 rows, the knockout cut 10 + 14 / 2 = 17
+    Snapshot big = demo::make(demo::race, 1.0);
+    for (int k = 22; k < 24; k++) {
+        CarIn c = big.cars.back();
+        c.vid = uint32_t(k);
+        c.pos = k + 1;
+        c.badge.clear(); // a team the game draws a rendered badge for (My Team)
+        big.cars.push_back(c);
+    }
+    big.s.racers = 24;
+    big.s.demo = false;
+    Tower tb;
+    const View &bv = tb.update(big, cfg, 1.0);
+    CHECK(bv.shown == 24 && bv.rows[23].on && bv.rows[23].vid == 23 && bv.rows[23].badge.empty());
+    CHECK(knockout_cut(1, 24) == 17);
+
+    // pit stops view: fixed mode shows each car's count
+    Config pc = cfg;
+    pc.gap = Config::Gap::pitstops;
+    Snapshot st = demo::make(demo::race, 1.0);
+    for (CarIn &c : st.cars)
+        c.pit_stops = int(c.vid % 3);
+    Tower ts;
+    const View &sv = ts.update(st, pc, 1.0);
+    CHECK(sv.h.pitstops && sv.rows[2].gap == std::to_string(st.cars[2].vid % 3));
+    // formation lap
+    Snapshot fm = demo::make(demo::race, 1.0);
+    fm.s.formation = true;
+    Tower tf;
+    CHECK(tf.update(fm, cfg, 1.0).h.formation);
+}
+
+static void bench()
+{
+    // host timing of one tower tick (model + leaves over the fake core): the DLL runs it 30 times a second
+    swofty::fake::Hud core;
+    Publisher pub({0, 1, 2, 3});
+    Tower t;
+    Config cfg;
+    auto t0 = std::chrono::steady_clock::now();
+    const int n = 3000;
+    for (int i = 0; i < n; i++) {
+        double now = i / 30.0;
+        Snapshot s = demo::make(demo::race, std::fmod(now, 14.0));
+        s.s.demo = false;
+        pub.publish(t.update(s, cfg, now), cfg, now, true);
+    }
+    double us = std::chrono::duration<double, std::micro>(std::chrono::steady_clock::now() - t0).count() / n;
+    std::printf("bench: %.1f us per tower tick (model + leaves, host)\n", us);
+    CHECK(us < 400.0);
 }
 
 static void test_live_adapter()
@@ -373,7 +477,7 @@ static void test_leaves_and_record()
     std::set<std::string> declared;
     for (auto &p : pub.L.paths())
         declared.insert(p);
-    for (const char *rec : {"build/public/addon/registry/tower.json", "build/private/addon/registry/tower.json"}) {
+    for (const char *rec : {"build/private/addon/registry/tower.json"}) {
         std::ifstream f(rec);
         if (!f) {
             std::printf("note: %s not built, record check skipped\n", rec);
@@ -408,8 +512,10 @@ int main()
     test_quali();
     test_cards();
     test_lap_clock();
+    test_session_views();
     test_live_adapter();
     test_leaves_and_record();
+    bench();
     if (failures) {
         std::printf("tower tests: %d failed\n", failures);
         return 1;

@@ -113,8 +113,10 @@ public:
             }
             if (live::has(c, SWOFTY_LIVE_HAVE_TYRE))
                 ci.tyre = c.tyre_letter;
+            auto stops = live::pit_stops(c);
+            ci.pit_stops = stops ? int(*stops) : -1;
             if (live::has(c, SWOFTY_LIVE_HAVE_PROGRESS))
-                ci.tyre_age = stints_.age(vid, c.lap, live::pit_stops(c).value_or(0), ci.in_pit);
+                ci.tyre_age = stints_.age(vid, c.lap, stops.value_or(0), ci.in_pit);
             if (live::has(c, SWOFTY_LIVE_HAVE_PENALTIES)) {
                 ci.pen_s = c.time_penalty_s;
                 ci.drive_through = c.drive_through != 0;

@@ -39,18 +39,25 @@ public:
     void step(double dt, float track_m, const std::vector<LapSample> &cars)
     {
         bool moved = false;
-        bool jumped = false;
+        int jumps = 0, seen = 0;
+        std::array<bool, kCars> back{};
         for (const LapSample &s : cars) {
             if (s.vid >= kCars)
                 continue;
             const Car &c = cars_[s.vid];
             if (!c.seen)
                 continue;
+            seen++;
             if (s.lap != c.lap || std::fabs(s.lap_m - c.lap_m) > 0.001f)
                 moved = true;
-            if (s.lap < c.lap || (s.lap == c.lap && s.lap_m < c.lap_m - 40.f))
-                jumped = true;
+            // a car going back: its own reset (back to the garage, a teleport to the pit lane) ...
+            if (s.lap < c.lap || (s.lap == c.lap && s.lap_m < c.lap_m - 40.f)) {
+                back[s.vid] = true;
+                jumps++;
+            }
         }
+        // ... or, when most of the field goes back at once, a flashback or a restart
+        const bool jumped = seen >= 4 && jumps * 2 > seen;
         if (moved) {
             sim_ += (pending_ <= 0.35 ? pending_ : 0.0) + dt; // short stalls are frames between physics updates
             pending_ = 0;
@@ -61,6 +68,11 @@ public:
             for (Car &c : cars_)
                 c.cross_t = -1;
         }
+        for (const LapSample &s : cars)
+            if (s.vid < kCars && back[s.vid] && cars_[s.vid].seen) { // that car's lap in progress is unusable
+                cars_[s.vid].cross_t = -1;
+                cars_[s.vid].dirty = true;
+            }
 
         for (const LapSample &s : cars) {
             if (s.vid >= kCars)
@@ -75,7 +87,7 @@ public:
                 c.dirty = true; // the lap we join in the middle is never timed
                 continue;
             }
-            if (s.lap == c.lap + 1 && !jumped) {
+            if (s.lap == c.lap + 1 && !jumped && !back[s.vid]) {
                 double f = 1.0;
                 if (track_m > 100.f) {
                     double before = std::fmax(0.0, double(track_m) - c.lap_m);

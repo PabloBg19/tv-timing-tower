@@ -1,152 +1,142 @@
 # TV Timing Tower
 
-*Español abajo · [English below](#english)*
+*Español · [English below](#english)*
 
-Addon para **Swofty Launcher** (F1 25, PC, Steam) que sustituye la torre de posiciones del juego por una torre de
-tiempos con el estilo de la retransmisión de F1 TV / DAZN 2025-2026. **Se dibuja con el propio HUD del juego** (no es
-una app externa, ni overlay de Electron/OBS/SimHub, ni usa telemetría UDP).
+Addon para **Swofty Launcher** (F1 25, PC, Steam) que sustituye la torre de posiciones del juego por la torre de
+tiempos de la retransmisión de F1 2026. **La dibuja el propio HUD del juego**: no es una app externa ni un overlay
+(Electron, OBS o SimHub), y no usa telemetría UDP.
 
 ## Qué hace
 
-- **Cabecera** con el logo de F1 y la sesión: `P1 33:56`, `Q2 08:12`, `SQ1 05:40` o `LAP 23/57`.
-- **Una fila por piloto**: posición (P1 en caja roja), logo de equipo **en color del propio juego** (si tienes un
-  mod de logos, sale el del mod), abreviatura (`RUS`) junto a los datos o apellido completo cuando no hay datos
-  (como en TV), dato a la derecha (`Interval`, `+6.7`, `Out`) y la letra del neumático en su color.
-- **Libres**: orden del juego, mejor vuelta del líder y diferencia del resto, `P` blanca cuando el coche está en
-  boxes o en el garaje.
-- **Clasificación y clasificación sprint** (Q1/Q2/Q3, SQ1/SQ2/SQ3): cronómetro de la sesión, zona de eliminación
-  con las posiciones en rojo y línea roja, los eliminados de la ronda anterior desaparecen de la torre (Q2: 16
-  filas, Q3: 10), tiempos en verde (mejor personal) o morado (mejor de la sesión) durante 3 s.
-- **Carrera y sprint**: `LAP X / Y`. En la vuelta 1 y con Safety Car, solo nombres. Después, intervalo al de
-  delante con un decimal (formato 2026) y, a ratos, gap al líder. Al empezar la vuelta 2, `GAINED / LOST`
-  (puestos ganados o perdidos desde la parrilla). Además `+1 Lap`, `PIT`, `Out` / `DSQ` / `NC`, penalizaciones
-  (`+5s`, `DT`, `SG`), vuelta rápida en morado, flechas de posición y bandera a cuadros al final.
-- **Banderas como en la señal de FOM 2026**: un bloque de color con el escudo FIA bajo la cabecera para
-  `SAFETY CAR`, `VIRTUAL SAFETY CAR`, `SAFETY CAR IN THIS LAP`, `VSC ENDING`, `YELLOW FLAG` + sector, `RED FLAG` y
-  `TRACK CLEAR`; al final, bandera a cuadros.
-- **Modo demo** con datos simulados de todos esos casos, y un **visor HTML** para revisar el diseño sin el juego.
-- Si el addon no puede leer la sesión (otra build del juego, core sin estado en vivo), **vuelve la torre original**
-  y lo deja escrito en `swofty/loader.log` con el prefijo `[tv-tower]`.
+- **Cabecera** como la de la TV: logo F1, `FIA Formula 1 World Championship` (o `SPRINT`), y debajo `LAP 23 / 57`,
+  `FORMATION LAP`, `Q2 08:12` o `P1 33:56`.
+- **Una fila por coche (hasta 24, Mi Equipo incluido):**
+  - posición, con P1 en caja roja;
+  - logo del equipo: el icono de la tele o el escudo del propio juego (ajuste); un equipo sin escudo, como Mi
+    Equipo, lleva una ficha con su color;
+  - abreviatura (`RUS`) cuando hay datos al lado y apellido completo cuando no;
+  - el dato de la derecha y la letra del neumático en su color.
+- **Libres:** mejor vuelta de P1 y diferencia de los demás con P1; `P` blanca en boxes o en el garaje.
+- **Clasificación y clasificación sprint:**
+  - tiempo restante de la sesión;
+  - P1 con su vuelta y los demás con la diferencia con P1;
+  - los coches en la zona de eliminación, con la diferencia con el último que pasa;
+  - los eliminados de la ronda anterior salen de la torre;
+  - destellos en verde (mejor personal) o morado (mejor de la sesión).
+- **Carrera y sprint:**
+  - intervalos con un decimal, como en 2026; la diferencia con el líder en las vueltas 5, 15, 25…;
+  - `GAINED / LOST` al empezar la vuelta 2 y `PIT STOPS` en las vueltas 10, 20, 30…;
+  - `IN PIT` en verde menta, `+1 Lap`, `Out`/`DSQ`/`NC`;
+  - penalizaciones (`+5s`, `DT`, `SG`), vuelta rápida en morado, triángulos de posición y bandera a cuadros;
+  - en los adelantamientos, las filas se desvanecen y vuelven con el orden nuevo.
+- **Banderas como en la señal de FOM:** bloque de color con el logo FIA para `SAFETY CAR`, `VIRTUAL SAFETY CAR`,
+  `SAFETY CAR IN THIS LAP`, `VSC ENDING`, `YELLOW FLAG` + sector, `RED FLAG` y `TRACK CLEAR`. Con Safety Car o
+  bandera roja la torre muestra solo los nombres.
+- **Todo sale del juego:** pilotos, nombres, equipos, colores, escudos, orden, estados y vueltas totales. Funciona
+  con carreras rápidas, fin de semana, Mi Equipo con 24 coches y mods de equipos o logos.
+- **Si algo falla, vuelve el tablero original del juego** y el motivo queda en `swofty/loader.log`, con el prefijo
+  `[tv-tower]`.
 
 ## Requisitos
 
-- F1 25 en Steam, build 25251167, con el 2026 Season Pack.
-- Swofty Launcher 1.9.x (probado contra 1.9.14) con Swofty Core 0.2.x.
-- Sesiones offline (Swofty siempre arranca el juego offline). El addon no hace llamadas de red ni toca nada del
-  online ni del antitrampas.
-- En el editor de HUD del juego, el elemento **Track Position / Posiciones** tiene que estar activado: la torre vive
-  dentro de él.
+- F1 25 en Steam (build 25251167) con el 2026 Season Pack.
+- Swofty Launcher 1.9.x (probado hasta 1.9.21).
+- Solo offline. El addon no hace conexiones de red ni toca nada del online ni del antitrampas.
+- El elemento **Posiciones** del HUD tiene que estar activado, porque la torre vive dentro de él.
 
 ## Instalación
 
-1. Abre Swofty Launcher → **Addons**.
-2. Arrastra `dist/tv-timing-tower-PRIVATE.swoftyaddon` (tu versión personal con logos reales) o
-   `dist/tv-timing-tower-PUBLIC.swoftyaddon` a la página. Los dos tienen el mismo id: instalar uno sustituye al otro.
-3. Actívalo en tu perfil y pulsa **Jugar**.
+Swofty Launcher → **Addons** → arrastra `tv-timing-tower.swoftyaddon` → actívalo en tu perfil → **Jugar**.
 
-## Ajustes (ADDON SETTINGS, en el menú principal bajo Carrera, o en el launcher)
+## Ajustes (ADDON SETTINGS)
 
 | Ajuste | Por defecto | Qué hace |
 |---|---|---|
-| Torre de TV | Sí | Activa o desactiva la torre (desactivada: vuelve la del juego) |
-| Filas | Todas | Todas / Top 10 + yo / Compacta (P1-P3 y los coches a tu alrededor) |
-| Nombres | Automático | Automático (abreviatura con datos, apellido sin datos, como en TV) / Apellido / Abreviatura |
-| Diferencias en carrera | Automático | Automático (como en TV) / Intervalo / Al líder / Ganadas-perdidas |
-| Neumáticos | Sí | Compuesto actual |
-| Vueltas del neumático | No | Vueltas con el juego actual (contadas desde la última parada vista) |
-| Fondo | TV | Sólido / TV / Translúcido (opacidad del fondo) |
-| Flechas de posición | Sí | Flecha verde/roja 3 s al ganar o perder posiciones (solo carrera) |
-| Logos de equipo | TV (PRIVATE) / Juego (PUBLIC) | TV: los iconos de la emisión 2026 (solo PRIVATE). Juego: los escudos en color del propio juego (siguen a los mods de logos). Juego blanco: los del HUD |
-| Barra de color de equipo | No | Fina barra con el color del equipo |
-| Resaltar mi coche | Sí | Tu fila más clara |
-| En libres / clasificación / clasificación sprint / carrera | Sí | Activar por tipo de sesión |
-| Tecla mostrar/ocultar | F8 | F8 oculta/muestra · **Ctrl+F8** modo demo · **Mayús+F8** siguiente escenario |
-| Modo demo / Escenario demo | No / Todos | Datos simulados para validar el diseño |
-| Logo de la cadena | Sí | (Solo PRIVATE) logo arriba a la derecha mientras se ve la torre |
-| Log detallado | No | Coste por fotograma y cambios de estado en `swofty/loader.log` |
+| TV tower | Sí | Activa la torre (desactivada: vuelve la del juego) |
+| Rows | All | Todas / Top 10 + yo / Compacta |
+| Names | Auto | Auto (abreviatura con datos, apellido sin datos) / Apellido / Abreviatura |
+| Race gaps | Auto | Auto (como en TV) / Intervalo / Al líder / Ganadas-perdidas / Paradas |
+| Tyres · Tyre age | Sí · No | Compuesto; vueltas con el juego actual |
+| Background | Broadcast | Opacidad del fondo |
+| Position arrows | Sí | Triángulo verde o rojo 3 s al ganar o perder puestos (carrera) |
+| Team logos | TV | TV (iconos de la emisión) / Game (escudos del juego, en color; siguen a los mods) / Game white |
+| Animations | Sí | Fundido de las filas en los adelantamientos |
+| Team colour bar · Highlight my car | No · Sí | |
+| In practice / qualifying / sprint qualifying / races | Sí | Por tipo de sesión |
+| Show/hide key | F8 | F8 muestra u oculta · **Ctrl+F8** demo · **Mayús+F8** siguiente escenario |
+| Demo mode · Demo scenario | No · Cycle | Datos simulados |
+| Broadcaster logo | Sí | Logo de la cadena arriba a la derecha |
+| Verbose log | No | Coste por actualización y cambios de estado en el log |
 
-**Escala, posición y opacidad general** se ajustan como cualquier elemento del HUD: Ajustes → HUD →
-Personalizar (o desde la pausa en sesión), seleccionando el elemento de posiciones. Por defecto está arriba a la
-izquierda, en el hueco del contador de vueltas (que se oculta), y con 22 coches cabe entera.
+La escala, la posición y la opacidad se cambian en el editor de HUD del juego (Ajustes → HUD → Personalizar).
 
-## Modo demo
+## Rendimiento
 
-Entra en una sesión de **libres** (Gran Premio o fin de semana) y pulsa **Ctrl+F8** (o activa *Modo demo* en
-ADDON SETTINGS). La torre recorre: carrera, Q1 con eliminación, Q2 con eliminados, Safety Car, VSC → VSC ENDING →
-TRACK CLEAR, bandera roja, bandera a cuadros, libres y clasificación sprint (14 s cada uno). **Mayús+F8** pasa al
-siguiente. Fuera del juego: `python tools/build.py` y abre `preview/index.html` servido con
-`python -m http.server 8765 --directory preview` → <http://127.0.0.1:8765>.
+La torre se actualiza 30 veces por segundo (la tecla F8 se lee en cada fotograma) y solo se escriben los valores
+que cambian. Cada actualización cuesta unos 23 µs en un PC de pruebas; en el juego, menos de 1 ms por segundo.
 
 ## Problemas conocidos
 
-- Los **tiempos de vuelta** los mide el addon (el estado en vivo de Swofty aún no los da). Error esperado de unas
-  centésimas; una vuelta invalidada por el juego sin aviso de límites de pista podría colarse (el orden siempre es
-  el del juego).
-- `SAFETY CAR IN THIS LAP` y `VSC ENDING` se deducen (el juego no expone el aviso): SC → cuando el coche de
-  seguridad entra al pit lane; VSC → al terminar el VSC.
-- En **Contrarreloj**, repeticiones y modo espectador se ve la torre del juego.
-- Mi Equipo: su logo puede quedar vacío (el juego no da clave de escudo para él).
-- Si el propio juego oculta el tablero (garaje, menús) mientras cambia el orden, podría verse un apellido repetido en
-  una fila hasta el siguiente cambio de esa fila; si lo ves, apunta cuándo.
-- Parrillas de más de 24 coches (mods) no caben.
-- Animaciones de deslizamiento de filas: no incluidas en 0.1.0.
+- Los tiempos de libres y clasificación los mide el addon, porque el estado en vivo de Swofty no los da. Error de
+  unas centésimas.
+- `SAFETY CAR IN THIS LAP` y `VSC ENDING` se deducen.
+- Contrarreloj, repeticiones y modo espectador usan el tablero del juego.
+- La TV junta las filas cuando hay un bloque de bandera; aquí la torre crece. Con 24 coches y bandera puede tocar el
+  borde de la pantalla: escálala en el editor de HUD.
+- No hay deslizamiento de filas como en la TV (el compositor de Swofty no lo permite sin saltos); se usa un fundido.
 
 ## Desinstalación
 
-Swofty → **Addons** → TV Timing Tower → desactivar o **Eliminar**. Al cerrar la sesión de juego Swofty deja la
-carpeta del juego como estaba; no queda nada del addon en el juego.
+Swofty → **Addons** → TV Timing Tower → desactivar o **Eliminar**. No queda nada en la carpeta del juego.
 
-## Compilar desde el código
+## Compilar
 
 ```
-python tools/fetch_assets.py     # solo PRIVATE: iconos de equipo de la TV, logo F1, logos FIA (fuera de git)
-python tools/build.py            # DLL, registros HUD, tests, validación con swofty hud compose, paquetes en dist/
+python tools/fetch_assets.py     # iconos de equipo, logos F1 y FIA en assets/private (fuera de git)
+python tools/build.py            # DLL, registro HUD, tests, compose y build de perfil de prueba, paquete en dist/
 ```
-Necesita Python 3.10+ con Pillow y Zig 0.16 (en `.tools/` o en el PATH). Fuente oficial opcional para el visor:
-`assets/private/fonts/Formula1-Bold.ttf` / `Formula1-Regular.ttf`.
+Hace falta Python 3.10+ con Pillow y Zig 0.16.
 
-Créditos: SDK de Swofty (MIT). El diseño de filas por coche y la regla de eliminación se inspiran en
-Project Halo de nyannoying (<https://github.com/nyannoying1337/f1-25-project-halo>). Logos y marcas reales:
-propiedad de sus dueños; solo en la build PRIVATE, para uso personal.
+Créditos: SDK de Swofty (MIT). Las filas por coche, la regla de eliminación y el método del reloj vienen de Project
+Halo de nyannoying (<https://github.com/nyannoying1337/f1-25-project-halo>). Los logos de F1, de la FIA y de los
+equipos son de sus dueños y aparecen igual en el juego oficial.
 
 ---
 
 ## English
 
-An addon for **Swofty Launcher** (F1 25, PC, Steam) that replaces the game's standings board with an F1 TV / DAZN
-2025-2026 broadcast-style timing tower, **drawn with the game's own HUD** (no external app, no Electron/OBS/SimHub
-overlay, no UDP telemetry).
+A **Swofty Launcher** addon for F1 25 (PC, Steam) that replaces the game's standings board with the 2026 F1
+broadcast timing tower, **drawn by the game's own HUD**: no external app, no overlay, no UDP telemetry.
 
-**What it does:** header with the F1 logo and `P1 33:56` / `Q2 08:12` / `LAP 23/57`; one row per driver with
-position (red box for P1), the game's own colour team logo (logo mods show too), surname in capitals (or 3-letter
-code), data on the right and the tyre compound letter in its colour.
-Practice: best lap and gaps, white `P` in the pits. Qualifying and sprint qualifying: session clock, knockout zone,
-cars knocked out earlier leave the tower, green/purple lap time flashes. Races: `LAP X/Y`, one-decimal intervals with the gap to the
-leader at times (as on TV), `+1 LAP`, `PIT`, `DNF/OUT/DSQ/NC`, penalties, purple fastest lap, arrows, chequered
-flag. Codes beside data, full surnames without it (lap 1, safety car); GAINED / LOST as lap 2 starts. Flag
-states as on the 2026 FOM world feed: a colour block with the FIA badge under the header.
-If the session cannot be read the game's own board comes back and `[tv-tower]` explains why in `swofty/loader.log`.
+- **Header:** F1 logo, `FIA Formula 1 World Championship` (or `SPRINT`), and `LAP 23 / 57`, `FORMATION LAP`,
+  `Q2 08:12` or `P1 33:56`.
+- **Rows (up to 24 cars, My Team included):** position, team icon or the game's badge (a team colour chip when
+  the game has none), the code beside data or the full surname without, the data column and the tyre letter.
+- **Practice:** gaps to P1.
+- **Qualifying:** the session clock and gaps to P1; the knockout zone shows the gap to the last car through, and
+  cars knocked out earlier leave the tower.
+- **Races:** one-decimal intervals and the gap to the leader on laps 5, 15, 25…; GAINED / LOST as lap 2 starts;
+  PIT STOPS on laps 10, 20…; mint `IN PIT`; penalties, fastest lap, position triangles, chequered flag and row
+  fades on overtakes.
+- **Flags:** FOM-style blocks with the FIA logo. Names only under the safety car or a red flag.
 
-**Requirements:** F1 25 Steam build 25251167 + 2026 Season Pack, Swofty Launcher 1.9.x, offline sessions, and the
-game's Track Position HUD element switched on.
+Everything comes from the game (drivers, names, teams, colours, badges, order), so careers, My Team and team or
+logo mods work. If the session cannot be read, the game's own board comes back and `[tv-tower]` explains why in
+`swofty/loader.log`.
 
-**Install:** drag `dist/tv-timing-tower-PUBLIC.swoftyaddon` (or the PRIVATE one) onto Swofty's **Addons** page,
-enable it, play.
+**Install:** drag `tv-timing-tower.swoftyaddon` onto Swofty's **Addons** page, enable it, play.
 
-**Settings** (ADDON SETTINGS under Career, or in the launcher): tower on/off, rows (all / top 10 + me / compact),
-names (surname / code), race gaps (auto / interval / leader), tyres, tyre age, background opacity, position arrows,
-team logos in colour, team colour bar, highlight my car, per-session switches, show/hide key (F8; Ctrl+F8 demo; Shift+F8 next scenario),
-demo mode and scenario, verbose log. Size, position and overall opacity: the game's HUD editor.
+**Requirements:** F1 25 Steam build 25251167 with the 2026 Season Pack, Swofty Launcher 1.9.x (tested up to
+1.9.21), the game's Position HUD element switched on. Offline only: no network connections, nothing online or
+anti-cheat related.
 
-**Demo:** in a practice session press Ctrl+F8. Outside the game: `python tools/build.py`, then serve `preview/`
-and open `index.html`.
+**Settings:** see the table above. Size, position and opacity are set in the game's HUD editor.
 
-**Known issues:** lap times are measured by the addon (Swofty's live state has none yet); SC IN THIS LAP and VSC
-ENDING are inferred; Time Trial, replays and the spectator view keep the game's board; My Team logo may be empty;
-grids over 24 cars do not fit; no row slide animations yet.
+**Performance:** 30 updates a second, about 23 µs each, and only changed values are written.
 
-**Uninstall:** Swofty → Addons → TV Timing Tower → disable or Remove.
+**Known issues:** practice and qualifying lap times are measured by the addon; SC IN THIS LAP and VSC ENDING are
+inferred; Time Trial, replays and the spectator view keep the game's board; with a flag block the tower grows
+instead of compressing its rows; rows fade instead of sliding.
 
-**Build:** `python tools/build.py` (Python 3.10+ with Pillow, Zig 0.16). MIT licence. Credits: Swofty SDK (MIT);
-row-per-car design and knockout rule inspired by Project Halo by nyannoying
-(<https://github.com/nyannoying1337/f1-25-project-halo>).
+**Build:** `python tools/fetch_assets.py && python tools/build.py`. MIT licence. Credits: Swofty SDK (MIT);
+Project Halo by nyannoying.

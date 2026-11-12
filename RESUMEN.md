@@ -1,5 +1,20 @@
 # Resumen — TV Timing Tower
 
+## 0.6.0 (12-11-2026, lista para publicar)
+
+- Un solo paquete con logos: `dist/tv-timing-tower.swoftyaddon` (D43).
+- Corregido el reloj de vueltas que anulaba los tiempos de todos los coches (D44). Diferencias de libres y
+  clasificación como en la TV, incluida la zona de eliminación (D45).
+- 24 coches y Mi Equipo, con ficha de color si no hay escudo (D46).
+- Rendimiento: de 82 µs por fotograma a unos 20 µs por actualización, 30 veces por segundo (D47).
+- Fundido más sobrio (D48), textos dentro de su caja (D49), PIT STOPS y FORMATION LAP (D50).
+- Verificado: tests en host (nuevos para el reloj de vueltas, clasificación, libres, 24 coches, paradas y formación),
+  compose y build de perfil completo del paquete, y el visor.
+- Sin ver en el juego: lo nuevo de esta versión y el reloj de sesión de la 0.5.
+
+---
+
+
 ## 0.5.0 (12-11-2026)
 
 - Texto alineado con logos y cajas (D38).

@@ -243,3 +243,60 @@ funcionara, el ajuste *Animaciones* = No deja el cambio inmediato.
 **D42 — Tipografía.** El juego no carga fuentes externas en el HUD; los estilos `OSD_*` ya son la familia F1 del
 propio juego (misma proporción que la emisión, D36). La única forma de usar el archivo de la fuente oficial sería
 sustituir la fuente del juego entero, fuera del alcance de este addon.
+
+## 0.6.0 (para publicar, 12-11-2026)
+
+**D43 — Un solo paquete, con logos.** El juego oficial ya muestra los logos de la F1, de la FIA y de los equipos,
+así que se elimina la build PUBLIC. Queda un único paquete `dist/tv-timing-tower.swoftyaddon`, con los iconos de
+equipo de la emisión, el logo F1 y los logos FIA. Swofty no traduce los ajustes, así que van en inglés para el
+público del registro.
+
+**D44 — Tiempos en libres y clasificación.** Error encontrado al revisar: cuando cualquier coche retrocedía en su
+vuelta (las IA vuelven al garaje constantemente), el reloj de vueltas lo tomaba por un flashback y anulaba la vuelta
+en curso de todos los coches, así que casi nunca había tiempos. Ahora el retroceso anula solo la vuelta de ese
+coche, y se considera flashback únicamente si retrocede más de la mitad del campo a la vez (hay tests para los dos
+casos).
+
+**D45 — Diferencias en clasificación y libres, como en la TV.**
+- Libres: todos con la diferencia con P1.
+- Clasificación: P1 con su vuelta, el resto con la diferencia con P1, y los coches en la zona de eliminación con la
+  diferencia con el último que pasa (P16 en Q1 con 22 coches, P10 en Q2).
+
+**D46 — Hasta 24 coches y Mi Equipo.**
+- 24 filas, y 30 huecos por coche: Project Halo vio en el juego ids de vehículo hasta 29 en parrillas de Mi Equipo.
+- Corte de eliminación 10 + (n−10)/2 (17 con 24 coches).
+- El compositor solo permite 4 valores del juego por coche (posición, apellido, abreviatura, color), así que el
+  escudo no puede leerse por coche. Un equipo sin clave de escudo (Mi Equipo, equipos con escudo renderizado) lleva
+  una ficha con su color (`nub_colour` del juego).
+- Nada viene fijado: nombres, abreviaturas, colores, escudos, orden, estados y vueltas totales salen del juego. Los
+  iconos de la TV se usan solo cuando la clave de escudo es de un equipo 2026 conocido; si no, sale el escudo del
+  juego.
+
+**D47 — Rendimiento.** En la sesión de las 18:44 el addon costaba 82 µs por fotograma de media (11 ms/s, 1,1 % de un
+núcleo); era el segundo consumidor después del propio Swofty. Causas: 21 lecturas de ajustes por fotograma a
+través de la API del core, y el modelo y las 1.600 hojas recalculados en cada fotograma. Ahora:
+- los ajustes se leen 4 veces por segundo;
+- la torre se actualiza 30 veces por segundo; la tecla se sigue leyendo en cada fotograma, y la interpolación por
+  distancia del reloj de vueltas no pierde precisión;
+- coste medido en el PC de pruebas: unos 20 µs por actualización, unos 0,6 ms/s.
+
+**D48 — Fundido más sobrio.** En el vídeo del arranque las filas se desvanecían todas a la vez. Ahora:
+- si cambian más de 4 filas en la misma actualización, no hay fundido (salidas, reinicios);
+- cada fila hace como mucho un fundido por segundo;
+- la columna de posición (número, caja de P1, triángulos) no se desvanece, solo el coche;
+- si se desactivan las animaciones en mitad de un fundido, la fila vuelve siempre.
+
+**D49 — Texto dentro de su caja.** En el juego las minúsculas de `OSD_24_regular` salen casi el doble de anchas que
+en la TV (`NORInterval`), así que `Interval`/`Leader`, las diferencias e `IN PIT` se comprimen dentro de su caja
+(`clampwidth`). `LAP 1 / 5` se separa más; los dígitos del juego son más anchos de lo estimado.
+
+**D50 — Lo que se añade de la investigación de grafismos** (fuentes en INVESTIGACION.md §7):
+- `PIT STOPS`: modo fijo y, en Automático, 10 s en las vueltas múltiplo de 10 cuando alguien ha parado. Usa el
+  contador de paradas del propio juego.
+- `FORMATION LAP` en la cabecera, solo con nombres. Usa el estado `formation` del juego.
+
+Lo que no se puede hacer o queda fuera:
+- `FINAL LAP`: el DLL no conoce las vueltas totales.
+- Gráficos de batalla, rótulos de piloto, sectores en vivo, avisos de investigación o el rendimiento del neumático:
+  no hay datos o son gráficos fuera de la torre.
+- Tiempo de parada en boxes: no hay datos.
