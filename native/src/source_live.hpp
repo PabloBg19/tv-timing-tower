@@ -61,6 +61,7 @@ public:
         switch (live::safety_car(s)) {
         case live::SafetyCar::safety_car: si.sc = 1; break;
         case live::SafetyCar::virtual_safety_car: si.sc = 2; break;
+        case live::SafetyCar::formation: si.sc = 0; si.formation = true; break;
         default: si.sc = 0; break;
         }
         si.red = live::has(s, SWOFTY_LIVE_SHAVE_RED_FLAG) && s.red_flag != 0;

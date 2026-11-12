@@ -10,19 +10,20 @@ una app externa, ni overlay de Electron/OBS/SimHub, ni usa telemetría UDP).
 
 - **Cabecera** con el logo de F1 y la sesión: `P1 33:56`, `Q2 08:12`, `SQ1 05:40` o `LAP 23/57`.
 - **Una fila por piloto**: posición (P1 en caja roja), logo de equipo **en color del propio juego** (si tienes un
-  mod de logos, sale el del mod), apellido en mayúsculas (o abreviatura de 3 letras), dato a la derecha y la letra
-  del neumático en su color (como en 2026).
+  mod de logos, sale el del mod), abreviatura (`RUS`) junto a los datos o apellido completo cuando no hay datos
+  (como en TV), dato a la derecha (`Interval`, `+6.7`, `Out`) y la letra del neumático en su color.
 - **Libres**: orden del juego, mejor vuelta del líder y diferencia del resto, `P` blanca cuando el coche está en
   boxes o en el garaje.
 - **Clasificación y clasificación sprint** (Q1/Q2/Q3, SQ1/SQ2/SQ3): cronómetro de la sesión, zona de eliminación
   con las posiciones en rojo y línea roja, los eliminados de la ronda anterior desaparecen de la torre (Q2: 16
   filas, Q3: 10), tiempos en verde (mejor personal) o morado (mejor de la sesión) durante 3 s.
-- **Carrera y sprint**: `LAP X/Y`, intervalo al de delante con un decimal (formato 2026) y gap al líder en momentos
-  puntuales (como en TV), `+1 LAP`, `PIT`, `DNF` / `OUT` / `DSQ` / `NC`, penalizaciones (`+5s`, `DT`, `SG`),
-  vuelta rápida en morado, flechas de posición y bandera a cuadros al final.
-- **Estados de carrera como en la señal de FOM**: tarjeta de color bajo la cabecera y la torre entera enmarcada en
-  ese color: `YELLOW FLAG S2`, `SAFETY CAR`, `SAFETY CAR ENDING`, `VIRTUAL SAFETY CAR`, `VIRTUAL SAFETY CAR ENDING`,
-  `RED FLAG` (marco rojo); `TRACK CLEAR` y bandera a cuadros.
+- **Carrera y sprint**: `LAP X / Y`. En la vuelta 1 y con Safety Car, solo nombres. Después, intervalo al de
+  delante con un decimal (formato 2026) y, a ratos, gap al líder. Al empezar la vuelta 2, `GAINED / LOST`
+  (puestos ganados o perdidos desde la parrilla). Además `+1 Lap`, `PIT`, `Out` / `DSQ` / `NC`, penalizaciones
+  (`+5s`, `DT`, `SG`), vuelta rápida en morado, flechas de posición y bandera a cuadros al final.
+- **Banderas como en la señal de FOM 2026**: un bloque de color con el escudo FIA bajo la cabecera para
+  `SAFETY CAR`, `VIRTUAL SAFETY CAR`, `SAFETY CAR IN THIS LAP`, `VSC ENDING`, `YELLOW FLAG` + sector, `RED FLAG` y
+  `TRACK CLEAR`; al final, bandera a cuadros.
 - **Modo demo** con datos simulados de todos esos casos, y un **visor HTML** para revisar el diseño sin el juego.
 - Si el addon no puede leer la sesión (otra build del juego, core sin estado en vivo), **vuelve la torre original**
   y lo deja escrito en `swofty/loader.log` con el prefijo `[tv-tower]`.
@@ -49,8 +50,8 @@ una app externa, ni overlay de Electron/OBS/SimHub, ni usa telemetría UDP).
 |---|---|---|
 | Torre de TV | Sí | Activa o desactiva la torre (desactivada: vuelve la del juego) |
 | Filas | Todas | Todas / Top 10 + yo / Compacta (P1-P3 y los coches a tu alrededor) |
-| Nombres | Apellido | Apellido en mayúsculas o abreviatura de 3 letras |
-| Diferencias en carrera | Automático | Automático (intervalos y gap al líder a ratos) / Intervalo / Al líder |
+| Nombres | Automático | Automático (abreviatura con datos, apellido sin datos, como en TV) / Apellido / Abreviatura |
+| Diferencias en carrera | Automático | Automático (como en TV) / Intervalo / Al líder / Ganadas-perdidas |
 | Neumáticos | Sí | Compuesto actual |
 | Vueltas del neumático | No | Vueltas con el juego actual (contadas desde la última parada vista) |
 | Fondo | TV | Sólido / TV / Translúcido (opacidad del fondo) |
@@ -122,8 +123,8 @@ code), data on the right and the tyre compound letter in its colour.
 Practice: best lap and gaps, white `P` in the pits. Qualifying and sprint qualifying: session clock, knockout zone,
 cars knocked out earlier leave the tower, green/purple lap time flashes. Races: `LAP X/Y`, one-decimal intervals with the gap to the
 leader at times (as on TV), `+1 LAP`, `PIT`, `DNF/OUT/DSQ/NC`, penalties, purple fastest lap, arrows, chequered
-flag. Flag states as on the FOM world feed: a colour card under the header and the whole tower framed in yellow
-(yellow flag, SC, VSC and their ENDING) or red (red flag); track clear.
+flag. Codes beside data, full surnames without it (lap 1, safety car); GAINED / LOST as lap 2 starts. Flag
+states as on the 2026 FOM world feed: a colour block with the FIA badge under the header.
 If the session cannot be read the game's own board comes back and `[tv-tower]` explains why in `swofty/loader.log`.
 
 **Requirements:** F1 25 Steam build 25251167 + 2026 Season Pack, Swofty Launcher 1.9.x, offline sessions, and the

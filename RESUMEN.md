@@ -1,5 +1,19 @@
 # Resumen — TV Timing Tower
 
+## 0.3.0 (12-11-2026, con capturas reales de la torre 2026)
+
+- Bloques de bandera con escudo FIA (`SAFETY / CAR`, `VIRTUAL / SAFETY CAR`…) y sin marco (D29).
+- Nombres automáticos: abreviaturas cuando hay datos y apellidos cuando no. En la vuelta 1, con SC y con bandera
+  roja, solo nombres (D30).
+- `GAINED / LOST`, con la parrilla guardada por el addon (D31).
+- `Interval`, `Leader`, `Out`, `+1 Lap`; subtítulo `FIA Formula 1 World Championship` / `SPRINT` (D32).
+- Verificado: tests en host (incluida la parrilla grabada en la vuelta de formación y congelada en la salida),
+  compose contra el juego (~4.670 enlaces) y el visor.
+- Sin ver en el juego: la textura FIA, la parrilla real y los cambios de la 0.2.0.
+
+---
+
+
 ## 0.2.0 (12-11-2026, tras la primera prueba en el juego)
 
 La 0.1.0 se vio en el juego: la torre, los nombres, las P de boxes, las tarjetas y la demo funcionaban. Cambios a

@@ -109,7 +109,7 @@ inline std::string fmt_laps_down(int n)
     if (n <= 0)
         return "";
     char b[16];
-    std::snprintf(b, sizeof b, "+%d LAP%s", n, n == 1 ? "" : "S");
+    std::snprintf(b, sizeof b, "+%d Lap%s", n, n == 1 ? "" : "s");
     return b;
 }
 
@@ -189,6 +189,7 @@ struct CarIn {
     bool drive_through = false, stop_go = false;
     int gap_ahead_ms = -1;    // -1 invalid
     int gap_leader_ms = -1;
+    int grid = 0;             // starting position when the source knows it (demo); 0: the tower records it
     int best_ms = -1;         // best valid lap
     int last_ms = -1;         // last completed lap
     bool me = false;
@@ -202,6 +203,7 @@ struct SessionIn {
     int racers = 0;           // competitors in the session (not the safety car)
     float track_m = 0;        // track length
     int sc = 0;               // 0 none, 1 safety car, 2 virtual
+    bool formation = false;   // formation lap (the grid is the order now)
     bool sc_in = false;       // the safety car is coming in (inferred)
     bool red = false;
     uint8_t yellow = 0;       // bit i: sector i+1
@@ -221,8 +223,11 @@ struct Snapshot {
 // --------------------------------------------------------------------------------------------- config
 struct Config {
     enum class Rows { all, top10, compact } rows = Rows::all;
-    enum class Gap { autoswitch, interval, leader } gap = Gap::autoswitch;
-    bool abbr = false;         // three-letter codes instead of surnames
+    // autoswitch: as on TV (intervals, the leader gaps now and then, places gained after lap 1, names only on
+    // lap 1 and under the safety car / red flag)
+    enum class Gap { autoswitch, interval, leader, gained } gap = Gap::autoswitch;
+    // auto: codes beside data (gaps, times), full surnames when the data column is empty (as on TV)
+    enum class Names { autoswitch, surname, code } names = Names::autoswitch;
     bool tyres = true;
     bool tyre_age = false;
     bool arrows = true;
@@ -247,7 +252,9 @@ struct Row {
     std::string gap;
     bool gap_purple = false;   // lap time flash: session best / new fastest lap
     bool gap_green = false;    // lap time flash: personal best
-    bool gap_label = false;    // gap text is a label ("INTERVAL", "LEADER")
+    bool gap_label = false;    // gap text is a label ("Interval", "Leader")
+    bool gain_on = false;      // places gained / lost view: an arrow (or a dash) before the number in `gap`
+    int gain = 0;              // > 0 gained, < 0 lost, 0 none
     char tyre = 0;
     std::string tyre_age;
     bool pit = false;          // white P box
@@ -261,7 +268,6 @@ struct Row {
     bool elim = false;         // knocked out in an earlier segment (not shown since 0.2: kept for tests)
     bool sep = false;          // rows above are not contiguous (top10 / compact): separator line
     bool me = false;
-    bool last = false;         // last row shown: the tower's frame closes under it
     int team = -1;             // team identity (preview only)
     std::string badge;         // texture path for the game's own logo unit, "" none
     std::string name;          // demo only
@@ -277,7 +283,10 @@ struct Header {
     bool demo = false;
     int card = card_none;
     std::string ysec;          // "S2", "S1 S3"
-    int frame = 0;             // coloured frame around the tower: 0 none, 1 yellow (SC, VSC, yellow), 2 red
+    bool abbr = false;         // three-letter codes in the rows (else full surnames)
+    bool bare = false;         // names only: no data column, no tyres (lap 1, safety car, red flag)
+    bool gained = false;       // the "GAINED / LOST" view
+    std::string sub;           // the line under the logo: "SPRINT" or ""
     bool lead = false;         // gaps are to the leader
 };
 
@@ -336,9 +345,24 @@ public:
         }
 
         h.card = flag_card(s, h.race, now);
-        h.frame = frame_of(h.card);
+        if (kind == Kind::sprint_quali)
+            h.sub = "SPRINT";
         h.ysec = yellow_text(s.yellow);
         h.lead = lead_mode(cfg, snap, now);
+        if (h.race) {
+            record_grid(snap);
+            h.gained = gained_mode(cfg, snap, now);
+            // TV: lap 1, the safety car and the red flag show the names alone
+            h.bare = cfg.gap == Config::Gap::autoswitch && !h.gained && !s.chequered &&
+                     (s.sc == 1 || s.red || lead.lap == 0);
+            if (h.bare || h.gained)
+                h.lead = false;
+        }
+        bool any_data = h.race ? !h.bare : false;
+        if (!h.race)
+            for (const CarIn &c : snap.cars)
+                any_data = any_data || c.best_ms > 0;
+        h.abbr = cfg.names == Config::Names::code || (cfg.names == Config::Names::autoswitch && any_data);
 
         // field size for the knockout cut: the most racers seen in this session
         field_ = std::max(field_, std::max(s.racers, int(snap.cars.size())));
@@ -354,14 +378,12 @@ public:
             if (slot >= kRows)
                 break;
             Row &r = v.rows[size_t(slot)];
-            fill_row(r, snap, idx, kind, cfg, h.lead, now);
+            fill_row(r, snap, idx, kind, cfg, h, now);
             r.sep = prev_idx >= 0 && idx != prev_idx + 1;
             prev_idx = idx;
             slot++;
         }
         v.shown = slot;
-        if (slot > 0)
-            v.rows[size_t(slot - 1)].last = true;
         return v;
     }
 
@@ -382,6 +404,10 @@ public:
         fastest_ms_ = -1;
         fastest_flash_vid_ = -1;
         fastest_flash_until_ = 0;
+        grid_.fill(0);
+        grid_state_ = 0;
+        gained_until_ = -1;
+        gained_shown_ = false;
     }
 
 private:
@@ -450,18 +476,66 @@ private:
         return field > prev_cut && pos > prev_cut;
     }
 
-    static int frame_of(int card)
+    // ---- starting grid: the order through the formation lap (or the first frames on lap 0), frozen at the first
+    // change of order once the formation lap is over. A race first seen past lap 1 has no grid.
+    void record_grid(const Snapshot &snap)
     {
-        switch (card) {
-        case card_sc: case card_vsc: case card_sc_end: case card_vsc_end: case card_yellow: return 1;
-        case card_red: return 2;
-        default: return 0;
+        const CarIn &lead = snap.cars.front();
+        if (grid_state_ == 2)
+            return;
+        bool demo_grid = false;
+        for (const CarIn &c : snap.cars)
+            demo_grid = demo_grid || c.grid > 0;
+        if (demo_grid) {
+            for (const CarIn &c : snap.cars)
+                if (c.vid < grid_.size())
+                    grid_[c.vid] = c.grid;
+            grid_state_ = 2;
+            return;
         }
+        auto take = [&] {
+            for (const CarIn &c : snap.cars)
+                if (c.vid < grid_.size())
+                    grid_[c.vid] = c.pos;
+        };
+        if (grid_state_ == 0) {
+            if (lead.lap > 0 && !snap.s.formation)
+                return; // joined mid-race: no grid
+            take();
+            grid_state_ = 1;
+            return;
+        }
+        if (snap.s.formation) {
+            take();
+            return;
+        }
+        bool changed = false;
+        for (const CarIn &c : snap.cars)
+            changed = changed || (c.vid < grid_.size() && grid_[c.vid] != c.pos);
+        if (changed || lead.lap > 0)
+            grid_state_ = 2; // lights out (the first change of order) or lap 1 done: the grid stays
+    }
+
+    bool gained_mode(const Config &cfg, const Snapshot &snap, double now)
+    {
+        if (grid_state_ != 2)
+            return false;
+        if (cfg.gap == Config::Gap::gained)
+            return true;
+        if (cfg.gap != Config::Gap::autoswitch)
+            return false;
+        // once, for 10 s, when the leader starts lap 2 (as the broadcast does early in a race)
+        if (!gained_shown_ && snap.cars.front().lap >= 1 && snap.cars.front().lap <= 2) {
+            gained_until_ = now + 10.0;
+            gained_shown_ = true;
+        }
+        return now < gained_until_;
     }
 
     // ---- one row
-    void fill_row(Row &r, const Snapshot &snap, int idx, Kind kind, const Config &cfg, bool lead, double now)
+    void fill_row(Row &r, const Snapshot &snap, int idx, Kind kind, const Config &cfg, const Header &h, double now)
     {
+        const bool lead = h.lead;
         const CarIn &c = snap.cars[size_t(idx)];
         const CarIn &leader = snap.cars.front();
         const bool race = kind == Kind::race;
@@ -476,7 +550,7 @@ private:
                                                                       : "#overrides.osd.timing_tower.team_badges_hud.") +
                                              c.badge;
         r.team = team_index(c.badge);
-        r.name = c.name.empty() ? "" : (cfg.abbr && !c.code.empty() ? c.code : c.name);
+        r.name = c.name.empty() ? "" : (h.abbr && !c.code.empty() ? c.code : c.name);
 
         const bool retired = c.status >= 4 && c.status <= 7;
         // timed sessions: when a segment ends every car still out reads 7; a car with a lap keeps its row
@@ -491,7 +565,7 @@ private:
         }
 
         // tyre
-        if (cfg.tyres && !r.out) {
+        if (cfg.tyres && !r.out && !h.bare && !h.gained) {
             r.tyre = c.tyre;
             if (cfg.tyre_age && c.tyre && c.tyre_age >= 0)
                 r.tyre_age = std::to_string(c.tyre_age);
@@ -513,14 +587,23 @@ private:
 
         if (race) {
             r.fl = snap.s.fastest_vid >= 0 && uint32_t(snap.s.fastest_vid) == c.vid;
-            if (retired) {
-                r.gap = c.status == 5 ? "DSQ" : c.status == 6 ? "NC" : c.status == 4 ? "DNF" : "OUT";
+            if (h.bare) {
+                // names only
+            } else if (h.gained) {
+                int g = c.vid < grid_.size() ? grid_[c.vid] : 0;
+                if (g > 0) {
+                    r.gain = g - pos;
+                    r.gain_on = true;
+                    r.gap = std::to_string(r.gain < 0 ? -r.gain : r.gain);
+                }
+            } else if (retired) {
+                r.gap = c.status == 5 ? "DSQ" : c.status == 6 ? "NC" : "Out";
             } else if (snap.s.red) {
                 r.gap = ""; // red flag: the field waits in the pit lane, no live gaps
             } else if (c.in_pit && c.status != 3) {
                 r.gap = "PIT";
             } else if (idx == 0) {
-                r.gap = lead ? "LEADER" : "INTERVAL";
+                r.gap = lead ? "Leader" : "Interval";
                 r.gap_label = true;
             } else {
                 int down = laps_down(snap, idx, lead ? 0 : idx - 1);
@@ -533,7 +616,8 @@ private:
                     r.gap = "";
             }
             // a new fastest lap flashes the lap time in purple
-            if (fastest_flash_vid_ == int(c.vid) && now < fastest_flash_until_ && fastest_ms_ > 0) {
+            if (!h.bare && !h.gained && fastest_flash_vid_ == int(c.vid) && now < fastest_flash_until_ &&
+                fastest_ms_ > 0) {
                 r.gap = fmt_lap(fastest_ms_);
                 r.gap_purple = true;
                 r.gap_label = false;
@@ -629,13 +713,18 @@ private:
 
     static std::string yellow_text(uint8_t bits)
     {
-        std::string t;
+        std::vector<int> s;
         for (int i = 0; i < 8; i++)
-            if (bits & (1u << i)) {
-                if (!t.empty())
-                    t += " ";
-                t += "S" + std::to_string(i + 1);
-            }
+            if (bits & (1u << i))
+                s.push_back(i + 1);
+        if (s.empty())
+            return "";
+        std::string t = s.size() == 1 ? "SECTOR " : "SECTORS ";
+        for (size_t i = 0; i < s.size(); i++) {
+            if (i)
+                t += i + 1 == s.size() ? " & " : ", ";
+            t += std::to_string(s[i]);
+        }
         return t;
     }
 
@@ -724,6 +813,10 @@ private:
     int fastest_ms_ = -1;
     int fastest_flash_vid_ = -1;
     double fastest_flash_until_ = 0;
+    std::array<int, 32> grid_{};
+    int grid_state_ = 0;       // 0 none, 1 recording, 2 frozen
+    double gained_until_ = -1;
+    bool gained_shown_ = false;
 };
 
 } // namespace tvt

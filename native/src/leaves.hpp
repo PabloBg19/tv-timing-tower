@@ -23,7 +23,7 @@ struct RowLeaves {
     hud::TextLeaf tage;
     hud::BoolLeaf tag, pit, pen;
     hud::TextLeaf pent;
-    hud::BoolLeaf fl, chq, last;
+    hud::BoolLeaf fl, chq, gu, gd, g0;
     hud::TextLeaf nm, badge;
     hud::BoolLeaf bdg;
     hud::OneHot car;
@@ -55,9 +55,9 @@ public:
         c_clear = L.boolean("c_clear");
         c_yel = L.boolean("c_yel");
         ysec = L.text("ysec", 24);
-        fy = L.boolean("fy");
-        fr = L.boolean("fr");
         clk = L.boolean("clk");
+        sprint = L.boolean("sprint");
+        gained = L.boolean("gained");
         rows = L.rows<RowLeaves>("r", kRows, 2, [](hud::Leaves &l, int) {
             RowLeaves r;
             r.on = l.boolean("on");
@@ -90,7 +90,9 @@ public:
             r.nm = l.text("nm", 24);
             r.badge = l.text("badge", 96);
             r.bdg = l.boolean("bdg");
-            r.last = l.boolean("last");
+            r.gu = l.boolean("gu");
+            r.gd = l.boolean("gd");
+            r.g0 = l.boolean("g0");
             r.car = l.one_hot("c", kSlots, 2);
             return r;
         });
@@ -120,7 +122,7 @@ public:
         L.set(timed, h.on && h.timed);
         L.set(race, h.on && h.race);
         L.set(demo, h.demo);
-        L.set(abbr, cfg.abbr);
+        L.set(abbr, h.abbr);
         L.set(colbar, cfg.colbar);
         L.set(bg, cfg.bg < 0 || cfg.bg > 2 ? 1 : cfg.bg);
         L.set(sess, h.sess);
@@ -136,8 +138,8 @@ public:
         L.set(c_clear, h.card == card_clear);
         L.set(c_yel, h.card == card_yellow);
         L.set(ysec, h.ysec);
-        L.set(fy, h.frame == 1);
-        L.set(fr, h.frame == 2);
+        L.set(sprint, !h.sub.empty());
+        L.set(gained, h.gained);
 
         for (int i = 0; i < kRows; i++) {
             const Row &r = v.rows[size_t(i)];
@@ -149,7 +151,6 @@ public:
                 // visibility change under a hidden node, so a slot cleared now could show again with the row
                 // (two names in one row). They change only while the row shows.
                 L.set(x.bdg, false);
-                L.set(x.last, false);
                 L.set(x.pit, false);
                 L.set(x.pen, false);
                 L.set(x.fl, false);
@@ -183,7 +184,9 @@ public:
             L.set(x.pent, r.pen_text);
             L.set(x.fl, r.fl);
             L.set(x.chq, r.chq);
-            L.set(x.last, r.last);
+            L.set(x.gu, r.gain_on && r.gain > 0);
+            L.set(x.gd, r.gain_on && r.gain < 0);
+            L.set(x.g0, r.gain_on && r.gain == 0);
             L.set(x.nm, r.name);
             L.set(x.badge, r.badge);
             L.set(x.bdg, !r.badge.empty());
@@ -198,7 +201,7 @@ public:
     hud::TextLeaf sess, lap, dlaps, dclk;
     hud::BoolLeaf c_chq, c_red, c_scend, c_sc, c_vsc, c_vscend, c_clear, c_yel;
     hud::TextLeaf ysec;
-    hud::BoolLeaf fy, fr, clk;
+    hud::BoolLeaf clk, gained, sprint;
     hud::Leaves::Rows<RowLeaves> rows;
 };
 

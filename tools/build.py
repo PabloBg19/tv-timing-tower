@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
 
@@ -94,14 +94,20 @@ OPTIONS = [
      {"values": [("all", "Todas", "All"), ("top10", "Top 10 + yo", "Top 10 + me"),
                  ("compact", "Compacta", "Compact")], "default": "all"}),
     ("names", "choice", "Nombres", "Names",
-     "Apellido completo en mayúsculas (como en TV) o abreviatura de tres letras.",
-     "Full surname in capitals (as on TV) or the three-letter code.",
-     {"values": [("surname", "Apellido", "Surname"), ("code", "Abreviatura", "Code")], "default": "surname"}),
+     "Automático (como en TV): abreviatura junto a tiempos y diferencias, apellido completo cuando no hay datos "
+     "(vuelta 1, Safety Car). O siempre apellido, o siempre abreviatura.",
+     "Auto (as on TV): the code beside times and gaps, the full surname when there is no data (lap 1, safety car). "
+     "Or always the surname, or always the code.",
+     {"values": [("auto", "Automático", "Auto"), ("surname", "Apellido", "Surname"), ("code", "Abreviatura", "Code")],
+      "default": "auto"}),
     ("gap_mode", "choice", "Diferencias en carrera", "Race gaps",
-     "Automático: intervalos y, en momentos puntuales, gap al líder (como en TV).",
-     "Auto: intervals, with the gap to the leader at times (as on TV).",
+     "Automático (como en TV): solo nombres en la vuelta 1 y con Safety Car o bandera roja, posiciones ganadas/perdidas "
+     "al empezar la vuelta 2, intervalos y, a ratos, gap al líder.",
+     "Auto (as on TV): names only on lap 1 and under the safety car or red flag, places gained/lost as lap 2 starts, "
+     "intervals and, at times, the gap to the leader.",
      {"values": [("auto", "Automático", "Auto"), ("interval", "Intervalo", "Interval"),
-                 ("leader", "Al líder", "To leader")], "default": "auto"}),
+                 ("leader", "Al líder", "To leader"), ("gained", "Ganadas/perdidas", "Gained/lost")],
+      "default": "auto"}),
     ("tyres", "toggle", "Neumáticos", "Tyres", "Muestra el compuesto actual de cada coche.",
      "Shows each car's current compound.", {"default": True}),
     ("tyre_age", "toggle", "Vueltas del neumático", "Tyre age",
@@ -147,7 +153,8 @@ OPTIONS = [
                  ("quali_q1", "Q1 (eliminación)", "Q1 (knockout)"), ("quali_q2", "Q2 (eliminados)", "Q2 (knocked out)"),
                  ("safety_car", "Safety Car", "Safety car"), ("vsc", "VSC", "VSC"),
                  ("red_flag", "Bandera roja", "Red flag"), ("finish", "Bandera a cuadros", "Chequered flag"),
-                 ("practice", "Libres", "Practice"), ("sprint_quali", "Clasificación sprint", "Sprint qualifying")],
+                 ("practice", "Libres", "Practice"), ("sprint_quali", "Clasificación sprint", "Sprint qualifying"),
+                 ("gained", "Ganadas/perdidas", "Gained/lost")],
       "default": "cycle"}),
     ("broadcaster_logo", "toggle", "Logo de la cadena", "Broadcaster logo",
      "Logo de la cadena arriba a la derecha mientras se ve la torre.",

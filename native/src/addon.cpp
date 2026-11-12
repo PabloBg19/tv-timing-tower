@@ -18,13 +18,13 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.2.0"
+#define TVT_VERSION "0.3.0"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
 SWOFTY_SETTING(bool, enabled, true);
 SWOFTY_SETTING(std::string_view, rows, "all");
-SWOFTY_SETTING(std::string_view, names, "surname");
+SWOFTY_SETTING(std::string_view, names, "auto");
 SWOFTY_SETTING(std::string_view, gap_mode, "auto");
 SWOFTY_SETTING(bool, tyres, true);
 SWOFTY_SETTING(bool, tyre_age, false);
@@ -53,10 +53,12 @@ tvt::Config read_config()
     std::string_view r = rows;
     c.rows = r == "top10" ? tvt::Config::Rows::top10 : r == "compact" ? tvt::Config::Rows::compact
                                                                       : tvt::Config::Rows::all;
-    c.abbr = std::string_view(names) == "code";
+    std::string_view nm = names;
+    c.names = nm == "code" ? tvt::Config::Names::code : nm == "surname" ? tvt::Config::Names::surname
+                                                                       : tvt::Config::Names::autoswitch;
     std::string_view g = gap_mode;
     c.gap = g == "interval" ? tvt::Config::Gap::interval : g == "leader" ? tvt::Config::Gap::leader
-                                                                         : tvt::Config::Gap::autoswitch;
+          : g == "gained"   ? tvt::Config::Gap::gained   : tvt::Config::Gap::autoswitch;
     c.tyres = tyres;
     c.tyre_age = tyre_age;
     std::string_view b = background;

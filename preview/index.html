@@ -91,10 +91,11 @@
     return e;
   }
   const Wtot = W + 80;
-  const CARDS = { 1: ['card_sc', 'SAFETY CAR', '#101010', 6.4], 2: ['card_sc', 'VIRTUAL SAFETY CAR', '#101010', 6.4],
-    3: ['card_red', 'RED FLAG', '#fff', 6.4], 4: ['card_chq', '', '', 0], 5: ['card_sc', 'YELLOW FLAG', '#101010', 6.4],
-    6: ['card_sc', 'SAFETY CAR ENDING', '#101010', 6.4], 7: ['card_sc', 'VIRTUAL SAFETY CAR ENDING', '#101010', 5.8],
-    8: ['card_clear', 'TRACK CLEAR', '#fff', 6.4] };
+  // flag blocks: [sprite, lines, colour] (FIA badge at the left; the game draws its own FIA texture)
+  const CARDS = { 1: ['card_sc', ['SAFETY', 'CAR'], '#101010'], 2: ['card_sc', ['VIRTUAL', 'SAFETY CAR'], '#101010'],
+    3: ['card_red', ['RED FLAG'], '#fff'], 4: ['card_chq', [], ''], 5: ['card_sc', ['YELLOW FLAG', null], '#101010'],
+    6: ['card_sc', ['SAFETY CAR', 'IN THIS LAP'], '#101010'], 7: ['card_sc', ['VSC', 'ENDING'], '#101010'],
+    8: ['card_clear', ['TRACK CLEAR'], '#fff'] };
   // the game draws its own colour badges; the preview stands in with the logos of assets/private/logos
   function teamLogo(team) {
     const tn = L.teams[team]; if (!tn) return null;
@@ -108,26 +109,34 @@
     const fr = frames[Math.min(frames.length - 1, Math.round(t / F.step))];
     tower.innerHTML = '';
     tower.style.transform = `translate(48px, 24px) scale(${$('scale').value * 1.0})`;
-    const h = fr.h, fk = h.frame === 1 ? 'y' : h.frame === 2 ? 'r' : '';
+    const h = fr.h;
     // header
     tower.append(spr('hdr' + bg, 0, 0, 20), spr('hdr_rule', 0, 0, 24));
     if (S.f1logo) tower.append(spr('f1logo', 0, 0, 26));
-    else tower.append(txt('F1', W / 2, 16, 10, 'centre', '#fff', 700));
+    else tower.append(txt('F1', W / 2, 13, 8, 'centre', '#fff', 700));
+    if (h.sprint) tower.append(txt('SPRINT', W / 2, 19.6, 4.6, 'centre', '#fff', 700));
+    else if (S.f1logo) tower.append(txt('FIA Formula 1 World Championship', W / 2, 19.2, 2.9, 'centre', '#d8dbe6', 400));
     const y0 = 32;
     if (h.race) {
       tower.append(txt('LAP', W / 2 - 15.5, y0, 5.8, 'right', '#fff', 400), txt(h.lap, W / 2 + 3, y0, 7.2, 'right', '#fff', 700),
-        txt('/', W / 2 + 6, y0, 5.8, 'centre', '#fff', 400), txt(h.laps || '57', W / 2 + 8.6, y0, 5.8, 'left', '#fff', 400));
+        txt('/', W / 2 + 6.5, y0, 5.8, 'centre', '#fff', 400), txt(h.laps || '57', W / 2 + 9.6, y0, 5.8, 'left', '#fff', 400));
     } else {
       tower.append(txt(h.sess, W / 2 - 3, y0, 7.2, 'right', '#fff', 700), txt(h.clock, W / 2 + 3, y0, 7.2, 'left', '#fff', 400));
     }
-    if (fk) tower.append(spr('fh' + fk, 0, 0, 46), spr('fhr' + fk, 0, 0, 46), spr('ft' + fk, 0, 0, 46));
     let y = H;
     if (h.card) {
-      const [s, label, col, cap] = CARDS[h.card];
+      const [s, lines, col] = CARDS[h.card];
       tower.append(spr(s, 0, y, 21));
-      if (label) tower.append(txt(label + (h.card === 5 && h.ysec ? '  ' + h.ysec : ''), W / 2, y + CARD / 2 + 3.0, cap, 'centre', col, 700));
-      if (fk) tower.append(spr('fc' + fk, 0, y, 46), spr('fcr' + fk, 0, y, 46));
+      if (lines.length) {
+        tower.append(spr('fiabox', 0, y, 22), txt('FIA', 14, y + CARD / 2 + 2.6, 5, 'centre', '#fff', 700));
+        if (lines.length === 1) tower.append(txt(lines[0], 29, y + CARD / 2 + 3.6, 7.2, 'left', col, 700));
+        else tower.append(txt(lines[0], 29, y + 11.6, 7.2, 'left', col, 700), txt(lines[1] === null ? h.ysec : lines[1], 29, y + 21.6, 7.2, 'left', col, 700));
+      }
       y += CARD;
+    }
+    if (h.gained) {
+      tower.append(spr('gainbg', 0, y, 21), txt('GAINED / LOST', W / 2, y + L.gainbar / 2 + 2.5, 5, 'centre', '#fff', 700));
+      y += L.gainbar;
     }
     // rows
     fr.rows.forEach((r, i) => {
@@ -143,12 +152,13 @@
       if (r.up) add(spr('arr_up', 0, 0, 26)); else if (r.dn) add(spr('arr_dn', 0, 0, 26));
       else add(txt(r.pos, L.pos_x, L.text_y, L.cap_pos, 'centre', '#fff', 700));
       if (logos && r.team >= 0) add(teamLogo(r.team));
-      const nm = variant === 'codes' ? r.code : r.name;
+      const nm = h.abbr ? r.code : r.name;
       add(txt(nm, L.name_x, L.text_y, L.cap_name, 'left', '#fff', 700, L.name_box));
       if (r.gap) {
         const col = r.purple ? C.purple : r.green ? C.green : r.label ? C.label : C.gap;
         add(txt(r.gap, L.gap_right, r.label ? L.text_y - 0.5 : L.text_y, r.label ? L.cap_label : L.cap_gap, 'right', col, (r.purple || r.green) ? 700 : 400));
       }
+      if (r.gon) add(spr(r.gain > 0 ? 'gup' : r.gain < 0 ? 'gdn' : 'gz', 0, 0, 27));
       if (showTyres && r.tyre) add(txt(r.tyre, L.tyre_x, L.text_y, L.cap_tyre, 'centre', C.tyres[r.tyre], 700));
       let sx = L.side_x;
       const ch = L.chip;
@@ -159,7 +169,6 @@
       if (r.chq) chip('chqbox', 16);
       if (r.age) chip('agebox', ch, r.age, '#fff');
       if (r.out || r.elim) add(spr('dim', 0, 0, 45));
-      if (fk) { add(spr('fl' + fk, 0, 0, 46)); add(spr('flr' + fk, 0, 0, 46)); if (r.last) add(spr('fb' + fk, 0, 0, 46)); }
       tower.append(g);
     });
     $('tv').textContent = t.toFixed(1) + ' s';

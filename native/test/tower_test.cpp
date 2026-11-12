@@ -37,8 +37,8 @@ static void test_format()
     CHECK(fmt_gap_race(65333) == "+1:05.3");
     CHECK(fmt_gap_ms(234) == "+0.234");
     CHECK(fmt_lap(87345) == "1:27.345");
-    CHECK(fmt_laps_down(1) == "+1 LAP");
-    CHECK(fmt_laps_down(3) == "+3 LAPS");
+    CHECK(fmt_laps_down(1) == "+1 Lap");
+    CHECK(fmt_laps_down(3) == "+3 Laps");
     CHECK(fmt_clock(2036) == "33:56");
     CHECK(std::string(session_label(6)) == "Q2");
     CHECK(std::string(session_label(11)) == "SQ2");
@@ -70,9 +70,10 @@ static void test_race_rows()
     CHECK(v.h.lap == "22");
     CHECK(v.h.laps_total == "57");
     CHECK(v.shown == 22);
-    CHECK(v.rows[0].p1 && v.rows[0].gap == "INTERVAL" && v.rows[0].gap_label);
+    CHECK(v.rows[0].p1 && v.rows[0].gap == "Interval" && v.rows[0].gap_label);
+    CHECK(v.h.abbr && !v.h.bare); // gaps shown: codes
     CHECK(v.rows[1].gap.rfind("+", 0) == 0);
-    CHECK(v.rows[19].gap == "+1 LAP" || v.rows[19].gap.rfind("+", 0) == 0);
+    CHECK(v.rows[19].gap == "+1 Lap" || v.rows[19].gap.rfind("+", 0) == 0);
     CHECK(v.rows[8].pen && v.rows[8].pen_text == "+5s");
     // a pass: P6 and P7 swap after 6 s and get arrows
     t.update(demo::make(demo::race, 7.0), cfg, 7.0);
@@ -82,8 +83,8 @@ static void test_race_rows()
     CHECK(!t.view().rows[5].up);
     // the fastest lap flashes purple then stays as the icon
     CHECK(t.view().rows[1].fl);
-    CHECK(t.view().h.card == card_yellow && t.view().h.ysec == "S2");
-    CHECK(t.view().rows[21].gap == "DNF" && t.view().rows[21].out);
+    CHECK(t.view().h.card == card_yellow && t.view().h.ysec == "SECTOR 2");
+    CHECK(t.view().rows[21].gap == "Out" && t.view().rows[21].out);
 }
 
 static void test_leader_mode_and_rows()
@@ -92,7 +93,7 @@ static void test_leader_mode_and_rows()
     Config cfg;
     cfg.gap = Config::Gap::leader;
     const View &v = t.update(demo::make(demo::race, 1.0), cfg, 1.0);
-    CHECK(v.h.lead && v.rows[0].gap == "LEADER");
+    CHECK(v.h.lead && v.rows[0].gap == "Leader");
     cfg.rows = Config::Rows::top10;
     const View &v2 = t.update(demo::make(demo::race, 1.0), cfg, 1.1);
     CHECK(v2.shown == 10); // the player (ALBON) is in the top 10 in this scenario
@@ -130,7 +131,7 @@ static void test_quali()
     // Q2: the six knocked out in Q1 leave the tower (as on TV); the knockout zone is P11-P16
     Tower t2;
     const View &q2 = t2.update(demo::make(demo::quali_q2, 0.5), cfg, 0.5);
-    CHECK(q2.shown == 16 && q2.rows[15].last && !q2.rows[16].on);
+    CHECK(q2.shown == 16 && !q2.rows[16].on);
     CHECK(q2.rows[10].ko_line && q2.rows[15].ko && q2.rows[15].pos == "16");
     // top 10 + me in Q2 with the player knocked out: ten rows, no player
     Config top = cfg;
@@ -165,12 +166,12 @@ static void test_cards()
     {
         Tower t;
         const View &v = t.update(demo::make(demo::red_flag, 1), cfg, 1);
-        CHECK(v.h.card == card_red && v.rows[3].gap.empty() && v.rows[20].gap == "OUT");
+        CHECK(v.h.card == card_red && v.rows[3].gap.empty() && v.h.bare && !v.h.abbr);
     }
     {
         Tower t;
         const View &v = t.update(demo::make(demo::finish, 5), cfg, 5);
-        CHECK(v.h.card == card_chq && v.rows[0].chq && v.rows[21].gap == "DNF" && v.rows[20].gap == "DSQ");
+        CHECK(v.h.card == card_chq && v.rows[0].chq && v.rows[21].gap == "Out" && v.rows[20].gap == "DSQ");
     }
     {
         Config off;
@@ -278,12 +279,11 @@ static void test_leaves_and_record()
     CHECK(core.text("view_model_data.hud_tvt_r00_pos") == "1");
     CHECK(core.number("view_model_data.hud_tvt_bg1") == 1);
     // demo rows carry their own names; live rows use the game's per-car slots instead
-    CHECK(core.text("view_model_data.hud_tvt_r00_nm") == "RUSSELL");
+    CHECK(core.text("view_model_data.hud_tvt_r00_nm") == "RUS");
     // every row: the game's own colour badge
     CHECK(core.number("view_model_data.hud_tvt_r00_bdg") == 1);
     CHECK(core.text("view_model_data.hud_tvt_r00_badge") == "#overrides.osd.timing_tower.team_badges_broadcast.mercedes_26");
-    CHECK(core.number("view_model_data.hud_tvt_r21_last") == 1 && core.number("view_model_data.hud_tvt_r20_last") == 0);
-    CHECK(core.number("view_model_data.hud_tvt_fy") == 0);
+    CHECK(core.number("view_model_data.hud_tvt_abbr") == 1 && core.number("view_model_data.hud_tvt_gained") == 0);
     // demo: no per-car slot on
     CHECK(core.number("view_model_data.hud_tvt_r00_c00") == 0);
     pub.off();
@@ -308,13 +308,41 @@ static void test_leaves_and_record()
     pub.publish(qv, cfg);
     CHECK(core.number("view_model_data.hud_tvt_r15_on") == 0 && core.number(k) == 1);
 
-    // flags: the frame
+    // safety car: the SC block, names only (full surnames, no gaps, no tyres)
     Tower tf;
     pub.publish(tf.update(demo::make(demo::safety_car, 1.0), cfg, 1.0), cfg);
-    CHECK(core.number("view_model_data.hud_tvt_fy") == 1 && core.number("view_model_data.hud_tvt_c_sc") == 1);
-    Tower tr;
-    pub.publish(tr.update(demo::make(demo::red_flag, 1.0), cfg, 1.0), cfg);
-    CHECK(core.number("view_model_data.hud_tvt_fr") == 1 && core.number("view_model_data.hud_tvt_fy") == 0);
+    CHECK(core.number("view_model_data.hud_tvt_c_sc") == 1 && core.number("view_model_data.hud_tvt_abbr") == 0);
+    CHECK(core.text("view_model_data.hud_tvt_r01_gap").empty() && core.number("view_model_data.hud_tvt_r01_tH") == 0);
+    // VSC: codes and intervals stay
+    Tower tv;
+    const View &vv = tv.update(demo::make(demo::vsc, 1.0), cfg, 1.0);
+    CHECK(vv.h.card == card_vsc && vv.h.abbr && vv.rows[1].gap.rfind("+", 0) == 0);
+    // places gained / lost as lap 2 starts
+    Tower tg;
+    const View &gv = tg.update(demo::make(demo::gained, 0.5), cfg, 0.5);
+    CHECK(gv.h.gained && gv.rows[1].gain_on && gv.rows[1].gain == 2 && gv.rows[1].gap == "2"); // vid 3 from P4 to P2
+    CHECK(gv.rows[2].gain == -1 && gv.rows[0].gain == 0 && gv.rows[0].tyre == 0);
+    pub.publish(gv, cfg);
+    CHECK(core.number("view_model_data.hud_tvt_gained") == 1 && core.number("view_model_data.hud_tvt_r01_gu") == 1 &&
+          core.number("view_model_data.hud_tvt_r02_gd") == 1 && core.number("view_model_data.hud_tvt_r00_g0") == 1);
+    CHECK(!tg.update(demo::make(demo::gained, 11.0), cfg, 11.0).h.gained); // 10 s, then intervals
+    // a live grid: recorded through the formation lap, frozen at the first change of order
+    Tower tl2;
+    Snapshot gs = demo::make(demo::race, 0.0);
+    gs.s.demo = false;
+    for (CarIn &c : gs.cars)
+        c.lap = 0;
+    gs.s.formation = true;
+    tl2.update(gs, cfg, 0.0);
+    gs.s.formation = false;
+    tl2.update(gs, cfg, 0.1);
+    std::swap(gs.cars[0].pos, gs.cars[1].pos);
+    std::swap(gs.cars[0], gs.cars[1]);
+    tl2.update(gs, cfg, 0.2); // lights out: a pass
+    for (CarIn &c : gs.cars)
+        c.lap = 1;
+    const View &lg = tl2.update(gs, cfg, 0.3);
+    CHECK(lg.h.gained && lg.rows[0].gain == 1 && lg.rows[1].gain == -1);
     pub.clock_pulse(true);
     pub.L.flush();
     CHECK(core.number("view_model_data.hud_tvt_clk") == 1);

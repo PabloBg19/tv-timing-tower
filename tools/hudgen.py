@@ -29,8 +29,8 @@ LAYOUT = {
     "width": 186.0,
     "row": 18.0,
     "header": 38.0,
-    "card": 16.0,
-    "frame": 1.3,            # coloured frame (SC / VSC / yellow, red flag)
+    "card": 26.0,            # flag block: FIA badge + two lines (2026 world feed)
+    "gainbar": 11.0,         # "GAINED / LOST" bar under the header
     "pos_x": 9.0,
     "logo_x": 25.0,
     "logo_size": 12.5,
@@ -137,19 +137,18 @@ def make_art(art: Path):
         x = L["pos_x"]
         add(name, img, [x - 4, R / 2 - 4, x + 4, R / 2 + 4])
 
-    # the frame round the tower while a flag is out (the broadcast's yellow / red outline): a left and a right edge
-    # per piece (header, card, row) and a bottom edge under the last row
-    fw = L["frame"]
-    for k, col in (("y", C["sc"]), ("r", C["red"])):
-        c = hexrgba(col)
-        add(f"fh{k}", flat(fw, H, c), [0, 0, fw, H])
-        add(f"fhr{k}", flat(fw, H, c), [W - fw, 0, W, H])
-        add(f"ft{k}", flat(W, fw, c), [0, 0, W, fw])
-        add(f"fc{k}", flat(fw, L["card"], c), [0, 0, fw, L["card"]])
-        add(f"fcr{k}", flat(fw, L["card"], c), [W - fw, 0, W, L["card"]])
-        add(f"fl{k}", flat(fw, R, c), [0, 0, fw, R])
-        add(f"flr{k}", flat(fw, R, c), [W - fw, 0, W, R])
-        add(f"fb{k}", flat(W, fw, c), [0, R - fw, W, R])
+    # places gained / lost: green and red triangles, a grey dash, left of the number
+    gx = L["gap_right"] - 15.0
+    for name, up, col in (("gup", True, C["green"]), ("gdn", False, "#E8002D")):
+        img = flat(6, 6, (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        n = img.size[0]
+        pts = [(n / 2, n * 0.1), (n * 0.95, n * 0.9), (n * 0.05, n * 0.9)] if up else \
+              [(n * 0.05, n * 0.1), (n * 0.95, n * 0.1), (n / 2, n * 0.9)]
+        d.polygon(pts, fill=hexrgba(col))
+        add(name, img, [gx - 3, R / 2 - 3.2, gx + 3, R / 2 + 2.8])
+    add("gz", flat(5, 0.9, (170, 175, 195, 255)), [gx - 2.5, R / 2 - 0.6, gx + 2.5, R / 2 + 0.3])
+    add("gainbg", flat(W, L["gainbar"], (46, 51, 72, 235)), [0, 0, W, L["gainbar"]])
 
     # outside chips: positioned by the side stack, bounds from the chip's own origin
     ch = L["chip"]
@@ -176,8 +175,9 @@ def make_art(art: Path):
                 d.rectangle([xx * q, yy * q, (xx + 1) * q - 1, (yy + 1) * q - 1], fill=(12, 12, 12, 255))
     add("chqbox", img, [0, top, 16, top + ch])
 
-    # header flag cards
+    # header flag blocks; the FIA badge sits on a navy square at the left, as on the 2026 world feed
     cd = L["card"]
+    add("fiabox", flat(18, 18, (16, 35, 105, 255)), [5, (cd - 18) / 2, 23, (cd + 18) / 2])
     add("card_sc", flat(W, cd, hexrgba(C["sc"])), [0, 0, W, cd])
     add("card_red", flat(W, cd, hexrgba(C["red"])), [0, 0, W, cd])
     add("card_clear", flat(W, cd, hexrgba(C["clear"])), [0, 0, W, cd])
@@ -215,12 +215,12 @@ def private_logos(art: Path, logos: Path, sprites: dict):
         bb = im.getbbox()
         im = im.crop(bb) if bb else im
         w, h = 40.0, 40.0 * im.size[1] / im.size[0]
-        if h > 12.5:
-            w, h = w * 12.5 / h, 12.5
+        if h > 10.5:
+            w, h = w * 10.5 / h, 10.5
         out = im.resize((px(w) * 2, px(h) * 2), Image.LANCZOS)
         save(out, art / "f1logo.png")
         x0 = (L["width"] - w) / 2
-        sprites["f1logo"] = {"png": "art/f1logo.png", "bounds": [x0, 4.5, x0 + w, 4.5 + h]}
+        sprites["f1logo"] = {"png": "art/f1logo.png", "bounds": [x0, 3.0, x0 + w, 3.0 + h]}
 
 
 # ------------------------------------------------------------------------------------------------- record
@@ -272,15 +272,7 @@ def group(id_, children, visible=None, at=None, repeat=None):
     return e
 
 
-def frame_edges(prefix, left, right, extra=()):
-    """The flag frame's sprites for one piece of the tower: yellow and red copies, each shown by its leaf."""
-    out = []
-    for k, leaf in (("y", "fy"), ("r", "fr")):
-        kids = [sprite(f"{prefix}{k}l", f"{left}{k}", 46), sprite(f"{prefix}{k}r", f"{right}{k}", 46)]
-        for i, (name, vis) in enumerate(extra):
-            kids.append(sprite(f"{prefix}{k}x{i}", f"{name}{k}", 46, visible=vis))
-        out.append(group(f"{prefix}{k}", kids, visible=vm(leaf)))
-    return out
+FIA_TEX = "eaid://ui_package/art/osd/textures/message_system/ms_fia_logo.tif"
 
 
 def header(flavour, has_f1):
@@ -290,18 +282,25 @@ def header(flavour, has_f1):
     if has_f1:
         logo = sprite("f1", "f1logo", 26)
     else:
-        logo = {"kind": "unit", "id": "f1", "unit": "series_logo", "at": [W / 2 - 16.0, 4.5], "size": 32.0,
+        logo = {"kind": "unit", "id": "f1", "unit": "series_logo", "at": [W / 2 - 14.5, 3.0], "size": 29.0,
                 "texture": {"screen": "series_logo"}}
+    # the line under the logo: "SPRINT" in sprint sessions; the championship's name otherwise (private build)
+    subs = [group("spr", [text("sprt", "OSD_24_bold", "centre", 60, 4.6, [W / 2, 19.6], literal="SPRINT")],
+                  visible=vm("sprint"))]
+    if flavour == "private":
+        subs.append(group("fiaw", [text("fiat", "OSD_19_regular", "centre", 120, 2.9, [W / 2, 19.2],
+                                        literal="FIA Formula 1 World Championship", colour="#d8dbe6ff")],
+                          visible=vm("sprint", True, True)))
     y = 32.0
-    # "LAP 23/57": the number right-aligned against the slash, "LAP" a fixed space before the widest number
+    # "LAP 23 / 57": the number right-aligned against the slash, "LAP" a fixed space before the widest number
     race = group("race", [
         {"kind": "centre", "id": "lc", "at": [W / 2, y], "children": [
             text("lw", "OSD_19_regular", "right", 22, 5.8, [-15.5, 0], literal="LAP"),
             text("ln", "OSD_24_bold", "right", 16, 7.2, [3.0, 0], value=vm("lap")),
-            text("ls", "OSD_19_regular", "centre", 6, 5.8, [6.0, 0], literal="/"),
-            group("lt", [text("ltn", "OSD_19_regular", "left", 16, 5.8, [8.6, 0],
+            text("ls", "OSD_19_regular", "centre", 6, 5.8, [6.5, 0], literal="/"),
+            group("lt", [text("ltn", "OSD_19_regular", "left", 16, 5.8, [9.6, 0],
                               value={"path": "#session.number_of_laps", "ty": "si32"})], visible=vm("demo", True, True)),
-            group("ltd", [text("ltdn", "OSD_19_regular", "left", 16, 5.8, [8.6, 0], value=vm("dlaps"))],
+            group("ltd", [text("ltdn", "OSD_19_regular", "left", 16, 5.8, [9.6, 0], value=vm("dlaps"))],
                   visible=vm("demo")),
         ]}], visible=vm("race"))
     timed = group("timed", [
@@ -311,35 +310,42 @@ def header(flavour, has_f1):
         group("clkd", [text("clkdn", "OSD_24_regular", "left", 40, 7.2, [W / 2 + 3.0, y], value=vm("dclk"))],
               visible=vm("demo")),
     ], visible=vm("timed"))
-    top = group("top", bgs + [sprite("rule", "hdr_rule", 24), logo, race, timed] +
-                frame_edges("hf", "fh", "fhr", [("ft", None)]))
+    top = group("top", bgs + [sprite("rule", "hdr_rule", 24), logo] + subs + [race, timed])
 
     cd = L["card"]
-    ty = cd / 2 + 3.0
+    x = 29.0
 
-    def card(id_, spr, label, colour="#101010ff", cap=6.4, framed=True):
-        kids = [sprite(id_ + "_bg", spr, 21), text(id_ + "_t", "OSD_24_bold", "centre", W - 8, cap, [W / 2, ty],
-                                                     literal=label, colour=colour)]
-        if framed:
-            kids += frame_edges(id_ + "f", "fc", "fcr")
+    def block(id_, spr, lines, colour="#101010ff", value=None):
+        """A flag block: the FIA badge and one or two lines, left-aligned (the second may be a leaf)."""
+        kids = [sprite(id_ + "_bg", spr, 21), sprite(id_ + "_fb", "fiabox", 22),
+                sprite(id_ + "_fl", "fia", 23, at=[14.0, cd / 2])]
+        if len(lines) == 1 and value is None:
+            kids.append(text(id_ + "_t", "OSD_24_bold", "left", W - x - 4, 7.2, [x, cd / 2 + 3.6],
+                             literal=lines[0], colour=colour))
+        else:
+            kids.append(text(id_ + "_t", "OSD_24_bold", "left", W - x - 4, 7.2, [x, 11.6], literal=lines[0],
+                             colour=colour))
+            if value is not None:
+                kids.append(text(id_ + "_u", "OSD_24_bold", "left", W - x - 4, 7.2, [x, 21.6], value=value,
+                                 colour=colour))
+            else:
+                kids.append(text(id_ + "_u", "OSD_24_bold", "left", W - x - 4, 7.2, [x, 21.6], literal=lines[1],
+                                 colour=colour))
         return group(id_, kids, visible=vm("c_" + id_))
 
-    # the broadcast's flag states (FOM world feed): a coloured block under the header, the tower framed in its colour
+    # the broadcast's flag states (FOM world feed 2026): a coloured block under the header with the FIA badge
     cards = {"kind": "stack", "id": "cards", "dir": "down", "gap": 0, "children": [
         group("chq", [sprite("chq_bg", "card_chq", 21)], visible=vm("c_chq")),
-        card("red", "card_red", "RED FLAG", "#ffffffff"),
-        card("scend", "card_sc", "SAFETY CAR ENDING"),
-        card("sc", "card_sc", "SAFETY CAR"),
-        card("vsc", "card_sc", "VIRTUAL SAFETY CAR"),
-        card("vscend", "card_sc", "VIRTUAL SAFETY CAR ENDING", cap=5.8),
-        card("clear", "card_clear", "TRACK CLEAR", "#ffffffff", framed=False),
-        group("yel", [
-            sprite("yel_bg", "card_sc", 21),
-            text("yel_t", "OSD_24_bold", "right", 100, 6.4, [W / 2 + 22.0, ty], literal="YELLOW FLAG",
-                 colour="#101010ff"),
-            text("yel_s", "OSD_24_bold", "left", 40, 6.4, [W / 2 + 26.0, ty], value=vm("ysec"),
-                 colour="#101010ff"),
-        ] + frame_edges("yelf", "fc", "fcr"), visible=vm("c_yel")),
+        block("red", "card_red", ["RED FLAG"], "#ffffffff"),
+        block("scend", "card_sc", ["SAFETY CAR", "IN THIS LAP"]),
+        block("sc", "card_sc", ["SAFETY", "CAR"]),
+        block("vsc", "card_sc", ["VIRTUAL", "SAFETY CAR"]),
+        block("vscend", "card_sc", ["VSC", "ENDING"]),
+        block("clear", "card_clear", ["TRACK CLEAR"], "#ffffffff"),
+        block("yel", "card_sc", ["YELLOW FLAG"], value=vm("ysec")),
+        group("gain", [sprite("gain_bg", "gainbg", 21),
+                       text("gain_t", "OSD_24_bold", "centre", W - 8, 5.0, [W / 2, L["gainbar"] / 2 + 2.5],
+                            literal="GAINED / LOST")], visible=vm("gained")),
     ]}
     return top, cards
 
@@ -393,6 +399,10 @@ def row(flavour):
     k.append(text("gl", "OSD_19_regular", "right", L["gap_box"], L["cap_label"], [gx, ty - 0.5],
                   value=vm(r + "gap"), colour=C["label"] + "ff", visible=vm(r + "glb")))
 
+    # places gained / lost (the number is the white gap text)
+    k += [sprite("gu", "gup", 27, visible=vm(r + "gu")), sprite("gd", "gdn", 27, visible=vm(r + "gd")),
+          sprite("g0", "gz", 27, visible=vm(r + "g0"))]
+
     # tyre: the compound's letter in its colour, as on the 2026 broadcast (no ring)
     for t, col in C["tyres"].items():
         k.append(text(f"t{t}", "OSD_24_bold", "centre", 10, L["cap_tyre"], [L["tyre_x"], ty], literal=t,
@@ -415,7 +425,6 @@ def row(flavour):
     ]}
     k.append(side)
     k.append(sprite("dim", "dim", 45, visible=vm(r + "dim")))
-    k += frame_edges("rf", "fl", "flr", [("fb", vm(r + "last"))])
     return group("r", k, visible=vm(r + "on"), repeat={"count": ROWS, "var": "N", "pitch": [0, R]})
 
 
@@ -497,6 +506,7 @@ def main():
     if art.exists():
         shutil.rmtree(art)
     sprites = make_art(art)
+    sprites["fia"] = {"texture": FIA_TEX, "fit": [15.0, 10.0]}
     has_f1 = False
     if a.flavour == "private" and a.logos.exists():
         private_logos(art, a.logos, sprites)

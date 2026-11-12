@@ -107,7 +107,7 @@ filas (eran blancos y el mapeo fallaba: el juego llama `alfa_romeo_26` a Audi, `
 **D24 — Neumático: solo la letra del compuesto en su color**, como en la torre de 2026 (captura real de
 Australia 2026 P1: `LEC 1:21.227 M P`). Sin círculo.
 
-**D25 — Banderas como la señal internacional de FOM.** Con SC, VSC, sus finales, bandera amarilla o bandera roja la
+**D25 — (sustituida por D29) Banderas con marco.** Con SC, VSC, sus finales, bandera amarilla o bandera roja la
 tarjeta de color va pegada bajo la cabecera y **toda la torre lleva un marco de ese color** (amarillo o rojo).
 Textos: `SAFETY CAR`, `SAFETY CAR ENDING`, `VIRTUAL SAFETY CAR`, `VIRTUAL SAFETY CAR ENDING`, `RED FLAG`,
 `YELLOW FLAG S2`, `TRACK CLEAR` (sin marco). Fuente: capturas de la torre FOM y su rediseño público (ver
@@ -127,3 +127,29 @@ mientras tanto, podría repetirse; si pasa, anotar cuándo.
 **D28 — Reloj de la cabecera con pulso.** El formateador del reloj del juego solo se ejecuta cuando su hoja de
 arranque pasa de 0 a 1; en la prueba se activó antes de existir el HUD y el reloj no salió. Ahora la hoja `clk`
 pulsa 4 veces por segundo en sesiones cronometradas.
+
+## 0.3.0 (capturas reales de la torre 2026 aportadas por Pablo)
+
+Referencia: cinco capturas de la señal internacional de 2026 (carrera vuelta 8/71, VSC vuelta 26/71, vuelta 4/55
+con gaps al líder, Safety Car vuelta 10/55, sprint vuelta 2/24 en modo GAINED / LOST).
+
+**D29 — Bloques de bandera con el escudo FIA, sin marco.** Bajo `LAP x / y` va un bloque de color de 26 unidades
+con el escudo FIA (textura del propio juego `ms_fia_logo.tif` sobre un cuadrado azul) y el texto en negrita a la
+izquierda, en dos líneas: `SAFETY / CAR`, `VIRTUAL / SAFETY CAR`, `SAFETY CAR / IN THIS LAP`, `VSC / ENDING`,
+`YELLOW FLAG / SECTOR 2`. `RED FLAG` y `TRACK CLEAR` van en una línea. La torre no lleva marco (se quita D25).
+
+**D30 — Nombres automáticos y vista "solo nombres".** Como en TV: con datos al lado (gaps, tiempos) se ven las
+abreviaturas (`RUS`, `VER`) y sin datos, los apellidos completos. En carrera, con *Diferencias* = Automático, la
+vuelta 1, el Safety Car y la bandera roja muestran solo los nombres, sin gaps ni neumáticos. El VSC mantiene los
+intervalos. Ajuste *Nombres*: Automático (por defecto) / Apellido / Abreviatura.
+
+**D31 — Posiciones ganadas/perdidas.** Barra `GAINED / LOST` bajo la cabecera y, en cada fila, ▲ verde o ▼ roja
+con el número de puestos, o una raya gris si es 0. La parrilla la guarda el addon porque `live` no la da: es el
+orden durante la vuelta de formación (estado `formation` del SC) o en los primeros instantes de la vuelta 0, y se
+congela con el primer cambio de orden tras la salida. En Automático sale 10 s al empezar la vuelta 2; también es un
+modo fijo de *Diferencias*. Si se entra en una carrera ya empezada no hay parrilla y no sale.
+
+**D32 — Textos como la señal 2026:** `Interval`, `Leader`, `Out` y `+1 Lap` en mayúscula inicial; el neumático,
+como letra de color tras el dato. En la cabecera, el logo F1 y debajo `FIA Formula 1 World Championship` (solo
+PRIVATE), o `SPRINT` en la clasificación sprint. En la carrera sprint no sale `SPRINT`, porque el juego no la
+distingue con seguridad del Gran Premio.

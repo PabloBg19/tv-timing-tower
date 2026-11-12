@@ -32,13 +32,13 @@ inline const Driver kGrid[22] = {
 };
 
 enum Scenario : int {
-    race = 0, quali_q1, quali_q2, safety_car, vsc, red_flag, finish, practice, sprint_quali, count
+    race = 0, quali_q1, quali_q2, safety_car, vsc, red_flag, finish, practice, sprint_quali, gained, count
 };
 
 inline const char *scenario_name(int s)
 {
     static const char *n[] = {"race", "quali_q1", "quali_q2", "safety_car", "vsc", "red_flag", "finish",
-                              "practice", "sprint_quali"};
+                              "practice", "sprint_quali", "gained"};
     return s >= 0 && s < count ? n[s] : "";
 }
 
@@ -71,11 +71,17 @@ inline Snapshot make(int sc, double t)
         return snap.cars.back();
     };
 
-    const bool is_race = sc == race || sc == safety_car || sc == vsc || sc == red_flag || sc == finish;
+    const bool is_race = sc == race || sc == safety_car || sc == vsc || sc == red_flag || sc == finish || sc == gained;
     if (is_race) {
         s.type = 15;
         s.laps_total = 57;
-        int lead_lap = sc == finish ? 57 : 22 + int(t / 7.0);
+        int lead_lap = sc == finish ? 57 : sc == gained ? 2 : 22 + int(t / 7.0);
+        if (sc == gained) {
+            // lap 2: a start with some moves; the grid is the demo's reference order shuffled
+            static const int start[22] = {0, 3, 1, 2, 5, 4, 6, 7, 9, 8, 12, 10, 11, 14, 13, 15, 17, 16, 19, 18, 21, 20};
+            for (int i = 0; i < 22; i++)
+                order[size_t(i)] = start[i];
+        }
         // a pass for P6 halfway through
         if (sc == race && t > 6.0)
             std::swap(order[5], order[6]);
@@ -96,6 +102,11 @@ inline Snapshot make(int sc, double t)
             c.have_total = true;
             c.tyre = "MHHMSMHHHMMHMHMHHMMHSM"[vid];
             c.tyre_age = 3 + (vid * 7) % 19;
+            if (sc == gained) {
+                // grid: the reference order (vid = grid slot - 1), so a car's gain is its vid - rank
+                c.grid = vid + 1;
+                continue;
+            }
             if (r >= 19) { // backmarkers a lap down
                 c.lap -= 1;
                 c.total_m -= s.track_m;

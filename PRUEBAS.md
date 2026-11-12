@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.2.0
+# Checklist de pruebas en el juego — TV Timing Tower 0.3.0
 
 Antes de empezar: instala `dist/tv-timing-tower-PRIVATE.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.2.0 loaded: … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.3.0 loaded: … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -47,25 +47,30 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Igual que el punto 2 con `SQ1/SQ2/SQ3`.
 
 ## 4. Carrera (y sprint)
-- [ ] Cabecera `LAP X/Y` (vuelta del líder / total del juego).
-- [ ] Líder: `INTERVAL` en gris; resto `+0.9`, `+12.3` (un decimal).
-- [ ] Cada vuelta múltiplo de 5 del líder: 8 s con `LEADER` y gaps al líder (modo Automático).
-- [ ] Doblados: `+1 LAP`.
+- [ ] Cabecera `LAP X / Y` (vuelta del líder / total del juego).
+- [ ] Vuelta 1: apellidos completos, sin diferencias ni neumáticos.
+- [ ] Al empezar la vuelta 2 (si has visto la vuelta de formación o la salida): barra `GAINED / LOST` durante 10 s,
+      con ▲/▼ y los puestos; compárala con la parrilla.
+- [ ] Después: abreviaturas, el líder con `Interval` en gris y el resto con `+0.9`, `+12.3` (un decimal) y la letra
+      del neumático.
+- [ ] En cada vuelta múltiplo de 5 del líder: 8 s con `Leader` y gaps al líder (modo Automático).
+- [ ] Doblados: `+1 Lap`.
 - [ ] Parada en boxes: `PIT` mientras está en el pit lane; cambia el icono de neumático al salir.
 - [ ] Vueltas del neumático (ajuste) se reinician tras la parada.
 - [ ] Adelantamiento: flecha verde/roja 3 s en los dos coches implicados.
 - [ ] Penalización de 5 s: chip amarillo `+5s`. Drive-through: `DT`.
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
-- [ ] Abandono: `DNF`/`OUT` y fila atenuada. Descalificación: `DSQ`.
+- [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
 
 ## 5. Estados de carrera (usa SC/VSC en "Frecuente" o provoca un accidente)
-- [ ] Bandera amarilla: tarjeta amarilla `YELLOW FLAG S2` bajo la cabecera y marco amarillo alrededor de la torre.
-- [ ] VSC: tarjeta `VIRTUAL SAFETY CAR` + marco amarillo; al terminar `VIRTUAL SAFETY CAR ENDING` 4 s y luego
-      `TRACK CLEAR` verde 4 s (sin marco).
-- [ ] Safety Car: `SAFETY CAR` + marco amarillo; cuando el coche de seguridad entra al pit lane `SAFETY CAR ENDING`;
-      al reanudar `TRACK CLEAR`.
-- [ ] Bandera roja: tarjeta roja `RED FLAG`, marco rojo, sin diferencias en la columna derecha.
+- [ ] Bandera amarilla: bloque amarillo con escudo FIA, `YELLOW FLAG` / `SECTOR 2`.
+- [ ] VSC: bloque `VIRTUAL / SAFETY CAR` con escudo FIA; siguen las abreviaturas y los intervalos. Al terminar,
+      `VSC / ENDING` 4 s y luego `TRACK CLEAR` verde 4 s.
+- [ ] Safety Car: bloque `SAFETY / CAR`; la torre pasa a apellidos completos, sin diferencias ni neumáticos. Cuando
+      el coche de seguridad entra al pit lane, `SAFETY CAR / IN THIS LAP`; al reanudar, `TRACK CLEAR`.
+- [ ] Bandera roja: bloque rojo `RED FLAG`, solo nombres.
+- [ ] El escudo FIA del bloque se ve (es una textura del juego; si sale vacío o raro, haz una captura).
 - [ ] Compara con la TV: si FOM lo muestra distinto, manda una captura de la emisión.
 - [ ] La caja de banderas nativa de la izquierda no aparece mientras se ve la torre (la torre la sustituye).
 

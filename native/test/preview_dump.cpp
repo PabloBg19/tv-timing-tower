@@ -25,12 +25,12 @@ static void row_json(FILE *f, const Row &r, const CarIn *car)
     std::fprintf(f,
                  "{\"vid\":%d,\"pos\":\"%s\",\"p1\":%d,\"up\":%d,\"dn\":%d,\"gap\":\"%s\",\"purple\":%d,\"green\":%d,"
                  "\"label\":%d,\"tyre\":\"%s\",\"age\":\"%s\",\"pit\":%d,\"pen\":\"%s\",\"fl\":%d,\"chq\":%d,"
-                 "\"out\":%d,\"ko\":%d,\"kol\":%d,\"elim\":%d,\"sep\":%d,\"me\":%d,\"last\":%d,\"team\":%d,\"name\":\"%s\","
+                 "\"out\":%d,\"ko\":%d,\"kol\":%d,\"elim\":%d,\"sep\":%d,\"me\":%d,\"gain\":%d,\"gon\":%d,\"team\":%d,\"name\":\"%s\","
                  "\"code\":\"%s\"}",
                  r.vid, r.pos.c_str(), r.p1, r.up, r.dn, esc(r.gap).c_str(), r.gap_purple, r.gap_green, r.gap_label,
                  r.tyre ? std::string(1, r.tyre).c_str() : "", r.tyre_age.c_str(), r.pit,
                  r.pen ? esc(r.pen_text).c_str() : "", r.fl, r.chq, r.out, r.ko, r.ko_line, r.elim, r.sep, r.me,
-                 r.last, r.team, car ? car->name.c_str() : "", car ? car->code.c_str() : "");
+                 r.gain, r.gain_on, r.team, car ? car->name.c_str() : "", car ? car->code.c_str() : "");
 }
 
 int main(int argc, char **argv)
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     Config compact = base;
     compact.rows = Config::Rows::compact;
     Config codes = base;
-    codes.abbr = true;
+    codes.names = Config::Names::code;
     codes.tyre_age = true;
     const Variant variants[] = {{"all", base}, {"top10", top10}, {"compact", compact}, {"codes", codes}};
 
@@ -66,9 +66,9 @@ int main(int argc, char **argv)
                 const Header &h = v.h;
                 std::fprintf(f,
                              "%s{\"t\":%.1f,\"h\":{\"race\":%d,\"sess\":\"%s\",\"lap\":\"%s\",\"laps\":\"%s\","
-                             "\"clock\":\"%s\",\"card\":%d,\"frame\":%d,\"ysec\":\"%s\",\"lead\":%d},\"rows\":[",
+                             "\"clock\":\"%s\",\"card\":%d,\"abbr\":%d,\"gained\":%d,\"sprint\":%d,\"ysec\":\"%s\",\"lead\":%d},\"rows\":[",
                              k ? "," : "", time, h.race, h.sess.c_str(), h.lap.c_str(), h.laps_total.c_str(),
-                             h.clock.c_str(), h.card, h.frame, h.ysec.c_str(), h.lead);
+                             h.clock.c_str(), h.card, h.abbr, h.gained, int(!h.sub.empty()), h.ysec.c_str(), h.lead);
                 for (int i = 0; i < v.shown; i++) {
                     const Row &r = v.rows[size_t(i)];
                     const CarIn *car = nullptr;
