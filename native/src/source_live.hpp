@@ -136,8 +136,8 @@ public:
                 // best lap (even if it doesn't fit that order) rather than leaving the row blank
                 int coherent = clock_.best_at_least(vid, floor_ms);
                 ci.best_ms = coherent > 0 ? coherent : clock_.best_ms(vid);
-                if (ci.best_ms > 0)
-                    floor_ms = ci.best_ms;
+                if (ci.best_ms > floor_ms)
+                    floor_ms = ci.best_ms; // a fallback faster than the floor doesn't lower it for the cars below
             }
             snap.cars.push_back(std::move(ci));
         }

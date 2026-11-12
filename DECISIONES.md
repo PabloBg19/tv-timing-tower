@@ -352,6 +352,11 @@ quién sale de la torre en Q2 salía mal: 10 + (16−10)/2 = 13 en vez de 10 + (
 cortaba en el piloto 13. Arreglo: `field_` ya no se reinicia si el cambio de `type` es dentro de la misma
 clasificación (incluida la sprint); sí se reinicia al cambiar de tipo de sesión de verdad (libres→clasificación,
 clasificación→carrera). Tests nuevos reproducen el caso con 22→16 (y 20→15 en sprint) y comprueban que no se corta.
+Revisión: eso solo arreglaba el caso de ver Q1 entera. Si el addon no ve Q1 (Q1 simulada, o el juego arrancado ya
+en Q2), el tamaño de parrilla se vuelve a sacar de Q2 y el corte volvía a salir en 13. Ahora una lista de 17 coches
+o menos en Q2 se toma como los que ya están en Q2 (los que pasan de 20, 22 o 24 son 15, 16 o 17), y no se quita a
+nadie; con la parrilla entera (20 o más) se quitan los eliminados en Q1 como antes. Q3 ya funcionaba en los dos
+casos (queda en 10).
 
 **D59 — Tiempos que no salían en libres y clasificación.** El filtro que evita que el reloj propio ponga a un
 coche por delante de otro que el juego clasifica mejor (D5) dejaba el hueco en blanco cuando ningún tiempo del
@@ -364,6 +369,9 @@ tiempo que puede estar algo descolocado es mejor que no enseñar nada.
 PIT STOPS, TYRES), así que mientras la torre rotaba por una de esas vistas, un coche que entraba a boxes en ese
 momento no lo mostraba hasta que la vista cambiase. Ahora IN PIT se comprueba primero (solo por detrás de
 nombres-solamente, abandono y bandera roja) y gana siempre a esas vistas, igual que en la retransmisión.
+Revisión: con Safety Car la torre muestra solo nombres y tampoco salía IN PIT, justo cuando más coches paran. Ahora
+con SC un coche en boxes muestra `IN PIT` (no con bandera roja, en parrilla ni en la vuelta de formación). Además,
+el tiempo de reserva de D59 ya no baja el mínimo que se exige a los coches de detrás.
 
 **D61 — SC ENDING, igual que VSC ENDING.** El Safety Car real solo tenía la fase «entrando en boxes»
 (`SAFETY CAR IN THIS LAP`, D8) antes de desactivarse, y al desactivarse pasaba directamente a `TRACK CLEAR` sin una

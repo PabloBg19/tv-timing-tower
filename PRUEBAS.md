@@ -1,12 +1,12 @@
 # Checklist de pruebas en el juego — TV Timing Tower 0.8.0
 
-Antes de empezar: instala `dist/tv-timing-tower-PRIVATE.swoftyaddon`, actívalo, en ADDON SETTINGS pon
+Antes de empezar: instala `dist/tv-timing-tower.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
 y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.7.2 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.8.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -68,10 +68,11 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 4e. Novedades 0.8.0 (arreglos reportados)
 - [ ] Libres y clasificación: salen tiempos en casi todos los coches (antes se quedaban en blanco con frecuencia).
-- [ ] Clasificación con 22 coches: Q2 muestra **16 filas** (no se corta en el 13), Q3 muestra 10.
+- [ ] Clasificación con 22 coches: Q2 muestra **16 filas** (no se corta en el 13), Q3 muestra 10. Prueba también
+      simulando la Q1 y entrando directamente en Q2.
 - [ ] Clasificación sprint con 20 coches: SQ2 muestra 15 filas.
 - [ ] Carrera: un coche que entra a boxes muestra `IN PIT` **siempre**, también si la torre está en ese momento en
-      `GAINED / LOST`, `PIT STOPS` o `TYRES`.
+      `GAINED / LOST`, `PIT STOPS` o `TYRES`, y con Safety Car (aunque la torre muestre solo los nombres).
 - [ ] Safety Car real: al terminar aparece primero `SC` / `ENDING` 4 s (con el escudo FIA) y luego `TRACK CLEAR`,
       igual que ya hacía el VSC.
 - [ ] Mi Equipo con 24 coches, filas = Todas: la torre sube un poco más que con una parrilla normal. Si se corta

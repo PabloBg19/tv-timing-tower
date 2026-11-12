@@ -61,7 +61,7 @@ REF = {
 
 LAYOUT = {
     "offset_y": -40.0,       # the whole tower, from the stock board's origin (into the hidden lap counter's space)
-    "extra_up": 24.0,        # added on top of offset_y while more than ~20 rows show (D59, not measured in game)
+    "extra_up": 24.0,        # added on top of offset_y while more than 22 rows show (D62, not measured in game)
     "row": ROW_UNITS,
     "width": u(REF["width"]),
     "pos_w": u(REF["pos_w"]), "pos_x": u(REF["pos_x"]),

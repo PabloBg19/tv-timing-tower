@@ -184,6 +184,24 @@ static void test_field_persists_across_quali_segments()
     t2.update(make_timed(10, 20, 20), cfg, 0.0); // a 20-car SQ1: cut at 15 (10 + (20-10)/2)
     const View &sq2 = t2.update(make_timed(11, 15, 15), cfg, 1.0);
     CHECK(sq2.shown == 15);
+    // Q2 seen without Q1 (Q1 skipped, or the game started at Q2) and only Q2's 16 listed: all 16 stay, and the
+    // knockout zone is 11-16
+    Tower t3;
+    t3.update(make_timed(1, 22, 22), cfg, 0.0); // practice first: a different session kind resets the field
+    const View &q2d = t3.update(make_timed(6, 16, 16), cfg, 1.0);
+    CHECK(q2d.shown == 16);
+    CHECK(q2d.rows[10].ko && q2d.rows[10].ko_line && q2d.rows[15].ko && !q2d.rows[15].elim && !q2d.rows[9].ko);
+    // the same with the whole field listed: Q1's 6 leave the tower
+    Tower t4;
+    CHECK(t4.update(make_timed(6, 22, 22), cfg, 0.0).shown == 16);
+    // a 24-car My Team Q2 with only its 17 listed
+    Tower t5;
+    CHECK(t5.update(make_timed(6, 17, 17), cfg, 0.0).shown == 17);
+    // Q3 with only its 10, or with Q2's 16 listed
+    Tower t6;
+    CHECK(t6.update(make_timed(7, 10, 10), cfg, 0.0).shown == 10);
+    Tower t7;
+    CHECK(t7.update(make_timed(7, 16, 16), cfg, 0.0).shown == 10);
 }
 
 static void test_cards()
@@ -366,6 +384,13 @@ static void test_session_views()
         Tower tip;
         const View &iv = tip.update(pit, pcfg, 1.0);
         CHECK(iv.rows[5].gap == "IN PIT" && iv.rows[5].gap_inpit);
+    }
+    // ... and under the safety car, when the rest of the tower shows the names alone
+    {
+        Tower tsc;
+        const View &scv = tsc.update(demo::make(demo::safety_car, 2.0), cfg, 2.0);
+        CHECK(scv.h.bare && scv.rows[4].gap == "IN PIT" && scv.rows[4].gap_inpit && scv.rows[4].tyre == 0);
+        CHECK(scv.rows[5].gap.empty() && !scv.rows[5].gap_inpit);
     }
     // starting tyres: on the grid every car stands, names and tyre letters, no gaps
     Tower tg;

@@ -514,8 +514,17 @@ private:
             return false;
         int pos = c.pos > 0 ? c.pos : idx + 1;
         int field = std::max(field_, 1);
-        int prev_cut = seg == 2 ? knockout_cut(1, field) : knockout_cut(2, field);
+        int prev_cut = seg == 2 ? q2_entrants() : knockout_cut(2, field);
         return field > prev_cut && pos > prev_cut;
+    }
+
+    // Cars that took part in Q2/SQ2. The game may list the whole field (20, 22 or 24 cars: the ones knocked out in
+    // Q1 leave the tower) or only the cars still in it (15, 16 or 17). A field of 17 or fewer is already Q2's own,
+    // so nobody is cut from it, even when the tower never saw Q1 (Q1 skipped, or the game started at Q2).
+    int q2_entrants() const
+    {
+        int field = std::max(field_, 1);
+        return field <= 17 ? field : knockout_cut(1, field);
     }
 
     // ---- starting grid: the order through the formation lap (or the first frames on lap 0), frozen at the first
@@ -632,7 +641,14 @@ private:
         if (race) {
             r.fl = snap.s.fastest_vid >= 0 && uint32_t(snap.s.fastest_vid) == c.vid;
             if (h.bare) {
-                // names only
+                // names only; under the safety car a car in the pits still shows it (stops are common then)
+                if (snap.s.sc == 1 && !snap.s.red && !h.start_tyres && !snap.s.formation && !retired && c.in_pit &&
+                    c.status != 3) {
+                    r.gap = "IN PIT";
+                    r.gap_inpit = true;
+                    r.tyre = 0;
+                    r.tyre_age.clear();
+                }
             } else if (retired) {
                 r.gap = c.status == 5 ? "DSQ" : c.status == 6 ? "NC" : "Out";
             } else if (snap.s.red) {
@@ -698,7 +714,7 @@ private:
             int seg = knockout_segment(snap.s.type);
             if (seg == 1 || seg == 2) {
                 int cut = knockout_cut(seg, field_);
-                int prev_cut = seg == 2 ? knockout_cut(1, field_) : field_;
+                int prev_cut = seg == 2 ? q2_entrants() : field_;
                 if (pos > prev_cut)
                     r.elim = true;
                 else if (pos > cut && !r.out) {
