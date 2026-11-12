@@ -109,7 +109,8 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] VSC: bloque `VIRTUAL / SAFETY CAR` con escudo FIA; siguen las abreviaturas y los intervalos. Al terminar,
       `VSC / ENDING` 4 s y luego `TRACK CLEAR` verde 4 s.
 - [ ] Safety Car: bloque `SAFETY / CAR`; la torre pasa a apellidos completos, sin diferencias ni neumáticos. Cuando
-      el coche de seguridad entra al pit lane, `SAFETY CAR / IN THIS LAP`; al reanudar, `TRACK CLEAR`.
+      el coche de seguridad entra al pit lane, `SAFETY CAR / IN THIS LAP`; al desactivarse, `SC / ENDING` 4 s y
+      luego `TRACK CLEAR` verde 4 s (igual que el VSC).
 - [ ] Bandera roja: bloque rojo `RED FLAG`, solo nombres.
 - [ ] El escudo FIA del bloque se ve (es una textura del juego; si sale vacío o raro, haz una captura).
 - [ ] Compara con la TV: si FOM lo muestra distinto, manda una captura de la emisión.
