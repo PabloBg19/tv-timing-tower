@@ -1,0 +1,12 @@
+# real logos, official font and anything private: never committed
+assets/private/
+# build outputs
+build/
+dist/
+.tools/
+preview/data/
+*.dll
+*.exe
+*.obj
+*.pdb
+__pycache__/
