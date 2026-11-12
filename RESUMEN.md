@@ -1,5 +1,12 @@
 # Resumen — TV Timing Tower
 
+## 0.7.2 (12-11-2026)
+
+- Fuera el logo de la cadena (DAZN) y la función `overlay` (D57).
+
+---
+
+
 ## 0.7.1 (12-11-2026)
 
 - Final de carrera como en la emisión: sin banda ni tira a cuadros; diferencias en meta y bandera en cada coche

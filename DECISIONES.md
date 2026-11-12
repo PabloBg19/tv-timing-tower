@@ -15,7 +15,7 @@ PC con todos los grupos. Sin hooks propios ni escaneo de memoria propio: no depe
 la build; si Swofty no verifica la build, `live` devuelve vacío, la torre se apaga y vuelve la nativa, y se
 escribe una línea en el log.
 
-**D3 — Overlay solo para el logo de cadena (arriba a la derecha).** Opción `Logo de cadena` (PRIVATE: DAZN,
+**D3 — (quitada en D57) Overlay solo para el logo de cadena (arriba a la derecha).** Opción `Logo de cadena` (PRIVATE: DAZN,
 activado; PUBLIC: no existe). Si el overlay no está disponible se ignora. Requiere `overlay` experimental solo
 en PRIVATE.
 
@@ -334,3 +334,10 @@ la banda y la tira. Se mantienen las diferencias en meta medidas por el addon (D
 blanca fuera de la fila; el amarillo es una investigación. Sustituye al chip amarillo `+5s`, y se usa para tiempo,
 drive-through y stop & go. El amarillo de investigación no se puede hacer porque el juego no expone
 investigaciones.
+
+## 0.7.2
+
+**D57 — Fuera el logo de la cadena.** El logo de DAZN arriba a la derecha quedaba raro y solo tiene sentido en
+España. Se quitan el ajuste *Broadcaster logo*, el dibujo con el overlay, la imagen del paquete y su descarga en
+`fetch_assets.py`. El addon ya no usa la función experimental `overlay`, así que el Addon Browser deja de
+mostrarlo con la etiqueta *Draws over the game*; solo usa `telemetry`.

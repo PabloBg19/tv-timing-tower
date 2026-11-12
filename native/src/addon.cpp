@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // TV Timing Tower for F1 25 (Swofty Launcher). Entry point: settings, the frame callback, the hotkey, demo mode and
-// the optional broadcaster logo. Offline only: no network, no hooks, no writes to game memory.
+// Offline only: no network, no hooks, no writes to game memory.
 #include <atomic>
 #include <cmath>
 #include <cstdio>
@@ -10,7 +10,6 @@
 
 #include <swofty/events.hpp>
 #include <swofty/mixin.hpp>
-#include <swofty/overlay.hpp>
 
 #include "demo.hpp"
 #include "leaves.hpp"
@@ -18,7 +17,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.7.1"
+#define TVT_VERSION "0.7.2"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -41,7 +40,6 @@ SWOFTY_SETTING(bool, in_race, true);
 SWOFTY_SETTING(std::string_view, hotkey, "F8");
 SWOFTY_SETTING(bool, demo, false);
 SWOFTY_SETTING(std::string_view, demo_scenario, "cycle");
-SWOFTY_SETTING(bool, broadcaster_logo, true);
 SWOFTY_SETTING(bool, debug_log, false);
 
 namespace {
@@ -112,7 +110,7 @@ bool game_in_front()
     return pid == GetCurrentProcessId();
 }
 
-// The addon's own folder (one up from native/), for the icon list and the broadcaster logo.
+// The addon's own folder (one up from native/), for the team icon list.
 std::string addon_dir()
 {
     HMODULE self = nullptr;
@@ -163,7 +161,7 @@ const char *why_name(tvt::LiveSource::Why w)
 // frame callback reads them four times a second, not every frame.
 struct Settings {
     tvt::Config cfg;
-    bool enabled = true, demo = false, debug = false, anim = true, bcast = true;
+    bool enabled = true, demo = false, debug = false, anim = true;
     int vk = 0;
     int scenario = -1;
 };
@@ -176,7 +174,6 @@ Settings load_settings()
     s.demo = demo;
     s.debug = debug_log;
     s.anim = animations;
-    s.bcast = broadcaster_logo;
     s.vk = vk_from_name(std::string_view(hotkey));
     s.scenario = scenario_from_setting();
     return s;
@@ -205,9 +202,6 @@ struct State {
 };
 
 State *g = nullptr;
-std::atomic<bool> g_tower_visible{false};
-std::atomic<bool> g_bcast_on{true};
-bool g_logo_loaded = false;
 
 // The tower's data is read, modelled and published 30 times a second: smoother than the board needs, and the
 // game's own HUD refreshes its values at that order. The hotkey is polled every frame.
@@ -250,7 +244,6 @@ void frame(double dt, void *)
     if (g->now >= g->next_settings) {
         g->set = load_settings();
         g->next_settings = g->now + 0.25;
-        g_bcast_on = g->set.bcast;
     }
     handle_keys();
     g->acc += dt;
@@ -319,7 +312,6 @@ void frame(double dt, void *)
     if (show != g->was_on && g->set.debug)
         swofty::log("%s tower %s", kTag, show ? "on" : "off");
     g->was_on = show;
-    g_tower_visible = show;
 
     QueryPerformanceCounter(&t1);
     double us = double(t1.QuadPart - t0.QuadPart) * 1e6 / double(f.QuadPart);
@@ -334,22 +326,6 @@ void frame(double dt, void *)
         g->cost_n = 1;
         g->next_cost_log = g->now + 60;
     }
-}
-
-// The broadcaster's logo in the top right corner, as on TV.
-void paint(SwoftyPaint *p, void *)
-{
-    if (!g_logo_loaded || !g_bcast_on || !g_tower_visible)
-        return;
-    namespace ov = swofty::overlay;
-    float iw = 0, ih = 0;
-    if (ov::image_size("tvt_bcast", &iw, &ih) != ov::Result::ok || iw <= 0 || ih <= 0)
-        return;
-    float s = ov::ui_scale(p);
-    ov::Rect safe = ov::safe_area(p);
-    float h = 30.f * s;
-    float w = h * iw / ih;
-    ov::image(p, "tvt_bcast", safe.x + safe.w - w, safe.y, w, h, 0xffffffe6);
 }
 
 } // namespace
@@ -379,17 +355,6 @@ SWOFTY_ON_LOAD
     if (r != swofty::events::Result::ok)
         swofty::log("%s could not register the frame callback (%d): the tower stays off", kTag, int(r));
 
-    namespace ov = swofty::overlay;
-    std::string logo = dir + "/overlay/broadcaster.png";
-    FILE *lf = dir.empty() ? nullptr : std::fopen(logo.c_str(), "rb");
-    if (lf)
-        std::fclose(lf);
-    if (lf && ov::available()) {
-        if (ov::load_image("tvt_bcast", "overlay/broadcaster.png") == ov::Result::ok) {
-            g_logo_loaded = true;
-            ov::on_paint(paint);
-        }
-    }
 }
 
 SWOFTY_ADDON()

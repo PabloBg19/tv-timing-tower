@@ -57,8 +57,7 @@ TV_TEAMS = {  # our name -> (year, slug, variant, tint)
 }
 COMMONS = {"f1": ["File:F1.svg", "File:F1 logo.svg"],
            "fia_black": ["File:FIA logo (black).png"],
-           "fia_white": ["File:FIA logo (white).png"],
-           "broadcaster": ["File:DAZN logo.svg", "File:DAZN Logo.svg", "File:DAZN 1 Logo.svg"]}
+           "fia_white": ["File:FIA logo (white).png"]}
 
 
 def get(url):

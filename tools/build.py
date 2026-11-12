@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.7.1"
+VERSION = "0.7.2"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
@@ -158,9 +158,6 @@ OPTIONS = [
                  ("gained", "Ganadas/perdidas", "Gained/lost"), ("grid", "Parrilla (neumáticos de salida)", "Grid (starting tyres)"),
                  ("tyres", "Vista de neumáticos", "Tyres view")],
       "default": "cycle"}),
-    ("broadcaster_logo", "toggle", "Logo de la cadena", "Broadcaster logo",
-     "Logo de la cadena arriba a la derecha mientras se ve la torre.",
-     "The broadcaster's logo in the top right while the tower shows.", {"default": True, "private": True}),
     ("debug_log", "toggle", "Log detallado", "Verbose log",
      "Escribe en swofty/loader.log el coste de cada actualización y los cambios de estado.",
      "Writes the update cost and state changes to swofty/loader.log.", {"default": False}),
@@ -188,8 +185,6 @@ def manifest(flavour):
                 sys.exit(f"setting {oid}: {key} is {len(o[key].encode())} bytes (Swofty's limit is 255)")
         opts.append(o)
     files = ["native/tvt_logos.txt"]
-    if flavour == "private":
-        files.append("overlay")
     desc_es = ("Torre de tiempos estilo retransmisión F1 TV/DAZN dibujada con el propio HUD del juego, en lugar del "
                "tablero de posiciones. Solo offline: lee el estado en vivo desde la memoria del juego (sin UDP), "
                "sin conexiones de red ni nada relacionado con el online o el antitrampas.")
@@ -207,7 +202,7 @@ def manifest(flavour):
         "icon": "icon.png",
         "category": "utility",
         "kind": ["ui", "native"],
-        "experimental_features": ["telemetry", "overlay"],
+        "experimental_features": ["telemetry"],
         "compat": {"game": "f1_25", "game_builds": [">=25251167"], "launcher": ">=1.9.0",
                    "seasons": ["f1_2026"], "platforms": ["steam"]},
         "requires": [{"id": "swofty.core", "version": ">=0.1.0"}],
@@ -249,13 +244,6 @@ def build_flavour(flavour, dll_path, logos):
     shutil.copy2(dll_path, stage / "native" / DLL)
     found = [hudgen.TEAMS.index(t) for t in layout.get("logos", [])]
     (stage / "native" / "tvt_logos.txt").write_text(" ".join(str(i) for i in found) + "\n")
-    if flavour == "private":
-        (stage / "overlay").mkdir(exist_ok=True)
-        bc = logos / "broadcaster.png"
-        if bc.exists():
-            shutil.copy2(bc, stage / "overlay" / "broadcaster.png")
-        else:
-            (stage / "overlay" / "README.txt").write_text("Put broadcaster.png here (white logo, transparent).\n")
     make_icon(stage / "icon.png")
     (stage / "swofty.json").write_text(json.dumps(manifest(flavour), indent=2, ensure_ascii=False) + "\n",
                                        encoding="utf-8")
@@ -354,8 +342,7 @@ def preview_assets(stage, layout):
         for t in hudgen.TEAMS:
             if (logos / f"{t}.png").exists():
                 shutil.copy2(logos / f"{t}.png", dst / f"{t}.png")
-        if (logos / "broadcaster.png").exists():
-            shutil.copy2(logos / "broadcaster.png", data / "broadcaster.png")
+
 
 
 def main():

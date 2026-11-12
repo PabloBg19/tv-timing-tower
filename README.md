@@ -69,7 +69,6 @@ paquete solo en español.
 | In practice / qualifying / sprint qualifying / races | Sí | Por tipo de sesión |
 | Show/hide key | F8 | F8 muestra u oculta · **Ctrl+F8** demo · **Mayús+F8** siguiente escenario |
 | Demo mode · Demo scenario | No · Cycle | Datos simulados |
-| Broadcaster logo | Sí | Logo de la cadena arriba a la derecha |
 | Verbose log | No | Coste por actualización y cambios de estado en el log |
 
 La escala, la posición y la opacidad se cambian en el editor de HUD del juego (Ajustes → HUD → Personalizar).
