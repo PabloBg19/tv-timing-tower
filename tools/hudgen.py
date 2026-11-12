@@ -101,7 +101,7 @@ LAYOUT = {
         "gap": "#F2F2F4",
         "label": "#BDBAC4",
         "lapword": "#D4D3DA",
-        "inpit": "#E8303A",
+        "inpit": "#5ED6B4",       # mint, as on the 2026 feed
         "sc": "#ECD024",
         "red": "#E10600",
         "clear": "#1E9E3E",
@@ -306,7 +306,13 @@ def vm(name, neg=False, default=None):
     return b
 
 
+# Measured in game (0.4.1 screenshots): the game draws a text's capitals 0.45 cap heights lower than the
+# composer's baseline. Every text of the record is raised by that much (the HTML preview draws true baselines).
+GAME_TEXT_DY = 0.45
+
+
 def text(id_, style, align, box, cap, at, value=None, literal=None, colour=None, visible=None, wrap=None, case=None):
+    at = [at[0], round(at[1] - GAME_TEXT_DY * cap, 3)]
     e = {"kind": "text", "id": id_, "style": style, "align": align, "box": box, "cap_height": cap, "at": at}
     if value is not None:
         e["value"] = value
@@ -373,18 +379,25 @@ def header(flavour, sprites):
     y = L["lap_base"]
     lw = L["cap_lapword"]
     ln = L["cap_lapnum"]
-    # "LAP 26 / 71": the game's own centring (eCentre) centres the whole line; the number is centred on its anchor
-    race = group("race", [
-        {"kind": "centre", "id": "lc", "at": [W / 2, y], "children": [
-            text("lw", "OSD_19_regular", "right", u(30), lw, [-u(13.0), 0], literal="LAP", colour=C["lapword"] + "ff"),
-            text("ln", "OSD_24_bold", "centre", u(26), ln, [0, 0], value=vm("lap")),
-            text("ls", "OSD_19_regular", "left", u(8), lw, [u(13.0), 0], literal="/", colour=C["lapword"] + "ff"),
-            group("lt", [text("ltn", "OSD_19_regular", "left", u(24), lw, [u(19.0), 0],
-                              value={"path": "#session.number_of_laps", "ty": "si32"}, colour=C["lapword"] + "ff")],
-                  visible=vm("demo", True, True)),
-            group("ltd", [text("ltdn", "OSD_19_regular", "left", u(24), lw, [u(19.0), 0], value=vm("dlaps"),
-                               colour=C["lapword"] + "ff")], visible=vm("demo")),
-        ]}], visible=vm("race"))
+    # "LAP 26 / 71": one line per digit count of the lap (ld1..ld3), so "LAP", the number and "/ 71" keep the
+    # broadcast's spacing; the game's own centring (eCentre) centres the whole line
+    digit = u(7.4)            # one bold digit at the lap number's size
+    def lap_line(nd):
+        wn = digit * nd
+        x_num = u(6.0)
+        x_sl = x_num + wn + u(3.0)
+        x_tot = x_sl + u(6.5)
+        return group(f"ld{nd}", [{"kind": "centre", "id": f"lc{nd}", "at": [W / 2, y], "children": [
+            text(f"lw{nd}", "OSD_19_regular", "right", u(30), lw, [0, 0], literal="LAP", colour=C["lapword"] + "ff"),
+            text(f"ln{nd}", "OSD_24_bold", "left", u(30), ln, [x_num, 0], value=vm("lap")),
+            text(f"ls{nd}", "OSD_19_regular", "left", u(8), lw, [x_sl, 0], literal="/", colour=C["lapword"] + "ff"),
+            group(f"lt{nd}", [text(f"ltn{nd}", "OSD_19_regular", "left", u(24), lw, [x_tot, 0],
+                                   value={"path": "#session.number_of_laps", "ty": "si32"},
+                                   colour=C["lapword"] + "ff")], visible=vm("demo", True, True)),
+            group(f"ltd{nd}", [text(f"ltdn{nd}", "OSD_19_regular", "left", u(24), lw, [x_tot, 0], value=vm("dlaps"),
+                                    colour=C["lapword"] + "ff")], visible=vm("demo")),
+        ]}], visible=vm(f"ld{nd}"))
+    race = group("race", [lap_line(1), lap_line(2), lap_line(3)], visible=vm("race"))
     timed = group("timed", [
         {"kind": "centre", "id": "tc", "at": [W / 2, y], "children": [
             text("sess", "OSD_24_bold", "right", u(60), ln, [-u(3.0), 0], value=vm("sess")),
@@ -485,7 +498,7 @@ def row(flavour, logos_found):
                   colour=C["green"] + "ff", visible=vm(r + "gpg")))
     k.append(text("gl", "OSD_24_regular", "right", L["gap_box"], L["cap_label"], [gx, ty], value=vm(r + "gap"),
                   colour=C["label"] + "ff", visible=vm(r + "glb"), case="none"))
-    k.append(text("gi", "OSD_24_bold", "right", L["gap_box"], L["cap_label"], [gx, ty], value=vm(r + "gap"),
+    k.append(text("gi", "OSD_24_bold", "right", L["gap_box"], u(6.6), [gx, ty], value=vm(r + "gap"),
                   colour=C["inpit"] + "ff", visible=vm(r + "gip")))
 
     # places gained / lost: the mark, then the white number (the gap text)
@@ -514,7 +527,13 @@ def row(flavour, logos_found):
     ]}
     k.append(side)
     k.append(sprite("dim", "dim", 45, visible=vm(r + "dim")))
-    return group("r", k, visible=vm(r + "on"), repeat={"count": ROWS, "var": "N", "pitch": [0, R]})
+    # a change of car on the row: the content fades out, the DLL swaps it while hidden, and it fades back in
+    # (rNN_fx false -> true). The background stays. Off with the Animations setting.
+    bg, content = k[:3], k[3:]
+    rc = group("rc", content)
+    rc["motion"] = {"id": "fx", "keys": [[0, 0.0], [0.16, 1.0]], "curve": "generic_fade_on",
+                    "play_on": vm(r + "fx")}
+    return group("r", bg + [rc], visible=vm(r + "on"), repeat={"count": ROWS, "var": "N", "pitch": [0, R]})
 
 
 def preview_leaves():
@@ -569,7 +588,9 @@ def record(flavour, sprites, logos_found):
         # replays and the spectator screen: off (not testable here; see DECISIONES.md D17)
         "sprites": sprites,
         "elements": elements,
-        "clock": {"output": P + "clock", "start": vm("clk")},
+        # as Project Halo's tower (seen in game): the DLL keeps the clock leaf registered ("" while not timed) so
+        # the node exists, and the clone of the game's formatter writes the time into it from `timed`
+        "clock": {"output": P + "clock", "start": vm("timed")},
         "stock_nodes": [
             {"template": "hud_lap_counter.osd_visibility_option",
              "scene": "eaid://ui_package/art/osd/components/lap_counter/lap_counter.idf",

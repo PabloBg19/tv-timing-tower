@@ -349,9 +349,25 @@ static void test_leaves_and_record()
     pp.publish(ti.update(demo::make(demo::race, 1.0), cfg, 1.0), cfg);
     CHECK(core.number("view_model_data.hud_tvt_r00_tm00") == 1 && core.number("view_model_data.hud_tvt_r00_bdg") == 0);
     CHECK(core.number("view_model_data.hud_tvt_r01_tm00") == 0 && core.number("view_model_data.hud_tvt_r01_bdg") == 1);
-    pub.clock_pulse(true);
-    pub.L.flush();
-    CHECK(core.number("view_model_data.hud_tvt_clk") == 1);
+    // the clock leaf exists (written "" once); the game's formatter owns it afterwards
+    CHECK(core.text("view_model_data.hud_tvt_clock").empty());
+    // row change fade: the old car stays while the row fades out, then the new one comes in
+    Publisher pf;
+    Tower ta;
+    Snapshot a0 = demo::make(demo::race, 1.0);
+    a0.s.demo = false;
+    pf.publish(ta.update(a0, cfg, 1.0), cfg, 1.0, true);
+    int v0 = ta.view().rows[5].vid;
+    std::snprintf(k, sizeof k, "view_model_data.hud_tvt_r05_c%02d", v0);
+    CHECK(core.number(k) == 1 && core.number("view_model_data.hud_tvt_r05_fx") == 1);
+    Snapshot a1 = demo::make(demo::race, 7.0); // P6 and P7 swapped
+    a1.s.demo = false;
+    pf.publish(ta.update(a1, cfg, 1.05), cfg, 1.05, true);
+    CHECK(core.number("view_model_data.hud_tvt_r05_fx") == 0 && core.number(k) == 1); // fading out, old car
+    pf.publish(ta.update(a1, cfg, 1.4), cfg, 1.4, true);
+    CHECK(core.number("view_model_data.hud_tvt_r05_fx") == 1 && core.number(k) == 0); // swapped, fading in
+    // race lap 1: intervals show (names only under the safety car / red flag)
+    CHECK(core.number("view_model_data.hud_tvt_ld2") == 1 || core.number("view_model_data.hud_tvt_ld1") == 1);
 
     // every leaf the record binds must be declared, with the record's {NN}/{VV} expanded
     std::set<std::string> declared;

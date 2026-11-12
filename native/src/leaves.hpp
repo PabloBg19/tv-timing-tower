@@ -23,7 +23,7 @@ struct RowLeaves {
     hud::TextLeaf tage;
     hud::BoolLeaf tag, pit, pen;
     hud::TextLeaf pent;
-    hud::BoolLeaf fl, chq, gu, gd, g0;
+    hud::BoolLeaf fl, chq, gu, gd, g0, fx;
     hud::TextLeaf nm, badge;
     hud::BoolLeaf bdg;
     hud::OneHot tm, car;
@@ -56,7 +56,9 @@ public:
         c_clear = L.boolean("c_clear");
         c_yel = L.boolean("c_yel");
         ysec = L.text("ysec", 24);
-        clk = L.boolean("clk");
+        clock = L.text("clock", 16);   // written once as "" so the node exists; the game's formatter fills it
+        L.set(clock, "");
+        ld = L.one_hot("ld", 3, 0, 1); // ld1..ld3: digits of the lap number
         sprint = L.boolean("sprint");
         gained = L.boolean("gained");
         rows = L.rows<RowLeaves>("r", kRows, 2, [](hud::Leaves &l, int) {
@@ -95,6 +97,7 @@ public:
             r.gu = l.boolean("gu");
             r.gd = l.boolean("gd");
             r.g0 = l.boolean("g0");
+            r.fx = l.boolean("fx");
             r.tm = l.one_hot("tm", kTeams, 2);
             r.car = l.one_hot("c", kSlots, 2);
             return r;
@@ -110,14 +113,8 @@ public:
         L.flush();
     }
 
-    // The game re-formats the session clock each time `clk` goes from false to true (the record's clock start), so
-    // the caller pulses it a few times a second while a timed session shows.
-    void clock_pulse(bool on)
-    {
-        L.set(clk, on);
-    }
-
-    void publish(const View &v, const Config &cfg)
+    // now: seconds (the row change fade's timing). anim: fade a row out and in when its car changes.
+    void publish(const View &v, const Config &cfg, double now = 0, bool anim = false)
     {
         const Header &h = v.h;
         L.set(show, h.on);
@@ -130,6 +127,7 @@ public:
         L.set(bg, cfg.bg < 0 || cfg.bg > 2 ? 1 : cfg.bg);
         L.set(sess, h.sess);
         L.set(lap, h.lap);
+        L.set(ld, h.lap.size() >= 3 ? 2 : h.lap.size() == 2 ? 1 : 0);
         L.set(dlaps, h.laps_total);
         L.set(dclk, h.clock);
         L.set(c_chq, h.card == card_chq);
@@ -149,6 +147,23 @@ public:
             RowLeaves &x = rows[i];
             hud::Leaves::Atomic group(L);
             L.set(x.on, r.on);
+            if (r.on && anim && was_on_[i] && shown_vid_[i] != r.vid) {
+                // a new car on this row: fade the old content out, keep it for kFadeHold, then swap and fade in
+                if (hold_until_[i] <= 0) {
+                    L.set(x.fx, false);
+                    hold_until_[i] = now + kFadeHold;
+                    continue;
+                }
+                if (now < hold_until_[i])
+                    continue;
+            }
+            hold_until_[i] = 0;
+            was_on_[i] = r.on;
+            if (r.on) {
+                shown_vid_[i] = r.vid;
+                if (anim)
+                    L.set(x.fx, true);
+            }
             if (!r.on) {
                 // The per-car name slots keep their value while the row is hidden: the game does not apply a
                 // visibility change under a hidden node, so a slot cleared now could show again with the row
@@ -207,10 +222,24 @@ public:
     hud::TextLeaf sess, lap, dlaps, dclk;
     hud::BoolLeaf c_chq, c_red, c_scend, c_sc, c_vsc, c_vscend, c_clear, c_yel;
     hud::TextLeaf ysec;
-    hud::BoolLeaf clk, gained, sprint;
+    hud::TextLeaf clock;
+    hud::OneHot ld;
+    hud::BoolLeaf gained, sprint;
     hud::Leaves::Rows<RowLeaves> rows;
 
+    static constexpr double kFadeHold = 0.22; // the row's fade out (generic_fade_on) before the swap
+
 private:
+    std::array<int, kRows> shown_vid_ = filled(-1);
+    std::array<bool, kRows> was_on_{};
+    std::array<double, kRows> hold_until_{};
+    static std::array<int, kRows> filled(int v)
+    {
+        std::array<int, kRows> a{};
+        a.fill(v);
+        return a;
+    }
+
     bool has_team(int t) const
     {
         for (int x : teams_)

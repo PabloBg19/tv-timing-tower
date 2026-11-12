@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.4.1"
+VERSION = "0.5.0"
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
 
@@ -127,6 +127,9 @@ OPTIONS = [
      "The game's own colour badges (they follow logo mods), or the white HUD ones.",
      {"values": [("tv", "TV", "TV"), ("game", "Juego", "Game"), ("game_white", "Juego blanco", "Game white")],
       "default": "tv", "public_values": ["game", "game_white"], "public_default": "game"}),
+    ("animations", "toggle", "Animaciones", "Animations",
+     "Al cambiar el coche de una fila (adelantamientos), la fila se desvanece y vuelve con el nuevo coche.",
+     "When a row's car changes (overtakes), the row fades out and back in with the new car.", {"default": True}),
     ("team_bar", "toggle", "Barra de color de equipo", "Team colour bar",
      "Una fina barra con el color del equipo junto al nombre.", "A thin team colour bar beside the name.",
      {"default": False}),

@@ -357,7 +357,7 @@ public:
             h.gained = gained_mode(cfg, snap, now);
             // TV: lap 1, the safety car and the red flag show the names alone
             h.bare = cfg.gap == Config::Gap::autoswitch && !h.gained && !s.chequered &&
-                     (s.sc == 1 || s.red || lead.lap == 0);
+                     (s.sc == 1 || s.red);
             if (h.bare || h.gained)
                 h.lead = false;
         }
@@ -606,8 +606,10 @@ private:
             } else if (snap.s.red) {
                 r.gap = ""; // red flag: the field waits in the pit lane, no live gaps
             } else if (c.in_pit && c.status != 3) {
-                r.gap = "IN PIT";
+                r.gap = "IN PIT";        // spans the data and tyre columns, as on the broadcast
                 r.gap_inpit = true;
+                r.tyre = 0;
+                r.tyre_age.clear();
             } else if (idx == 0) {
                 r.gap = lead ? "Leader" : "Interval";
                 r.gap_label = true;

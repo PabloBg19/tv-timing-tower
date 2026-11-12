@@ -1,5 +1,17 @@
 # Resumen — TV Timing Tower
 
+## 0.5.0 (12-11-2026)
+
+- Texto alineado con logos y cajas (D38).
+- Reloj de sesión según el método de Halo (D39).
+- Intervalos desde la vuelta 1, `IN PIT` en menta, `LAP n / N` bien espaciado (D40).
+- Fundido de filas en los adelantamientos (D41).
+- Verificado: tests, compose y build de perfil completo de los dos paquetes.
+- Sin ver en el juego: el reloj, el fundido y la corrección vertical.
+
+---
+
+
 ## 0.4.1 (12-11-2026)
 
 - Arreglo del error al pulsar Jugar con la 0.4.0 (`os error 3`): los sprites desde textura del juego rompían el

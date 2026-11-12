@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.4.1"
+#define TVT_VERSION "0.5.0"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -31,6 +31,7 @@ SWOFTY_SETTING(bool, tyre_age, false);
 SWOFTY_SETTING(std::string_view, background, "broadcast");
 SWOFTY_SETTING(bool, arrows, true);
 SWOFTY_SETTING(bool, team_bar, false);
+SWOFTY_SETTING(bool, animations, true);
 SWOFTY_SETTING(std::string_view, logos, "tv");
 SWOFTY_SETTING(bool, highlight, true);
 SWOFTY_SETTING(bool, in_practice, true);
@@ -263,9 +264,7 @@ void frame(double dt, void *)
         const tvt::View &v = g->tower.update(snap, cfg, g->now);
         show = v.h.on;
         if (show) {
-            // the game's session clock re-formats on every rising edge: 4 a second keeps the seconds exact
-            g->pub->clock_pulse(v.h.timed && !v.h.demo && std::fmod(g->now, 0.25) < 0.125);
-            g->pub->publish(v, cfg);
+            g->pub->publish(v, cfg, g->now, animations);
         }
     }
     if (!show && g->was_on)

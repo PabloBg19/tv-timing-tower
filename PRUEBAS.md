@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.4.1
+# Checklist de pruebas en el juego — TV Timing Tower 0.5.0
 
 Antes de empezar: instala `dist/tv-timing-tower-PRIVATE.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.4.1 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.5.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -65,6 +65,13 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
 - [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
+
+## 4b. Novedades 0.5.0
+- [ ] En cada fila, el nombre, el número, el logo y el neumático están a la misma altura.
+- [ ] Clasificación y libres: el tiempo restante de la sesión aparece junto a `Q1` / `P1` y cuenta hacia atrás.
+- [ ] Carrera: intervalos desde la vuelta 1. Un coche en boxes: `IN PIT` en verde menta, sin neumático.
+- [ ] Adelantamiento: las dos filas se desvanecen y vuelven con el orden nuevo, con los triángulos verde y rojo.
+      Si las filas desaparecen y no vuelven, pon *Animaciones* = No y avísame.
 
 ## 5. Estados de carrera (usa SC/VSC en "Frecuente" o provoca un accidente)
 - [ ] Bandera amarilla: bloque amarillo con escudo FIA, `YELLOW FLAG` / `SECTOR 2`.

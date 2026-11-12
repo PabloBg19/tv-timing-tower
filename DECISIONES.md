@@ -215,3 +215,31 @@ Cambios:
 
 En tu instalación faltaba además `swofty.json` en la carpeta del addon, tras el fallo. Al reinstalar con
 `swofty addons install` quedó completa, y `swofty build` del perfil `default` terminó bien.
+
+## 0.5.0 (segunda prueba en el juego, 12-11-2026)
+
+**D38 — Corrección vertical del texto.** En las capturas del juego, las mayúsculas salían 7 px más abajo de lo
+calculado en una fila de 42 px (unas 2,9 unidades, 0,45 alturas de mayúscula): por eso los nombres quedaban por
+debajo de los logos y de la caja de P1. Ahora todos los textos del registro suben 0,45 × su altura de mayúscula
+(`GAME_TEXT_DY` en `hudgen.py`). El visor HTML dibuja la línea base real.
+
+**D39 — Reloj de la sesión, como Project Halo.** El DLL registra la hoja `hud_tvt_clock` y la escribe una vez
+vacía, para que exista el nodo donde el formateador clonado del juego escribe el tiempo. El arranque vuelve a ser
+`timed`, como en Halo, que funciona en el juego. Se quita el pulso de la 0.2.
+
+**D40 — Intervalos desde la vuelta 1.** Solo el Safety Car y la bandera roja muestran solo nombres; antes también
+la vuelta 1. `IN PIT` va en verde menta (#5ED6B4, muestreado de la captura de la vuelta 15/66) y ocupa también la
+columna del neumático. `LAP 1 / 5` tiene tres variantes según los dígitos de la vuelta (`ld1`..`ld3`), para que el
+espaciado sea el de la emisión.
+
+**D41 — Animación de adelantamientos: fundido.** En el vídeo de la emisión las dos filas se cruzan deslizándose en
+unos 0,3 s, con un triángulo verde en el coche que sube y uno rojo en el que baja. El `motion` del compositor de
+Swofty reproduce la animación al revés cuando la hoja vuelve a falso, así que un deslizamiento que vuelva a reposo
+sin salto no se puede hacer. Lo más cercano y limpio es un fundido: la fila se apaga (0,22 s) con el coche antiguo,
+el DLL cambia el coche con la fila oculta y la fila vuelve a aparecer con el nuevo. Los triángulos se mantienen.
+Swofty avisa de que los disparadores de `motion` sobre hojas propias no se han visto aún en el juego. Si no
+funcionara, el ajuste *Animaciones* = No deja el cambio inmediato.
+
+**D42 — Tipografía.** El juego no carga fuentes externas en el HUD; los estilos `OSD_*` ya son la familia F1 del
+propio juego (misma proporción que la emisión, D36). La única forma de usar el archivo de la fuente oficial sería
+sustituir la fuente del juego entero, fuera del alcance de este addon.
