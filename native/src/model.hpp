@@ -340,6 +340,7 @@ public:
         best_flash(snap, kind, now);
         fastest_flash(snap, kind, now);
 
+        remember(snap, now);
         std::vector<int> pick = pick_rows(snap, cfg);
         int prev_idx = -1;
         int slot = 0;
@@ -353,7 +354,6 @@ public:
             slot++;
         }
         v.shown = slot;
-        remember(snap, now);
         return v;
     }
 
