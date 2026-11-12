@@ -24,10 +24,10 @@ static void row_json(FILE *f, const Row &r, const CarIn *car)
 {
     std::fprintf(f,
                  "{\"vid\":%d,\"pos\":\"%s\",\"p1\":%d,\"up\":%d,\"dn\":%d,\"gap\":\"%s\",\"purple\":%d,\"green\":%d,"
-                 "\"label\":%d,\"tyre\":\"%s\",\"age\":\"%s\",\"pit\":%d,\"pen\":\"%s\",\"fl\":%d,\"chq\":%d,"
+                 "\"label\":%d,\"inpit\":%d,\"tyre\":\"%s\",\"age\":\"%s\",\"pit\":%d,\"pen\":\"%s\",\"fl\":%d,\"chq\":%d,"
                  "\"out\":%d,\"ko\":%d,\"kol\":%d,\"elim\":%d,\"sep\":%d,\"me\":%d,\"gain\":%d,\"gon\":%d,\"team\":%d,\"name\":\"%s\","
                  "\"code\":\"%s\"}",
-                 r.vid, r.pos.c_str(), r.p1, r.up, r.dn, esc(r.gap).c_str(), r.gap_purple, r.gap_green, r.gap_label,
+                 r.vid, r.pos.c_str(), r.p1, r.up, r.dn, esc(r.gap).c_str(), r.gap_purple, r.gap_green, r.gap_label, r.gap_inpit,
                  r.tyre ? std::string(1, r.tyre).c_str() : "", r.tyre_age.c_str(), r.pit,
                  r.pen ? esc(r.pen_text).c_str() : "", r.fl, r.chq, r.out, r.ko, r.ko_line, r.elim, r.sep, r.me,
                  r.gain, r.gain_on, r.team, car ? car->name.c_str() : "", car ? car->code.c_str() : "");

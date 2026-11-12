@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
 
@@ -121,10 +121,12 @@ OPTIONS = [
     ("arrows", "toggle", "Flechas de posición", "Position arrows",
      "Flecha verde o roja durante 3 s cuando un coche gana o pierde posiciones.",
      "A green or red arrow for 3 s when a car gains or loses places.", {"default": True}),
-    ("logo_colour", "toggle", "Logos de equipo en color", "Team logos in colour",
-     "Los escudos de la retransmisión del propio juego, en color (y los de cualquier mod de logos). No: los blancos del HUD.",
-     "The game's own broadcast badges, in colour (and those of any logo mod). Off: the white HUD ones.",
-     {"default": True}),
+    ("logos", "choice", "Logos de equipo", "Team logos",
+     "TV: los iconos de la retransmisión 2026 (solo build personal). Juego: los escudos en color del propio juego "
+     "(siguen a los mods de logos). Juego blanco: los del HUD del juego.",
+     "The game's own colour badges (they follow logo mods), or the white HUD ones.",
+     {"values": [("tv", "TV", "TV"), ("game", "Juego", "Game"), ("game_white", "Juego blanco", "Game white")],
+      "default": "tv", "public_values": ["game", "game_white"], "public_default": "game"}),
     ("team_bar", "toggle", "Barra de color de equipo", "Team colour bar",
      "Una fina barra con el color del equipo junto al nombre.", "A thin team colour bar beside the name.",
      {"default": False}),
@@ -171,12 +173,16 @@ def manifest(flavour):
     for oid, typ, les, len_, des, den, extra in OPTIONS:
         if extra.get("private") and flavour != "private":
             continue
+        default = extra["default"] if es else extra.get("public_default", extra["default"])
         o = {"id": oid, "type": typ, "label": les if es else len_, "description": des if es else den,
-             "default": extra["default"], "binds": "native"}
+             "default": default, "binds": "native"}
         if typ == "choice":
-            o["values"] = [{"value": v, "label": a if es else b} for v, a, b in extra["values"]]
+            vals = extra["values"]
+            if not es and "public_values" in extra:
+                vals = [v for v in vals if v[0] in extra["public_values"]]
+            o["values"] = [{"value": v, "label": a if es else b} for v, a, b in vals]
         opts.append(o)
-    files = []
+    files = ["native/tvt_logos.txt"]
     if flavour == "private":
         files.append("overlay")
     desc_es = ("Torre de tiempos estilo retransmisión F1 TV/DAZN dibujada con el propio HUD del juego, en lugar del "
@@ -237,6 +243,8 @@ def build_flavour(flavour, dll_path, logos):
     layout = json.loads((stage / "layout.json").read_text())
     (stage / "native").mkdir(exist_ok=True)
     shutil.copy2(dll_path, stage / "native" / DLL)
+    found = [hudgen.TEAMS.index(t) for t in layout.get("logos", [])]
+    (stage / "native" / "tvt_logos.txt").write_text(" ".join(str(i) for i in found) + "\n")
     if flavour == "private":
         (stage / "overlay").mkdir(exist_ok=True)
         bc = logos / "broadcaster.png"

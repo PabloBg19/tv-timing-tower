@@ -152,3 +152,22 @@ Referencias: la captura aportada (Hungría 2025, FP1), coberturas públicas
 - **Reloj**: el formateador clonado (`clock_fmt`) se dispara con el flanco 0→1 de su hoja `start`.
 - **Visibilidad**: el log de la prueba no mostró escrituras perdidas (las hojas de Swofty no descartan nada), así
   que los dos apellidos en una fila se atribuyen al motor de UI (cambio bajo un nodo oculto, D27).
+
+## 6. Medidas de la torre 2026 (0.4.0)
+
+Fuente: cinco capturas de la emisión 2026 aportadas por Pablo (vueltas 8/71, 26/71 con VSC, 4/55, 10/55 con SC y
+sprint 2/24 con GAINED / LOST). Método: ampliación 4x con rejilla cada 10 px, perfiles de luminancia por columna y
+detección de color de la caja de P1 y de los bloques amarillos. Los valores están en `REF` (`tools/hudgen.py`) y su
+justificación en DECISIONES.md D33.
+
+Hallazgos que cambian el diseño:
+- Las filas se comprimen cuando hay un bloque de bandera (21,5 px → 19,2 px).
+- En carrera, un coche en boxes muestra `IN PIT` en rojo.
+- En el sprint, la cabecera lleva el logotipo SPRINT en lugar del lockup de la FIA, y `GAINED / LOST` va dentro de
+  la banda oscura de `LAP`.
+- Colores de los iconos de equipo en la emisión: Mercedes, Aston Martin, Williams, Racing Bulls y Cadillac en
+  blanco; Audi en rojo; el resto, en su color.
+
+Recursos descargados (solo PRIVATE, en `assets/private/logos`, fuera de git):
+- Iconos `2026<equipo>logo.webp` y `…logowhite.webp` de formula1.com.
+- `FIA logo (black).png` y `FIA logo (white).png` de Wikimedia Commons.

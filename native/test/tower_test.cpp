@@ -254,10 +254,10 @@ static void test_live_adapter()
     Config cfg;
     cfg.gap = Config::Gap::interval;
     const View &v = t.update(snap, cfg, 0.0);
-    CHECK(v.rows[1].gap == "+1.2" && v.rows[2].gap == "PIT" && v.rows[1].me && v.h.lap == "5");
+    CHECK(v.rows[1].gap == "+1.2" && v.rows[2].gap == "IN PIT" && v.rows[2].gap_inpit && v.rows[1].me && v.h.lap == "5");
     CHECK(v.rows[0].team == 1);
     CHECK(v.rows[0].badge == "#overrides.osd.timing_tower.team_badges_broadcast.ferrari_2026");
-    cfg.logo_colour = false;
+    cfg.logos = Config::Logos::game_white;
     CHECK(t.update(snap, cfg, 0.1).rows[0].badge == "#overrides.osd.timing_tower.team_badges_hud.ferrari_2026");
 
     fake.session().type = 18; // Time Trial: the game's own board
@@ -343,6 +343,12 @@ static void test_leaves_and_record()
         c.lap = 1;
     const View &lg = tl2.update(gs, cfg, 0.3);
     CHECK(lg.h.gained && lg.rows[0].gain == 1 && lg.rows[1].gain == -1);
+    // private build: the broadcast icon (one-hot) replaces the game's badge for the teams it has
+    Publisher pp({0});
+    Tower ti;
+    pp.publish(ti.update(demo::make(demo::race, 1.0), cfg, 1.0), cfg);
+    CHECK(core.number("view_model_data.hud_tvt_r00_tm00") == 1 && core.number("view_model_data.hud_tvt_r00_bdg") == 0);
+    CHECK(core.number("view_model_data.hud_tvt_r01_tm00") == 0 && core.number("view_model_data.hud_tvt_r01_bdg") == 1);
     pub.clock_pulse(true);
     pub.L.flush();
     CHECK(core.number("view_model_data.hud_tvt_clk") == 1);

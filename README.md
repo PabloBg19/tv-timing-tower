@@ -56,7 +56,7 @@ una app externa, ni overlay de Electron/OBS/SimHub, ni usa telemetría UDP).
 | Vueltas del neumático | No | Vueltas con el juego actual (contadas desde la última parada vista) |
 | Fondo | TV | Sólido / TV / Translúcido (opacidad del fondo) |
 | Flechas de posición | Sí | Flecha verde/roja 3 s al ganar o perder posiciones (solo carrera) |
-| Logos de equipo en color | Sí | Escudos en color del propio juego (y de cualquier mod de logos); No: los blancos del HUD |
+| Logos de equipo | TV (PRIVATE) / Juego (PUBLIC) | TV: los iconos de la emisión 2026 (solo PRIVATE). Juego: los escudos en color del propio juego (siguen a los mods de logos). Juego blanco: los del HUD |
 | Barra de color de equipo | No | Fina barra con el color del equipo |
 | Resaltar mi coche | Sí | Tu fila más clara |
 | En libres / clasificación / clasificación sprint / carrera | Sí | Activar por tipo de sesión |
@@ -99,7 +99,7 @@ carpeta del juego como estaba; no queda nada del addon en el juego.
 ## Compilar desde el código
 
 ```
-python tools/fetch_assets.py     # solo para PRIVATE: logos reales en assets/private (fuera de git)
+python tools/fetch_assets.py     # solo PRIVATE: iconos de equipo de la TV, logo F1, logos FIA (fuera de git)
 python tools/build.py            # DLL, registros HUD, tests, validación con swofty hud compose, paquetes en dist/
 ```
 Necesita Python 3.10+ con Pillow y Zig 0.16 (en `.tools/` o en el PATH). Fuente oficial opcional para el visor:

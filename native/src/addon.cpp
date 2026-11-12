@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.3.0"
+#define TVT_VERSION "0.4.0"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -31,7 +31,7 @@ SWOFTY_SETTING(bool, tyre_age, false);
 SWOFTY_SETTING(std::string_view, background, "broadcast");
 SWOFTY_SETTING(bool, arrows, true);
 SWOFTY_SETTING(bool, team_bar, false);
-SWOFTY_SETTING(bool, logo_colour, true);
+SWOFTY_SETTING(std::string_view, logos, "tv");
 SWOFTY_SETTING(bool, highlight, true);
 SWOFTY_SETTING(bool, in_practice, true);
 SWOFTY_SETTING(bool, in_quali, true);
@@ -65,7 +65,9 @@ tvt::Config read_config()
     c.bg = b == "solid" ? 0 : b == "light" ? 2 : 1;
     c.arrows = arrows;
     c.colbar = team_bar;
-    c.logo_colour = logo_colour;
+    std::string_view lg = logos;
+    c.logos = lg == "game" ? tvt::Config::Logos::game : lg == "game_white" ? tvt::Config::Logos::game_white
+                                                                           : tvt::Config::Logos::tv;
     c.highlight = highlight;
     c.en_practice = in_practice;
     c.en_quali = in_quali;
@@ -107,7 +109,7 @@ bool game_in_front()
     return pid == GetCurrentProcessId();
 }
 
-// The addon's own folder (one up from native/), for the broadcaster logo.
+// The addon's own folder (one up from native/), for the icon list and the broadcaster logo.
 std::string addon_dir()
 {
     HMODULE self = nullptr;
@@ -124,6 +126,22 @@ std::string addon_dir()
         p.resize(s);
     }
     return p;
+}
+
+std::vector<int> read_team_list(const std::string &dir)
+{
+    std::vector<int> out;
+    if (dir.empty())
+        return out;
+    FILE *f = std::fopen((dir + "\\native\\tvt_logos.txt").c_str(), "rb");
+    if (!f)
+        return out;
+    int v;
+    while (std::fscanf(f, "%d", &v) == 1)
+        if (v >= 0 && v < tvt::kTeams)
+            out.push_back(v);
+    std::fclose(f);
+    return out;
 }
 
 const char *why_name(tvt::LiveSource::Why w)
@@ -302,11 +320,12 @@ SWOFTY_ON_LOAD
     static State state;
     g = &state;
     std::string dir = addon_dir();
-    static tvt::Publisher pub;
+    std::vector<int> teams = read_team_list(dir);
+    static tvt::Publisher pub(teams);
     g->pub = &pub;
-    swofty::log("%s TV Timing Tower %s loaded: %zu leaves, %s team logos, hotkey %.*s", kTag, TVT_VERSION,
-                pub.L.size(), logo_colour ? "colour (broadcast)" : "white (HUD)",
-                int(std::string_view(hotkey).size()), std::string_view(hotkey).data());
+    swofty::log("%s TV Timing Tower %s loaded: %zu leaves, %zu broadcast team icons, logos '%.*s', hotkey %.*s", kTag,
+                TVT_VERSION, pub.L.size(), teams.size(), int(std::string_view(logos).size()),
+                std::string_view(logos).data(), int(std::string_view(hotkey).size()), std::string_view(hotkey).data());
 
     if (!tvt::live::available())
         swofty::log("%s the live state is not available yet (needs Swofty core with 'telemetry'; off on unverified game "

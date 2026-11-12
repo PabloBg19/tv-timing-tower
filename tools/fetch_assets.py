@@ -38,7 +38,26 @@ TEAMS = {  # our name -> (year, f1.com slug)
     "audi": (2026, "audi"),
     "cadillac": (2026, "cadillac"),
 }
+# The broadcast tower's team icons (2026 world feed, as in the reference captures): the published colour icon,
+# the white one, or the white one tinted (Audi's rings are red on the tower).
+F1CDN_VARIANT = "https://media.formula1.com/image/upload/c_fit,h_512/q_auto/v1740000000/common/f1/{y}/{s}/{y}{s}{v}.webp"
+TV_TEAMS = {  # our name -> (year, slug, variant, tint)
+    "mercedes": (2026, "mercedes", "logowhite", None),
+    "ferrari": (2026, "ferrari", "logo", None),
+    "redbull": (2026, "redbullracing", "logo", None),
+    "mclaren": (2026, "mclaren", "logo", None),
+    "astonmartin": (2026, "astonmartin", "logowhite", None),
+    "alpine": (2026, "alpine", "logo", None),
+    "williams": (2026, "williams", "logowhite", None),
+    "racingbulls": (2026, "racingbulls", "logowhite", None),
+    "haas": (2026, "haasf1team", "logo", None),
+    "sauber": (2025, "kicksauber", "logo", None),
+    "audi": (2026, "audi", "logowhite", (214, 32, 42)),
+    "cadillac": (2026, "cadillac", "logowhite", None),
+}
 COMMONS = {"f1": ["File:F1.svg", "File:F1 logo.svg"],
+           "fia_black": ["File:FIA logo (black).png"],
+           "fia_white": ["File:FIA logo (white).png"],
            "broadcaster": ["File:DAZN logo.svg", "File:DAZN Logo.svg", "File:DAZN 1 Logo.svg"]}
 
 
@@ -100,6 +119,14 @@ def prepare(img, mode):
     return img.crop(bb) if bb else img
 
 
+def tint(img, rgb):
+    img = img.convert("RGBA")
+    r, g, b = rgb
+    out = Image.new("RGBA", img.size, (r, g, b, 0))
+    out.putalpha(img.getchannel("A"))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--force", action="store_true")
@@ -118,6 +145,22 @@ def main():
             print(f"ok   {name}")
         except Exception as e:  # keep going: a missing logo falls back to the game's own badge
             print(f"miss {name}: {e}")
+    for name, (year, slug, variant, colour) in TV_TEAMS.items():
+        dst = OUT / f"tv_{name}.png"
+        if dst.exists() and not a.force:
+            continue
+        url = F1CDN_VARIANT.format(y=year, s=slug, v=variant)
+        try:
+            img = Image.open(io.BytesIO(get(url))).convert("RGBA")
+            bb = img.getbbox()
+            img = img.crop(bb) if bb else img
+            if colour:
+                img = tint(img, colour)
+            img.save(dst)
+            sources.append(f"tv_{name}: {url}")
+            print(f"ok   tv_{name}")
+        except Exception as e:
+            print(f"miss tv_{name}: {e}")
     for name, titles in COMMONS.items():
         dst = OUT / f"{name}.png"
         if dst.exists() and not a.force:
@@ -131,7 +174,7 @@ def main():
             if not raw:
                 continue
             img = Image.open(io.BytesIO(raw))
-            prepare(img, "white" if name == "f1" else "keep").save(dst)
+            prepare(img, "white" if name == "f1" else "keep").save(dst)  # FIA logos: as published
             sources.append(f"{name}: {desc or t}")
             print(f"ok   {name} ({t})")
             break

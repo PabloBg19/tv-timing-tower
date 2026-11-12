@@ -18,7 +18,7 @@ inline constexpr const char *kPrefix = "view_model_data.hud_tvt_";
 struct RowLeaves {
     hud::BoolLeaf on, sep, me, p1, ko, kol, dim, up, dn;
     hud::TextLeaf pos, gap;
-    hud::BoolLeaf gpu, gpg, glb, gsp;
+    hud::BoolLeaf gpu, gpg, glb, gip, gsp;
     hud::BoolLeaf tS, tM, tH, tI, tW;
     hud::TextLeaf tage;
     hud::BoolLeaf tag, pit, pen;
@@ -26,12 +26,13 @@ struct RowLeaves {
     hud::BoolLeaf fl, chq, gu, gd, g0;
     hud::TextLeaf nm, badge;
     hud::BoolLeaf bdg;
-    hud::OneHot car;
+    hud::OneHot tm, car;
 };
 
 class Publisher {
 public:
-    Publisher()
+    // private_teams: the team indices the record has a broadcast icon sprite for (native/tvt_logos.txt)
+    explicit Publisher(std::vector<int> private_teams = {}) : teams_(std::move(private_teams))
     {
         // the first three change together: show first so the stock board and ours swap in one tick
         show = L.boolean("show");
@@ -74,6 +75,7 @@ public:
             r.gpu = l.boolean("gpu");
             r.gpg = l.boolean("gpg");
             r.glb = l.boolean("glb");
+            r.gip = l.boolean("gip");
             r.gsp = l.boolean("gsp");
             r.tS = l.boolean("tS");
             r.tM = l.boolean("tM");
@@ -93,6 +95,7 @@ public:
             r.gu = l.boolean("gu");
             r.gd = l.boolean("gd");
             r.g0 = l.boolean("g0");
+            r.tm = l.one_hot("tm", kTeams, 2);
             r.car = l.one_hot("c", kSlots, 2);
             return r;
         });
@@ -171,7 +174,8 @@ public:
             L.set(x.gpu, r.gap_purple);
             L.set(x.gpg, r.gap_green);
             L.set(x.glb, r.gap_label);
-            L.set(x.gsp, r.gap_purple || r.gap_green || r.gap_label);
+            L.set(x.gip, r.gap_inpit);
+            L.set(x.gsp, r.gap_purple || r.gap_green || r.gap_label || r.gap_inpit);
             L.set(x.tS, r.tyre == 'S');
             L.set(x.tM, r.tyre == 'M');
             L.set(x.tH, r.tyre == 'H');
@@ -188,8 +192,10 @@ public:
             L.set(x.gd, r.gain_on && r.gain < 0);
             L.set(x.g0, r.gain_on && r.gain == 0);
             L.set(x.nm, r.name);
-            L.set(x.badge, r.badge);
-            L.set(x.bdg, !r.badge.empty());
+            bool icon = cfg.logos == Config::Logos::tv && r.team >= 0 && has_team(r.team);
+            L.set(x.tm, icon ? r.team : -1);
+            L.set(x.badge, icon ? std::string() : r.badge);
+            L.set(x.bdg, !icon && !r.badge.empty());
             L.set(x.car, r.vid >= 0 && r.vid < kSlots && !h.demo ? r.vid : -1);
         }
         L.flush();
@@ -203,6 +209,16 @@ public:
     hud::TextLeaf ysec;
     hud::BoolLeaf clk, gained, sprint;
     hud::Leaves::Rows<RowLeaves> rows;
+
+private:
+    bool has_team(int t) const
+    {
+        for (int x : teams_)
+            if (x == t)
+                return true;
+        return false;
+    }
+    std::vector<int> teams_;
 };
 
 } // namespace tvt

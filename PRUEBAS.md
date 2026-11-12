@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.3.0
+# Checklist de pruebas en el juego — TV Timing Tower 0.4.0
 
 Antes de empezar: instala `dist/tv-timing-tower-PRIVATE.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.3.0 loaded: … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.4.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -19,8 +19,11 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] El reloj de la cabecera **sale y** cuenta hacia atrás (es el del propio juego).
 - [ ] Nombres en mayúsculas correctos (los del juego), **nunca dos apellidos en una fila** (prueba también tras volver
       del garaje y tras salir de la demo con Ctrl+F8).
-- [ ] Logos de equipo **en color** y correctos (Audi con los aros, Racing Bulls, Cadillac). Ajuste *Logos de equipo
-      en color* = No: escudos blancos.
+- [ ] Logos de equipo como en la TV: Ferrari, Red Bull, McLaren, Alpine y Haas en color; Mercedes, Aston,
+      Williams, Racing Bulls y Cadillac en blanco; Audi con los aros rojos. *Logos de equipo* = Juego: los escudos
+      del propio juego; Juego blanco: los blancos del HUD.
+- [ ] Compara una captura del juego con una de la TV a la misma altura de fila: ancho de la torre (≈6,3 filas),
+      columnas, cabecera (logo F1, lockup FIA, banda LAP) y bloques de bandera con el logo FIA.
 - [ ] Neumático: solo la letra en su color (S roja, M amarilla, H blanca), sin círculo.
 - [ ] Apellidos largos (VERSTAPPEN, HULKENBERG, ANTONELLI) no pisan el tiempo.
 - [ ] Coches en garaje/boxes muestran la `P` blanca a la derecha.

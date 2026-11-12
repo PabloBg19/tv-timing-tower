@@ -1,5 +1,19 @@
 # Resumen — TV Timing Tower
 
+## 0.4.0 (12-11-2026, réplica de las capturas 2026)
+
+- La geometría está medida sobre las capturas: torre de 6,3 filas de ancho (antes 10,3) y columnas, cabecera,
+  banda LAP y bloques al píxel (D33).
+- Los colores están muestreados de las capturas.
+- Iconos de equipo con los colores de la emisión (D34) y logo FIA real en los bloques (D35).
+- `IN PIT` en rojo en carrera.
+- Verificado en el visor lado a lado con las capturas (vueltas 4/55, 26/71 con VSC y 10/55 con SC), con tests y
+  con el compositor de Swofty contra el juego.
+- Sin ver en el juego: cómo queda la fuente del juego con estas medidas y lo pendiente de las versiones 0.2 y 0.3.
+
+---
+
+
 ## 0.3.0 (12-11-2026, con capturas reales de la torre 2026)
 
 - Bloques de bandera con escudo FIA (`SAFETY / CAR`, `VIRTUAL / SAFETY CAR`…) y sin marco (D29).

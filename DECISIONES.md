@@ -153,3 +153,50 @@ modo fijo de *Diferencias*. Si se entra en una carrera ya empezada no hay parril
 como letra de color tras el dato. En la cabecera, el logo F1 y debajo `FIA Formula 1 World Championship` (solo
 PRIVATE), o `SPRINT` en la clasificación sprint. En la carrera sprint no sale `SPRINT`, porque el juego no la
 distingue con seguridad del Gran Premio.
+
+## 0.4.0 (réplica al milímetro de las capturas 2026)
+
+**D33 — Geometría medida, no estimada.** Todas las medidas salen de las capturas a 4x con rejilla y de perfiles de
+luminancia, en píxeles de una fila de 21,5 px (vueltas sin bandera), y se escalan a una fila de 17,5 unidades
+(`REF` y `u()` en `tools/hudgen.py`):
+
+- **Torre:** 135 px de ancho, unas 6,3 filas (antes era 10,3).
+- **Fila:** columna de posición de 19 px con celdas más oscuras separadas por una línea fina (1,75 px). La caja
+  roja de P1 tiene la altura de la celda.
+- **Columnas:** logo centrado a 29 px, nombre desde 42 px, dato hasta 117,5 px, letra del neumático a 127 px.
+- **Cabecera:** bloque gris pizarra de 49,5 px con el logo F1 (70×17,5 px) y el lockup
+  `FIA Formula 1 World Championship`, una línea clara de 1,5 px y la banda oscura de `LAP` de 22 px.
+- **GAINED / LOST:** añade 22 px dentro de esa misma banda.
+- **Bloques de bandera:** 42 px con dos líneas y 52 px con tres, más una separación de 2 px. Logo FIA de 44 px de
+  ancho, texto desde 55 px, mayúsculas de 9,8 px e interlineado de 13,75 px.
+
+Colores muestreados: cabecera #444351→#32303C, banda #181723, filas #26252C, celdas #16151E, amarillo #ECD024,
+rojo P1 #E0120F, morado #C35BDC.
+
+Diferencia aceptada: con un bloque de bandera la TV comprime las filas (19,2 px en lugar de 21,5). Aquí el paso de
+fila es fijo (las filas son un `repeat` con paso fijo), así que con bandera la torre crece unos 44 px.
+
+**D34 — Logos de equipo como la TV (build PRIVATE).** Los iconos de la torre 2026 se descargan de formula1.com en
+la variante que usa la emisión:
+
+- En color: Ferrari, Red Bull, McLaren, Alpine y Haas.
+- En blanco: Mercedes, Aston Martin, Williams, Racing Bulls y Cadillac.
+- Audi: los aros blancos teñidos de rojo.
+
+Ajuste *Logos de equipo*: TV (por defecto en PRIVATE) / Juego (los escudos en color del juego, que siguen a los
+mods de logos) / Juego blanco. Un equipo sin icono (por ejemplo, de un mod) usa siempre el escudo del juego. La
+build PUBLIC no lleva iconos; usa Juego por defecto.
+
+**D35 — Logo FIA real.** En los bloques de bandera va el logo FIA de Wikimedia Commons (`FIA logo (black).png`
+sobre amarillo, `(white)` sobre rojo o verde), igual que en la emisión. La build PUBLIC usa la textura FIA del
+propio juego teñida.
+
+**D36 — Tipografía.** El juego solo ofrece 11 estilos de texto (`OSD_17/19/24/26/30/34`, `17/24/34`), todos de su
+familia F1. Medido sobre las capturas, la proporción de la fuente coincide con la de TV (`VERSTAPPEN` ocupa ≈10
+alturas de mayúscula en las dos), así que se mantiene la fuente del juego, con los mismos pesos que la TV:
+
+- Negrita: nombres, número de vuelta, bloques y `GAINED / LOST`.
+- Regular: posición, diferencias, `Interval`/`Leader`, `LAP` y `/ 71`.
+- `IN PIT` en rojo.
+
+El visor HTML usa Titillium Web, más estrecha, así que ahí el texto se ve algo más pequeño que en el juego.

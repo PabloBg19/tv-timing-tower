@@ -233,7 +233,9 @@ struct Config {
     bool arrows = true;
     bool colbar = false;       // team colour bar
     bool highlight = true;     // player's row highlighted
-    bool logo_colour = true;   // the game's broadcast badges (colour) instead of the HUD ones (white)
+    // tv: the broadcast's team icons (private build; a team without one falls back to the game's badge);
+    // game: the game's broadcast badges (colour, follow logo mods); game_white: the game's white HUD badges
+    enum class Logos { tv, game, game_white } logos = Logos::tv;
     int bg = 1;                // background: 0 solid, 1 broadcast (slightly translucent), 2 light
     bool en_practice = true, en_quali = true, en_sprint_quali = true, en_race = true;
     int compact_around = 1;    // compact: P1-P3 plus this many rows either side of the player
@@ -253,6 +255,7 @@ struct Row {
     bool gap_purple = false;   // lap time flash: session best / new fastest lap
     bool gap_green = false;    // lap time flash: personal best
     bool gap_label = false;    // gap text is a label ("Interval", "Leader")
+    bool gap_inpit = false;    // "IN PIT" in red (race)
     bool gain_on = false;      // places gained / lost view: an arrow (or a dash) before the number in `gap`
     int gain = 0;              // > 0 gained, < 0 lost, 0 none
     char tyre = 0;
@@ -546,9 +549,11 @@ private:
         r.p1 = pos == 1;
         r.me = cfg.highlight && c.me;
         // the game's own badge for the car's team: the broadcast set is in colour (and follows logo mods)
-        r.badge = c.badge.empty() ? "" : std::string(cfg.logo_colour ? "#overrides.osd.timing_tower.team_badges_broadcast."
-                                                                      : "#overrides.osd.timing_tower.team_badges_hud.") +
-                                             c.badge;
+        r.badge = c.badge.empty() ? ""
+                                  : std::string(cfg.logos == Config::Logos::game_white
+                                                    ? "#overrides.osd.timing_tower.team_badges_hud."
+                                                    : "#overrides.osd.timing_tower.team_badges_broadcast.") +
+                                        c.badge;
         r.team = team_index(c.badge);
         r.name = c.name.empty() ? "" : (h.abbr && !c.code.empty() ? c.code : c.name);
 
@@ -601,7 +606,8 @@ private:
             } else if (snap.s.red) {
                 r.gap = ""; // red flag: the field waits in the pit lane, no live gaps
             } else if (c.in_pit && c.status != 3) {
-                r.gap = "PIT";
+                r.gap = "IN PIT";
+                r.gap_inpit = true;
             } else if (idx == 0) {
                 r.gap = lead ? "Leader" : "Interval";
                 r.gap_label = true;
@@ -621,6 +627,7 @@ private:
                 r.gap = fmt_lap(fastest_ms_);
                 r.gap_purple = true;
                 r.gap_label = false;
+                r.gap_inpit = false;
             }
         } else {
             r.pit = c.in_pit;
