@@ -113,6 +113,7 @@ public:
             }
             if (live::has(c, SWOFTY_LIVE_HAVE_TYRE))
                 ci.tyre = c.tyre_letter;
+            ci.speed_kmh = live::speed_kmh(c).value_or(-1.f);
             auto stops = live::pit_stops(c);
             ci.pit_stops = stops ? int(*stops) : -1;
             if (live::has(c, SWOFTY_LIVE_HAVE_PROGRESS))

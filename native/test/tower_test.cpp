@@ -295,6 +295,30 @@ static void test_session_views()
     Tower ts;
     const View &sv = ts.update(st, pc, 1.0);
     CHECK(sv.h.pitstops && sv.rows[2].gap == std::to_string(st.cars[2].vid % 3));
+    // starting tyres: on the grid every car stands, names and tyre letters, no gaps
+    Tower tg;
+    const View &gv = tg.update(demo::make(demo::grid, 1.0), cfg, 1.0);
+    CHECK(gv.h.start_tyres && gv.h.bare && !gv.h.abbr && gv.rows[0].tyre != 0 && gv.rows[3].gap.empty());
+    // ... and not once the cars move
+    Snapshot mv = demo::make(demo::grid, 1.0);
+    for (CarIn &c : mv.cars)
+        c.speed_kmh = 80.f;
+    Tower tm;
+    CHECK(!tm.update(mv, cfg, 1.0).h.start_tyres);
+    // tyres view: the leader starts lap 27 (counter 26 -> 27): laps on the set in the data column for 10 s
+    Tower tt;
+    tt.update(demo::make(demo::tyres, 0.5), cfg, 0.5);
+    const Snapshot ty = demo::make(demo::tyres, 1.5);
+    const View &tv2 = tt.update(ty, cfg, 1.5);
+    CHECK(tv2.h.tyres && tv2.rows[4].gap == std::to_string(ty.cars[4].tyre_age) && tv2.rows[4].tyre != 0);
+    CHECK(!tt.update(demo::make(demo::tyres, 12.0), cfg, 12.0).h.tyres);
+    // final classification: gaps to the winner from the moment each car took the flag
+    Tower tfc;
+    for (double t = 0; t <= 6.01; t += 0.1) // past the 5 s purple flash of the fastest lap
+        tfc.update(demo::make(demo::finish, t), cfg, t);
+    const View &fv = tfc.view();
+    CHECK(fv.h.final_cls && fv.rows[0].gap == "Leader" && (fv.rows[1].gap == "+0.8" || fv.rows[1].gap == "+0.9"));
+    CHECK(fv.rows[2].gap == "+1.6" || fv.rows[2].gap == "+1.5" || fv.rows[2].gap == "+1.7");
     // formation lap
     Snapshot fm = demo::make(demo::race, 1.0);
     fm.s.formation = true;

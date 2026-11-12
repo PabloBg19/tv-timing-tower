@@ -191,6 +191,7 @@ struct CarIn {
     int gap_leader_ms = -1;
     int grid = 0;             // starting position when the source knows it (demo); 0: the tower records it
     int pit_stops = -1;       // the game's own count, -1 unknown
+    float speed_kmh = -1;     // -1 unknown (starting tyres: the grid stands still before the start)
     int best_ms = -1;         // best valid lap
     int last_ms = -1;         // last completed lap
     bool me = false;
@@ -226,7 +227,7 @@ struct Config {
     enum class Rows { all, top10, compact } rows = Rows::all;
     // autoswitch: as on TV (intervals, the leader gaps now and then, places gained after lap 1, names only on
     // lap 1 and under the safety car / red flag)
-    enum class Gap { autoswitch, interval, leader, gained, pitstops } gap = Gap::autoswitch;
+    enum class Gap { autoswitch, interval, leader, gained, pitstops, tyres } gap = Gap::autoswitch;
     // auto: codes beside data (gaps, times), full surnames when the data column is empty (as on TV)
     enum class Names { autoswitch, surname, code } names = Names::autoswitch;
     bool tyres = true;
@@ -291,6 +292,9 @@ struct Header {
     bool bare = false;         // names only: no data column, no tyres (lap 1, safety car, red flag)
     bool gained = false;       // the "GAINED / LOST" view
     bool pitstops = false;     // the "PIT STOPS" view
+    bool tyres = false;        // the "TYRES" view: laps on the current set
+    bool start_tyres = false;  // "STARTING TYRES": on the grid and the formation lap
+    bool final_cls = false;    // "FINAL CLASSIFICATION": the winner has taken the flag
     bool formation = false;    // "FORMATION LAP" in place of the lap line
     std::string sub;           // the line under the logo: "SPRINT" or ""
     bool lead = false;         // gaps are to the leader
@@ -360,11 +364,18 @@ public:
             h.formation = s.formation;
             h.gained = gained_mode(cfg, snap, now);
             h.pitstops = !h.gained && pitstops_mode(cfg, snap, now);
+            h.tyres = !h.gained && !h.pitstops && tyres_mode(cfg, snap, now);
+            record_finish(snap, now);
+            h.final_cls = s.chequered && lead.status == 3;
+            // before the start: the grid's tyres (as the broadcast shows them on the formation lap)
+            h.start_tyres = cfg.gap == Config::Gap::autoswitch && cfg.tyres && !h.final_cls && on_grid(snap);
             // TV: the safety car, the red flag and the formation lap show the names alone
             h.bare = cfg.gap == Config::Gap::autoswitch && !h.gained && !s.chequered &&
-                     (s.sc == 1 || s.red || s.formation);
-            if (h.bare || h.gained || h.pitstops)
+                     (s.sc == 1 || s.red || s.formation || h.start_tyres);
+            if (h.bare || h.gained || h.pitstops || h.tyres)
                 h.lead = false;
+            if (h.final_cls)
+                h.lead = true; // the final classification: gaps to the winner
         }
         bool any_data = h.race ? !h.bare : false;
         if (!h.race)
@@ -426,6 +437,9 @@ public:
         grid_state_ = 0;
         last_pit_lap_ = -1;
         pit_until_ = -1;
+        last_tyre_lap_ = -1;
+        tyre_until_ = -1;
+        finish_t_.fill(-1);
         gained_until_ = -1;
         gained_shown_ = false;
     }
@@ -587,7 +601,7 @@ private:
         }
 
         // tyre
-        if (cfg.tyres && !r.out && !h.bare && !h.gained) {
+        if (cfg.tyres && !r.out && (!h.bare || h.start_tyres) && !h.gained) {
             r.tyre = c.tyre;
             if (cfg.tyre_age && c.tyre && c.tyre_age >= 0)
                 r.tyre_age = std::to_string(c.tyre_age);
@@ -621,6 +635,22 @@ private:
             } else if (h.pitstops) {
                 if (c.pit_stops >= 0)
                     r.gap = std::to_string(c.pit_stops);
+            } else if (h.tyres && !retired) {
+                if (c.tyre_age >= 0)
+                    r.gap = std::to_string(c.tyre_age);
+            } else if (h.final_cls && c.status == 3) {
+                // the gap at the line, from the moment each car took the flag
+                double tw = winner_t();
+                double tc = c.vid < finish_t_.size() ? finish_t_[c.vid] : -1;
+                int down = leader.lap - c.lap;
+                if (idx == 0) {
+                    r.gap = "Leader";
+                    r.gap_label = true;
+                } else if (down > 0) {
+                    r.gap = fmt_laps_down(down);
+                } else if (tw >= 0 && tc >= tw) {
+                    r.gap = fmt_gap_race(int(std::lround((tc - tw) * 1000.0)));
+                }
             } else if (retired) {
                 r.gap = c.status == 5 ? "DSQ" : c.status == 6 ? "NC" : "Out";
             } else if (snap.s.red) {
@@ -644,7 +674,7 @@ private:
                     r.gap = "";
             }
             // a new fastest lap flashes the lap time in purple
-            if (!h.bare && !h.gained && !h.pitstops && fastest_flash_vid_ == int(c.vid) && now < fastest_flash_until_ &&
+            if (!h.bare && !h.gained && !h.pitstops && !h.tyres && fastest_flash_vid_ == int(c.vid) && now < fastest_flash_until_ &&
                 fastest_ms_ > 0) {
                 r.gap = fmt_lap(fastest_ms_);
                 r.gap_purple = true;
@@ -762,6 +792,56 @@ private:
 
     // ---- pit stops view: fixed, or (auto) 10 s each time the leader starts a lap that is a multiple of 10 once
     // a car has stopped (the leader view takes the other multiples of 5)
+    // ---- tyres view: fixed, or (auto) 10 s when the leader starts laps 7, 17, 27...
+    bool tyres_mode(const Config &cfg, const Snapshot &snap, double now)
+    {
+        if (cfg.gap == Config::Gap::tyres)
+            return true;
+        if (cfg.gap != Config::Gap::autoswitch || !cfg.tyres)
+            return false;
+        int ll = snap.cars.front().lap;
+        if (last_tyre_lap_ >= 0 && ll != last_tyre_lap_ && ll >= 7 && (ll % 10) == 7)
+            tyre_until_ = now + 10.0;
+        last_tyre_lap_ = ll;
+        return now < tyre_until_;
+    }
+
+    // ---- on the grid: lap 0, before the order first changes after the formation lap, and every car standing
+    // (or the formation lap itself)
+    bool on_grid(const Snapshot &snap) const
+    {
+        const CarIn &lead = snap.cars.front();
+        if (lead.lap != 0 || grid_state_ == 2)
+            return false;
+        if (snap.s.formation)
+            return true;
+        bool known = false;
+        for (const CarIn &c : snap.cars) {
+            if (c.speed_kmh < 0)
+                continue;
+            known = true;
+            if (c.speed_kmh > 3.f)
+                return false;
+        }
+        return known;
+    }
+
+    void record_finish(const Snapshot &snap, double now)
+    {
+        for (const CarIn &c : snap.cars)
+            if (c.status == 3 && c.vid < finish_t_.size() && finish_t_[c.vid] < 0)
+                finish_t_[c.vid] = now;
+    }
+
+    double winner_t() const
+    {
+        double t = -1;
+        for (double x : finish_t_)
+            if (x >= 0 && (t < 0 || x < t))
+                t = x;
+        return t;
+    }
+
     bool pitstops_mode(const Config &cfg, const Snapshot &snap, double now)
     {
         if (cfg.gap == Config::Gap::pitstops)
@@ -866,6 +946,15 @@ private:
     std::array<int, 32> grid_{};
     int cut_best_ = -1;
     int last_pit_lap_ = -1;
+    int last_tyre_lap_ = -1;
+    double tyre_until_ = -1;
+    std::array<double, 32> finish_t_ = minus_ones();
+    static std::array<double, 32> minus_ones()
+    {
+        std::array<double, 32> a{};
+        a.fill(-1);
+        return a;
+    }
     double pit_until_ = -1;
     int grid_state_ = 0;       // 0 none, 1 recording, 2 frozen
     double gained_until_ = -1;

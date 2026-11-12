@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.6.0"
+#define TVT_VERSION "0.7.0"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -60,7 +60,8 @@ tvt::Config read_config()
     std::string_view g = gap_mode;
     c.gap = g == "interval" ? tvt::Config::Gap::interval : g == "leader" ? tvt::Config::Gap::leader
           : g == "gained"   ? tvt::Config::Gap::gained
-          : g == "pitstops" ? tvt::Config::Gap::pitstops : tvt::Config::Gap::autoswitch;
+          : g == "pitstops" ? tvt::Config::Gap::pitstops
+          : g == "tyres"    ? tvt::Config::Gap::tyres    : tvt::Config::Gap::autoswitch;
     c.tyres = tyres;
     c.tyre_age = tyre_age;
     std::string_view b = background;

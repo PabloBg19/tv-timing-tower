@@ -23,7 +23,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.6.0"
+VERSION = "0.7.0"
+LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
 
@@ -93,20 +94,16 @@ OPTIONS = [
      {"values": [("all", "Todas", "All"), ("top10", "Top 10 + yo", "Top 10 + me"),
                  ("compact", "Compacta", "Compact")], "default": "all"}),
     ("names", "choice", "Nombres", "Names",
-     "Automático (como en TV): abreviatura junto a tiempos y diferencias, apellido completo cuando no hay datos "
-     "(vuelta 1, Safety Car). O siempre apellido, o siempre abreviatura.",
-     "Auto (as on TV): the code beside times and gaps, the full surname when there is no data (lap 1, safety car). "
-     "Or always the surname, or always the code.",
+     "Auto: abreviatura con datos al lado, apellido sin datos (parrilla, Safety Car).",
+     "Auto: the code beside data, the full surname without (grid, safety car).",
      {"values": [("auto", "Automático", "Auto"), ("surname", "Apellido", "Surname"), ("code", "Abreviatura", "Code")],
       "default": "auto"}),
     ("gap_mode", "choice", "Diferencias en carrera", "Race gaps",
-     "Automático (como en TV): solo nombres en la vuelta 1 y con Safety Car o bandera roja, posiciones ganadas/perdidas "
-     "al empezar la vuelta 2, intervalos y, a ratos, gap al líder.",
-     "Auto (as on TV): intervals; names only under the safety car or red flag; places gained/lost as lap 2 starts; "
-     "the gap to the leader on laps 5, 15, 25...; pit stops on laps 10, 20, 30... once a car has stopped.",
+     "Como en TV: intervalos; al líder 5/15/25; neumáticos 7/17; paradas 10/20; ganadas/perdidas en la 2.",
+     "As on TV: intervals; leader gap laps 5/15/25; tyres 7/17; stops 10/20; gained/lost on lap 2.",
      {"values": [("auto", "Automático", "Auto"), ("interval", "Intervalo", "Interval"),
                  ("leader", "Al líder", "To leader"), ("gained", "Ganadas/perdidas", "Gained/lost"),
-                 ("pitstops", "Paradas", "Pit stops")],
+                 ("pitstops", "Paradas", "Pit stops"), ("tyres", "Neumáticos", "Tyres")],
       "default": "auto"}),
     ("tyres", "toggle", "Neumáticos", "Tyres", "Muestra el compuesto actual de cada coche.",
      "Shows each car's current compound.", {"default": True}),
@@ -122,10 +119,8 @@ OPTIONS = [
      "Flecha verde o roja durante 3 s cuando un coche gana o pierde posiciones.",
      "A green or red arrow for 3 s when a car gains or loses places.", {"default": True}),
     ("logos", "choice", "Logos de equipo", "Team logos",
-     "TV: los iconos de la retransmisión 2026 (solo build personal). Juego: los escudos en color del propio juego "
-     "(siguen a los mods de logos). Juego blanco: los del HUD del juego.",
-     "TV: the 2026 broadcast's team icons. Game: the game's own colour badges (they follow logo mods). "
-     "Game white: the game's white HUD badges. A team without a TV icon always shows the game's badge.",
+     "TV: iconos de la emisión 2026. Juego: escudos del juego en color (siguen a los mods). Juego blanco: los del HUD.",
+     "TV: the 2026 broadcast icons. Game: the game's colour badges (follow logo mods). Game white: HUD badges.",
      {"values": [("tv", "TV", "TV"), ("game", "Juego", "Game"), ("game_white", "Juego blanco", "Game white")],
       "default": "tv", "public_values": ["game", "game_white"], "public_default": "game"}),
     ("animations", "toggle", "Animaciones", "Animations",
@@ -150,8 +145,8 @@ OPTIONS = [
      {"values": [(f"F{i}", f"F{i}", f"F{i}") for i in range(1, 13)] + [("off", "Ninguna", "None")],
       "default": "F8"}),
     ("demo", "toggle", "Modo demo", "Demo mode",
-     "Datos simulados (carrera, qualy con eliminados, SC, VSC, bandera roja, final) en cualquier sesión, incluso Contrarreloj.",
-     "Simulated data (race, qualifying knockouts, SC, VSC, red flag, finish) in any session, Time Trial too.",
+     "Datos simulados (carrera, qualy con eliminados, SC, VSC, bandera roja, final, parrilla) en una sesión de libres.",
+     "Simulated data (race, qualifying knockouts, SC, VSC, red flag, finish, grid) in a practice session.",
      {"default": False}),
     ("demo_scenario", "choice", "Escenario demo", "Demo scenario", "Qué escenario muestra el modo demo.",
      "Which scenario demo mode shows.",
@@ -160,31 +155,37 @@ OPTIONS = [
                  ("safety_car", "Safety Car", "Safety car"), ("vsc", "VSC", "VSC"),
                  ("red_flag", "Bandera roja", "Red flag"), ("finish", "Bandera a cuadros", "Chequered flag"),
                  ("practice", "Libres", "Practice"), ("sprint_quali", "Clasificación sprint", "Sprint qualifying"),
-                 ("gained", "Ganadas/perdidas", "Gained/lost")],
+                 ("gained", "Ganadas/perdidas", "Gained/lost"), ("grid", "Parrilla (neumáticos de salida)", "Grid (starting tyres)"),
+                 ("tyres", "Vista de neumáticos", "Tyres view")],
       "default": "cycle"}),
     ("broadcaster_logo", "toggle", "Logo de la cadena", "Broadcaster logo",
      "Logo de la cadena arriba a la derecha mientras se ve la torre.",
      "The broadcaster's logo in the top right while the tower shows.", {"default": True, "private": True}),
     ("debug_log", "toggle", "Log detallado", "Verbose log",
-     "Escribe en swofty/loader.log el coste por fotograma y los cambios de estado.",
-     "Writes the frame cost and state changes to swofty/loader.log.", {"default": False}),
+     "Escribe en swofty/loader.log el coste de cada actualización y los cambios de estado.",
+     "Writes the update cost and state changes to swofty/loader.log.", {"default": False}),
 ]
 
 
 def manifest(flavour):
-    es = False  # one package for everyone since 0.6: English settings (Swofty has no translations)
+    # Swofty shows one text per setting (no translations): both languages by default, "English / Español"
+    def pick(en, es):
+        if LANG == "en" or en == es:
+            return en
+        if LANG == "es":
+            return es
+        return f"{en} / {es}"
     opts = []
     for oid, typ, les, len_, des, den, extra in OPTIONS:
         if extra.get("private") and flavour != "private":
             continue
-        default = extra["default"] if es else extra.get("public_default", extra["default"])
-        o = {"id": oid, "type": typ, "label": les if es else len_, "description": des if es else den,
-             "default": default, "binds": "native"}
+        o = {"id": oid, "type": typ, "label": pick(len_, les), "description": pick(den, des),
+             "default": extra["default"], "binds": "native"}
         if typ == "choice":
-            vals = extra["values"]
-            if not es and "public_values" in extra:
-                vals = [v for v in vals if v[0] in extra["public_values"]]
-            o["values"] = [{"value": v, "label": a if es else b} for v, a, b in vals]
+            o["values"] = [{"value": v, "label": pick(b, a)} for v, a, b in extra["values"]]
+        for key in ("label", "description"):
+            if len(o[key].encode()) > 255:  # Swofty refuses longer strings
+                sys.exit(f"setting {oid}: {key} is {len(o[key].encode())} bytes (Swofty's limit is 255)")
         opts.append(o)
     files = ["native/tvt_logos.txt"]
     if flavour == "private":
@@ -201,7 +202,7 @@ def manifest(flavour):
         "name": "TV Timing Tower",
         "version": VERSION,
         "author": "Pablo Belascoain",
-        "description": desc_es if es else desc_en,
+        "description": pick(desc_en, desc_es),
         "license": "MIT",
         "icon": "icon.png",
         "category": "utility",
@@ -361,7 +362,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("what", nargs="?", default="all", choices=["all", "test"])
     ap.add_argument("--no-compose", action="store_true")
+    ap.add_argument("--lang", choices=["both", "en", "es"], default="both",
+                    help="language of the settings' labels (Swofty has no translations): both, en or es")
     a = ap.parse_args()
+    global LANG
+    LANG = a.lang
     BUILD.mkdir(exist_ok=True)
     logos = ROOT / "assets" / "private" / "logos"
 

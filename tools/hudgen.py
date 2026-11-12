@@ -441,6 +441,12 @@ def header(flavour, sprites):
             kids.append(e)
         return group(id_, kids, visible=vm("c_" + id_))
 
+    def band(id_, label, leaf):
+        """A line of the dark LAP band (as GAINED / LOST): the view the data column shows."""
+        return group(id_, [sprite(f"{id_}_bg{i}", f"gainbg{i}", 21, visible=vm(f"bg{i}")) for i in range(3)] +
+                     [text(f"{id_}_t", "OSD_24_bold", "centre", W - u(10), L["cap_gainword"], [W / 2, L["gain_base"]],
+                           literal=label, wrap="clampwidth")], visible=vm(leaf))
+
     # the 2026 world feed's flag blocks under the LAP band
     cards = {"kind": "stack", "id": "cards", "dir": "down", "gap": 0, "children": [
         group("gain", [sprite(f"gain_bg{i}", f"gainbg{i}", 21, visible=vm(f"bg{i}")) for i in range(3)] +
@@ -449,7 +455,10 @@ def header(flavour, sprites):
         group("pits", [sprite(f"pits_bg{i}", f"gainbg{i}", 21, visible=vm(f"bg{i}")) for i in range(3)] +
               [text("pits_t", "OSD_24_bold", "centre", W, L["cap_gainword"], [W / 2, L["gain_base"]],
                     literal="PIT STOPS")], visible=vm("pstops")),
+        band("tyv", "TYRES", "tyrev"),
+        band("sty", "STARTING TYRES", "stty"),
         group("chq", [sprite("chq_bg", "blk_chq", 21)], visible=vm("c_chq")),
+        band("fcl", "FINAL CLASSIFICATION", "fcls"),
         block("red", "red", ["RED", "FLAG"], "#FFFFFFff", fia="w"),
         block("scend", "sc", ["SAFETY CAR", "IN THIS", "LAP"]),
         block("sc", "sc", ["SAFETY", "CAR"]),

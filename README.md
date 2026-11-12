@@ -25,7 +25,8 @@ tiempos de la retransmisión de F1 2026. **La dibuja el propio HUD del juego**: 
   - destellos en verde (mejor personal) o morado (mejor de la sesión).
 - **Carrera y sprint:**
   - intervalos con un decimal, como en 2026; la diferencia con el líder en las vueltas 5, 15, 25…;
-  - `GAINED / LOST` al empezar la vuelta 2 y `PIT STOPS` en las vueltas 10, 20, 30…;
+  - `STARTING TYRES` en parrilla, `GAINED / LOST` al empezar la vuelta 2, `TYRES` (vueltas de cada juego) en las
+    vueltas 7, 17…, `PIT STOPS` en las 10, 20… y `FINAL CLASSIFICATION` con las diferencias en meta;
   - `IN PIT` en verde menta, `+1 Lap`, `Out`/`DSQ`/`NC`;
   - penalizaciones (`+5s`, `DT`, `SG`), vuelta rápida en morado, triángulos de posición y bandera a cuadros;
   - en los adelantamientos, las filas se desvanecen y vuelven con el orden nuevo.
@@ -50,12 +51,15 @@ Swofty Launcher → **Addons** → arrastra `tv-timing-tower.swoftyaddon` → ac
 
 ## Ajustes (ADDON SETTINGS)
 
+En el juego cada ajuste aparece en inglés y español (`Rows / Filas`); `python tools/build.py --lang es` genera el
+paquete solo en español.
+
 | Ajuste | Por defecto | Qué hace |
 |---|---|---|
 | TV tower | Sí | Activa la torre (desactivada: vuelve la del juego) |
 | Rows | All | Todas / Top 10 + yo / Compacta |
 | Names | Auto | Auto (abreviatura con datos, apellido sin datos) / Apellido / Abreviatura |
-| Race gaps | Auto | Auto (como en TV) / Intervalo / Al líder / Ganadas-perdidas / Paradas |
+| Race gaps | Auto | Auto (como en TV) / Intervalo / Al líder / Ganadas-perdidas / Paradas / Neumáticos |
 | Tyres · Tyre age | Sí · No | Compuesto; vueltas con el juego actual |
 | Background | Broadcast | Opacidad del fondo |
 | Position arrows | Sí | Triángulo verde o rojo 3 s al ganar o perder puestos (carrera) |
@@ -115,8 +119,9 @@ broadcast timing tower, **drawn by the game's own HUD**: no external app, no ove
 - **Practice:** gaps to P1.
 - **Qualifying:** the session clock and gaps to P1; the knockout zone shows the gap to the last car through, and
   cars knocked out earlier leave the tower.
-- **Races:** one-decimal intervals and the gap to the leader on laps 5, 15, 25…; GAINED / LOST as lap 2 starts;
-  PIT STOPS on laps 10, 20…; mint `IN PIT`; penalties, fastest lap, position triangles, chequered flag and row
+- **Races:** STARTING TYRES on the grid; one-decimal intervals and the gap to the leader on laps 5, 15, 25…;
+  GAINED / LOST as lap 2 starts; TYRES (laps on the set) on laps 7, 17…; PIT STOPS on laps 10, 20…; FINAL
+  CLASSIFICATION with the gaps at the line; mint `IN PIT`; penalties, fastest lap, position triangles, chequered flag and row
   fades on overtakes.
 - **Flags:** FOM-style blocks with the FIA logo. Names only under the safety car or a red flag.
 

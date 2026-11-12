@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.6.0
+# Checklist de pruebas en el juego — TV Timing Tower 0.7.0
 
 Antes de empezar: instala `dist/tv-timing-tower-PRIVATE.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.6.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.7.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -65,6 +65,13 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
 - [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
+
+## 4d. Novedades 0.7.0
+- [ ] Parrilla y vuelta de formación: banda `STARTING TYRES`, apellidos y letra del neumático; desaparece al apagarse
+      los semáforos.
+- [ ] Vuelta 7 (y 17, 27…): banda `TYRES` 10 s, con las vueltas de cada juego de neumáticos.
+- [ ] Al ganar el líder: banda `FINAL CLASSIFICATION` y diferencias en meta (`+0.8`, `+1 Lap`, `Out`).
+- [ ] ADDON SETTINGS: cada ajuste en `English / Español`.
 
 ## 4c. Novedades 0.6.0
 - [ ] Libres: aparecen tiempos (P1 su vuelta, los demás `+0.xxx` respecto a P1) aunque las IA entren y salgan del

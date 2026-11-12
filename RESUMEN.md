@@ -1,5 +1,17 @@
 # Resumen — TV Timing Tower
 
+## 0.7.0 (12-11-2026)
+
+- `STARTING TYRES` en parrilla y en la vuelta de formación (D51).
+- Vista `TYRES` con las vueltas de cada juego de neumáticos (D52).
+- `FINAL CLASSIFICATION` con las diferencias en meta con el ganador (D53).
+- Ajustes en inglés y español (D54).
+- Demo: escenarios nuevos «grid» y «tyres».
+- Verificado con tests (vistas nuevas), compose y build de perfil completo. Sin ver en el juego.
+
+---
+
+
 ## 0.6.0 (12-11-2026, lista para publicar)
 
 - Un solo paquete con logos: `dist/tv-timing-tower.swoftyaddon` (D43).

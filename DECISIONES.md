@@ -300,3 +300,25 @@ Lo que no se puede hacer o queda fuera:
 - Gráficos de batalla, rótulos de piloto, sectores en vivo, avisos de investigación o el rendimiento del neumático:
   no hay datos o son gráficos fuera de la torre.
 - Tiempo de parada en boxes: no hay datos.
+
+## 0.7.0 (12-11-2026)
+
+**D51 — STARTING TYRES.** En parrilla y en la vuelta de formación, la banda oscura de `LAP` lleva
+`STARTING TYRES`, con los apellidos y la letra del neumático de salida de cada coche. Condiciones: vuelta 0, antes
+del primer cambio de orden y con todos los coches parados (velocidad del juego por debajo de 3 km/h), o la vuelta
+de formación. Solo en el modo Automático y con los neumáticos activados.
+
+**D52 — Vista de neumáticos (`TYRES`).** La columna de datos muestra las vueltas con el juego actual (la letra
+sigue a la derecha). En Automático sale 10 s cuando el líder empieza las vueltas 7, 17, 27…; también es un modo fijo
+de *Diferencias en carrera*. Las vueltas se cuentan desde la última parada vista: si se entra a mitad de carrera, se
+cuentan desde ese momento.
+
+**D53 — FINAL CLASSIFICATION.** Cuando el ganador cruza con la bandera a cuadros, la banda pasa a
+`FINAL CLASSIFICATION` y cada coche que termina muestra su diferencia en la meta con el ganador. El addon la mide en
+el momento en que cada coche cambia a «terminado»; la precisión es de una actualización, unos 0,03 s. Los doblados
+muestran `+1 Lap` y los retirados `Out`.
+
+**D54 — Ajustes en dos idiomas.** Swofty muestra un solo texto por ajuste y no tiene traducciones. Por defecto
+cada etiqueta y descripción lleva inglés y español (`Rows / Filas`), y `python tools/build.py --lang es` (o `en`)
+genera el paquete en un solo idioma. Swofty no acepta textos de más de 255 bytes; `build.py` lo comprueba y la
+prueba de build de perfil lo detectó.

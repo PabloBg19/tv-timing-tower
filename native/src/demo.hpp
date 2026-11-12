@@ -32,13 +32,14 @@ inline const Driver kGrid[22] = {
 };
 
 enum Scenario : int {
-    race = 0, quali_q1, quali_q2, safety_car, vsc, red_flag, finish, practice, sprint_quali, gained, count
+    race = 0, quali_q1, quali_q2, safety_car, vsc, red_flag, finish, practice, sprint_quali, gained, grid, tyres,
+    count
 };
 
 inline const char *scenario_name(int s)
 {
     static const char *n[] = {"race", "quali_q1", "quali_q2", "safety_car", "vsc", "red_flag", "finish",
-                              "practice", "sprint_quali", "gained"};
+                              "practice", "sprint_quali", "gained", "grid", "tyres"};
     return s >= 0 && s < count ? n[s] : "";
 }
 
@@ -71,11 +72,13 @@ inline Snapshot make(int sc, double t)
         return snap.cars.back();
     };
 
-    const bool is_race = sc == race || sc == safety_car || sc == vsc || sc == red_flag || sc == finish || sc == gained;
+    const bool is_race = sc == race || sc == safety_car || sc == vsc || sc == red_flag || sc == finish || sc == gained ||
+                         sc == grid || sc == tyres;
     if (is_race) {
         s.type = 15;
         s.laps_total = 57;
-        int lead_lap = sc == finish ? 57 : sc == gained ? 2 : 22 + int(t / 7.0);
+        int lead_lap = sc == finish ? 57 : sc == gained ? 2 : sc == grid ? 1 : sc == tyres ? (t < 1.0 ? 27 : 28)
+                                                                                         : 22 + int(t / 7.0);
         if (sc == gained) {
             // lap 2: a start with some moves; the grid is the demo's reference order shuffled
             static const int start[22] = {0, 3, 1, 2, 5, 4, 6, 7, 9, 8, 12, 10, 11, 14, 13, 15, 17, 16, 19, 18, 21, 20};
@@ -102,6 +105,11 @@ inline Snapshot make(int sc, double t)
             c.have_total = true;
             c.tyre = "MHHMSMHHHMMHMHMHHMMHSM"[vid];
             c.tyre_age = 3 + (vid * 7) % 19;
+            c.speed_kmh = sc == grid ? 0.f : 250.f;
+            if (sc == grid) { // on the grid: no gaps yet
+                c.gap_ahead_ms = c.gap_leader_ms = -1;
+                continue;
+            }
             if (sc == gained) {
                 // grid: the reference order (vid = grid slot - 1), so a car's gain is its vid - rank
                 c.grid = vid + 1;

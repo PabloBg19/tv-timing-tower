@@ -126,11 +126,12 @@
       tower.append(spr('gainbg' + bg, 0, y, 21), txt('GAINED / LOST', W / 2, y + L.gain_base, L.cap_gainword, 'centre', '#fff', 700));
       y += L.gainbar;
     }
-    if (h.pits) {
-      tower.append(spr('gainbg' + bg, 0, y, 21), txt('PIT STOPS', W / 2, y + L.gain_base, L.cap_gainword, 'centre', '#fff', 700));
-      y += L.gainbar;
-    }
+    const bandLine = label => { tower.append(spr('gainbg' + bg, 0, y, 21), txt(label, W / 2, y + L.gain_base, L.cap_gainword, 'centre', '#fff', 700)); y += L.gainbar; };
+    if (h.pits) bandLine('PIT STOPS');
+    if (h.tyv) bandLine('TYRES');
+    if (h.sty) bandLine('STARTING TYRES');
     if (h.card === 4) { tower.append(spr('blk_chq', 0, y, 21)); y += L.chq_h; }
+    if (h.fcl) bandLine('FINAL CLASSIFICATION');
     else if (h.card) {
       const [col, lines, ink, fia] = BLOCKS[h.card], n = lines.length, hb = L['block' + n];
       tower.append(spr(`blk${n}_${col}`, 0, y, 21));

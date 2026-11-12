@@ -61,6 +61,9 @@ public:
         ld = L.one_hot("ld", 3, 0, 1); // ld1..ld3: digits of the lap number
         sprint = L.boolean("sprint");
         pstops = L.boolean("pstops");
+        tyrev = L.boolean("tyrev");
+        stty = L.boolean("stty");
+        fcls = L.boolean("fcls");
         form = L.boolean("form");
         gained = L.boolean("gained");
         rows = L.rows<RowLeaves>("r", kRows, 2, [](hud::Leaves &l, int) {
@@ -145,6 +148,9 @@ public:
         L.set(sprint, !h.sub.empty());
         L.set(gained, h.gained);
         L.set(pstops, h.pitstops);
+        L.set(tyrev, h.tyres);
+        L.set(stty, h.start_tyres);
+        L.set(fcls, h.final_cls);
         L.set(form, h.on && h.race && h.formation);
 
         // Row change fades: only for a few rows at a time (a start or a restart reshuffles the field: snap) and at
@@ -243,7 +249,7 @@ public:
     hud::TextLeaf ysec;
     hud::TextLeaf clock;
     hud::OneHot ld;
-    hud::BoolLeaf gained, sprint, pstops, form;
+    hud::BoolLeaf gained, sprint, pstops, form, tyrev, stty, fcls;
     hud::Leaves::Rows<RowLeaves> rows;
 
     static constexpr double kFadeHold = 0.16; // the row's fade out (generic_fade_on) before the swap
