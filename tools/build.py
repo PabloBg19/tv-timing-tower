@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.8.2"
+VERSION = "0.9.0"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
@@ -105,6 +105,11 @@ OPTIONS = [
                  ("leader", "Al líder", "To leader"), ("gained", "Ganadas/perdidas", "Gained/lost"),
                  ("pitstops", "Paradas", "Pit stops"), ("tyres", "Neumáticos", "Tyres")],
       "default": "auto"}),
+    ("gap_decimals", "choice", "Decimales en carrera", "Race gap decimals",
+     "2026: un decimal, como en la emisión actual (+0.9). Clásico: milésimas, como en los F1 anteriores (+0.934).",
+     "2026: one decimal, as on today's broadcast (+0.9). Classic: thousandths, as in earlier F1 games (+0.934).",
+     {"values": [("one", "2026 (+0.9)", "2026 (+0.9)"), ("three", "Clásico (+0.934)", "Classic (+0.934)")],
+      "default": "one"}),
     ("tyres", "toggle", "Neumáticos", "Tyres", "Muestra el compuesto actual de cada coche.",
      "Shows each car's current compound.", {"default": True}),
     ("tyre_age", "toggle", "Vueltas del neumático", "Tyre age",
@@ -203,7 +208,7 @@ def manifest(flavour):
         "category": "utility",
         "kind": ["ui", "native"],
         "experimental_features": ["telemetry"],
-        "compat": {"game": "f1_25", "game_builds": [">=25251167"], "launcher": ">=1.9.0",
+        "compat": {"game": "f1_25", "launcher": ">=1.9.0",
                    "seasons": ["f1_2026"], "platforms": ["steam"]},
         "requires": [{"id": "swofty.core", "version": ">=0.1.0"}],
         "options": opts,

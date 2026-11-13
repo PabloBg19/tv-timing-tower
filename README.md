@@ -40,7 +40,8 @@ tiempos de la retransmisión de F1 2026. **La dibuja el propio HUD del juego**: 
 
 ## Requisitos
 
-- F1 25 en Steam (build 25251167) con el 2026 Season Pack.
+- F1 25 (Steam o EA app) con el 2026 Season Pack. En la versión EA hace falta tener Swofty actualizado;
+  probado solo en Steam.
 - Swofty Launcher 1.9.x (probado hasta 1.9.21).
 - Solo offline. El addon no hace conexiones de red ni toca nada del online ni del antitrampas.
 - El elemento **Posiciones** del HUD tiene que estar activado, porque la torre vive dentro de él.
@@ -60,6 +61,7 @@ paquete solo en español.
 | Rows | All | Todas / Top 10 + yo / Compacta |
 | Names | Auto | Auto (abreviatura con datos, apellido sin datos) / Apellido / Abreviatura |
 | Race gaps | Auto | Auto (como en TV) / Intervalo / Al líder / Ganadas-perdidas / Paradas / Neumáticos |
+| Race gap decimals | 2026 | 2026 (`+0.9`) / Clásico (`+0.934`, como en los F1 anteriores) |
 | Tyres · Tyre age | Sí · No | Compuesto; vueltas con el juego actual |
 | Background | Broadcast | Opacidad del fondo |
 | Position arrows | Sí | Triángulo verde o rojo 3 s al ganar o perder puestos (carrera) |
@@ -120,7 +122,7 @@ broadcast timing tower, **drawn by the game's own HUD**: no external app, no ove
 - **Practice:** gaps to P1.
 - **Qualifying:** the session clock and gaps to P1; the knockout zone shows the gap to the last car through, and
   cars knocked out earlier leave the tower.
-- **Races:** STARTING TYRES on the grid; one-decimal intervals and the gap to the leader on laps 5, 15, 25…;
+- **Races:** STARTING TYRES on the grid; one-decimal intervals (or classic thousandths, a setting) and the gap to the leader on laps 5, 15, 25…;
   GAINED / LOST as lap 2 starts; TYRES (laps on the set) on laps 7, 17…; PIT STOPS on laps 10, 20…; the gaps at the
   line and a chequered flag per finisher at the end; penalties as the red "!" square; mint `IN PIT`; penalties, fastest lap, position triangles, chequered flag and row
   fades on overtakes.
@@ -132,7 +134,7 @@ logo mods work. If the session cannot be read, the game's own board comes back a
 
 **Install:** drag `tv-timing-tower.swoftyaddon` onto Swofty's **Addons** page, enable it, play.
 
-**Requirements:** F1 25 Steam build 25251167 with the 2026 Season Pack, Swofty Launcher 1.9.x (tested up to
+**Requirements:** F1 25 (Steam or EA app; EA needs a recent Swofty, tested on Steam only) with the 2026 Season Pack, Swofty Launcher 1.9.x (tested up to
 1.9.21), the game's Position HUD element switched on. Offline only: no network connections, nothing online or
 anti-cheat related.
 

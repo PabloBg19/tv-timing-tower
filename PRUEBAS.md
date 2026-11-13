@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.8.2
+# Checklist de pruebas en el juego — TV Timing Tower 0.9.0
 
 Antes de empezar: instala `dist/tv-timing-tower.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.8.2 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.9.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -66,6 +66,11 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
 - [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
+
+## 4f. Novedades 0.9.0
+- [ ] ADDON SETTINGS → *Race gap decimals* = Clásico: en carrera los intervalos salen con milésimas (`+0.934`),
+      sin pisar la abreviatura. 2026 vuelve a `+0.9`.
+- [ ] (Alguien con la versión EA) la torre sale en el juego y no solo en el editor de HUD.
 
 ## 4e. Novedades 0.8.0 (arreglos reportados)
 - [ ] Libres y clasificación: salen tiempos en casi todos los coches (antes se quedaban en blanco con frecuencia).

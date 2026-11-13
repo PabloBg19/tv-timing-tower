@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.8.2"
+#define TVT_VERSION "0.9.0"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -26,6 +26,7 @@ SWOFTY_SETTING(bool, enabled, true);
 SWOFTY_SETTING(std::string_view, rows, "all");
 SWOFTY_SETTING(std::string_view, names, "auto");
 SWOFTY_SETTING(std::string_view, gap_mode, "auto");
+SWOFTY_SETTING(std::string_view, gap_decimals, "one");
 SWOFTY_SETTING(bool, tyres, true);
 SWOFTY_SETTING(bool, tyre_age, false);
 SWOFTY_SETTING(std::string_view, background, "broadcast");
@@ -61,6 +62,7 @@ tvt::Config read_config()
           : g == "gained"   ? tvt::Config::Gap::gained
           : g == "pitstops" ? tvt::Config::Gap::pitstops
           : g == "tyres"    ? tvt::Config::Gap::tyres    : tvt::Config::Gap::autoswitch;
+    c.gap_ms = std::string_view(gap_decimals) == "three";
     c.tyres = tyres;
     c.tyre_age = tyre_age;
     std::string_view b = background;

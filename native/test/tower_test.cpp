@@ -500,6 +500,12 @@ static void test_live_adapter()
     cfg.gap = Config::Gap::interval;
     const View &v = t.update(snap, cfg, 0.0);
     CHECK(v.rows[1].gap == "+1.2" && v.rows[2].gap == "IN PIT" && v.rows[2].gap_inpit && v.rows[1].me && v.h.lap == "5");
+    // "Race gap decimals" = Classic: thousandths, as in earlier F1 games
+    Config c3 = cfg;
+    c3.gap_ms = true;
+    Tower t3;
+    CHECK(t3.update(snap, c3, 0.0).rows[1].gap == "+1.234");
+    CHECK(fmt_gap_race(65432, true) == "+1:05.432" && fmt_gap_race(65432) == "+1:05.4");
     CHECK(v.rows[0].team == 1);
     CHECK(v.rows[0].badge == "#overrides.osd.timing_tower.team_badges_broadcast.ferrari_2026");
     cfg.logos = Config::Logos::game_white;

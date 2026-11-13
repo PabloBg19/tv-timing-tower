@@ -68,9 +68,14 @@ inline int knockout_cut(int segment, int field)
 }
 
 // ------------------------------------------------------------------------------------------------- formatting
-// 2026 broadcast: one decimal, truncated ("+0.9"); over a minute "+1:05.3".
-inline std::string fmt_gap_race(int ms)
+// Timed sessions: thousandths ("+0.234", "+1:02.345").
+inline std::string fmt_gap_ms(int ms);
+
+// 2026 broadcast: one decimal, truncated ("+0.9"); over a minute "+1:05.3". `thousandths`: the classic "+0.934".
+inline std::string fmt_gap_race(int ms, bool thousandths = false)
 {
+    if (thousandths)
+        return fmt_gap_ms(ms);
     char b[24];
     if (ms < 0)
         ms = 0;
@@ -230,6 +235,7 @@ struct Config {
     enum class Gap { autoswitch, interval, leader, gained, pitstops, tyres } gap = Gap::autoswitch;
     // auto: codes beside data (gaps, times), full surnames when the data column is empty (as on TV)
     enum class Names { autoswitch, surname, code } names = Names::autoswitch;
+    bool gap_ms = false;       // race gaps in thousandths ("+0.934", earlier F1 games) instead of 2026's tenths
     bool tyres = true;
     bool tyre_age = false;
     bool arrows = true;
@@ -683,7 +689,7 @@ private:
                 } else if (down > 0) {
                     r.gap = fmt_laps_down(down);
                 } else if (tw >= 0 && tc >= tw) {
-                    r.gap = fmt_gap_race(int(std::lround((tc - tw) * 1000.0)));
+                    r.gap = fmt_gap_race(int(std::lround((tc - tw) * 1000.0)), cfg.gap_ms);
                 }
             } else if (idx == 0) {
                 r.gap = lead ? "Leader" : "Interval";
@@ -694,7 +700,7 @@ private:
                 if (down > 0 && (lead || gap < 0))
                     r.gap = fmt_laps_down(down);
                 else if (gap >= 0)
-                    r.gap = fmt_gap_race(gap);
+                    r.gap = fmt_gap_race(gap, cfg.gap_ms);
                 else if (lead && c.gap_ahead_ms >= 0 && leader.status != 3)
                     r.gap = "";
             }

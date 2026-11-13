@@ -416,3 +416,18 @@ Como no se ha podido confirmar que esa fuera la causa, cada minuto (si algo camb
 `[tv-tower] laps:` con los coches con tiempo, los pasos por meta y por qué no se cronometró cada uno (primera
 vuelta, boxes, vuelta sucia, avisos de límites, fuera de rango), los retrocesos, flashbacks, saltos de meta y saltos
 de contador. Sin tiempo, la fila se queda vacía, como en la emisión.
+
+## 0.9.0
+
+**D65 — Decimales clásicos en carrera.** Petición en OverTake: poder ver `+1.200` en lugar de `+1.2`, como en los F1
+anteriores. Ajuste *Race gap decimals*: 2026 (por defecto, un decimal truncado) o Clásico (milésimas, el mismo
+formato que libres y clasificación, `+1:05.432` pasado el minuto). El resto del aspecto sigue siendo el de 2026: una
+segunda torre con el diseño antiguo sería otro registro HUD entero, y no se ha pedido más que los números.
+
+**D66 — Versión EA.** Comentario en OverTake: en la versión EA la torre solo salía en el editor de HUD y en el juego se
+veía la del juego. Swofty lee el estado en vivo de la build EA (1789128892) con todos los grupos desde el 11-11
+(`live_rows.hpp`, `EA_BUILD`), así que el addon no necesita nada distinto. Lo que sí lo marcaba como «no
+compatible» era `compat.game_builds: [">=25251167"]`: es el número de build de Steam, y el launcher enseña «Made for
+game build 25251167 (yours: …)» en cualquier otra copia. Se quita (vacío = cualquier build; si el estado en vivo no
+está, la torre ya se apaga sola y vuelve la del juego). `platforms` sigue en `steam` hasta que alguien lo pruebe en
+EA. Si en EA siguiera sin verse, las líneas `[tv-tower] source:` y `[live]` del `loader.log` dicen por qué.

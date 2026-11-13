@@ -1,5 +1,13 @@
 # Resumen — TV Timing Tower
 
+## 0.9.0 (13-11-2026, comentarios de OverTake)
+
+- Ajuste *Race gap decimals*: 2026 (`+0.9`) o Clásico (`+0.934`) (D65).
+- Versión EA: fuera el `game_builds` de Steam del manifiesto, que hacía que el launcher avisara de que el addon era
+  para otra versión del juego (D66). Swofty lee la versión EA; sin probar allí.
+
+---
+
 ## 0.8.2 (13-11-2026)
 
 - Clasificación sin ningún tiempo en el juego: el reloj de vueltas ya no confunde el paso por meta (la distancia
