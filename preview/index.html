@@ -174,30 +174,23 @@
       if (r.out || r.elim) add(spr('dim', 0, 0, 45));
       tower.append(g);
     });
-    // banners top centre, as in game: ban_x tower widths right of the tower, level with its top
+    // NEW RACE LEADER top centre, as in game
     if (h.ban) {
-      const bx = L.ban_cx - (h.ban === 1 ? L.ban_lw : L.ban_fw) / 2, bh = L.ban_h, lead = h.ban === 1, cap = lead ? L.ban_cap : L.ban_fcap, ty = bh / 2 + cap / 2;
+      const bx = L.ban_cx - L.ban_lw / 2, bh = L.ban_h, cap = L.ban_cap, ty = bh / 2 + cap / 2;
       const b = document.createElement('div'); b.className = 'el';
-      Object.assign(b.style, { left: bx + 'px', top: L.ban_y + 'px', width: (lead ? L.ban_lw : L.ban_fw) + 'px', height: bh + 'px' });
+      Object.assign(b.style, { left: bx + 'px', top: L.ban_y + 'px', width: L.ban_lw + 'px', height: bh + 'px' });
       const add = e => e && b.append(e);
-      add(spr(lead ? 'ban_l_bg' : 'ban_f_bg', 0, 0, 40));
-      let logoCx, nameX, box;
-      if (lead) {
-        logoCx = L.ban_lw - L.ban_team_w / 2; nameX = L.ban_lab_x - 6; box = L.ban_name_w;
-        // the white team block tinted with the team's colour (the game tints it with the car's nub colour)
-        const sb = S.ban_team;
-        if (sb) { const d = document.createElement('div'); d.className = 'el'; const bb = sb.bounds, u = 'url(data/' + sb.png + ')';
-          Object.assign(d.style, { left: bb[0] + 'px', top: bb[1] + 'px', width: (bb[2] - bb[0]) + 'px', height: (bb[3] - bb[1]) + 'px',
-            zIndex: 41, backgroundColor: TEAMCOL[L.teams[h.btm]] || '#888', webkitMaskImage: u, maskImage: u,
-            webkitMaskSize: '100% 100%', maskSize: '100% 100%' });
-          add(d); }
-        add(txt('NEW RACE LEADER', L.ban_lab_x, ty, cap, 'left', C.ban_label, 700));
-      } else {
-        logoCx = L.ban_flogo; nameX = L.ban_fname_r; box = 60;
-        add(txt('FASTEST LAP', 10, ty, cap, 'left', C.ban_flabel, 700));
-        add(txt(h.bt, L.ban_ftime, ty, cap, 'left', C.ban_time, 700));
-      }
-      add(txt(h.bnm, nameX, ty, cap, 'right', '#fff', 700, box));
+      add(spr('ban_l_bg', 0, 0, 40));
+      const logoCx = L.ban_lw - L.ban_team_w / 2;
+      // the white team block tinted with the team's colour (the game tints it with the car's nub colour)
+      const sb = S.ban_team;
+      if (sb) { const d = document.createElement('div'); d.className = 'el'; const bb = sb.bounds, u = 'url(data/' + sb.png + ')';
+        Object.assign(d.style, { left: bb[0] + 'px', top: bb[1] + 'px', width: (bb[2] - bb[0]) + 'px', height: (bb[3] - bb[1]) + 'px',
+          zIndex: 41, backgroundColor: TEAMCOL[L.teams[h.btm]] || '#888', webkitMaskImage: u, maskImage: u,
+          webkitMaskSize: '100% 100%', maskSize: '100% 100%' });
+        add(d); }
+      add(txt('NEW RACE LEADER', L.ban_lab_x, ty, cap, 'left', C.ban_label, 700));
+      add(txt(h.bnm, L.ban_lab_x - 6, ty, cap, 'right', '#fff', 700, L.ban_name_w));
       if (logos && h.btm >= 0) add(spr('tmb_' + L.teams[h.btm], logoCx, bh / 2, 43));
       tower.append(b);
     }

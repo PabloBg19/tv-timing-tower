@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.14.1
+# Checklist de pruebas en el juego — TV Timing Tower 0.15.0
 
 Antes de empezar: instala `dist/tv-timing-tower.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.14.1 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.15.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -66,6 +66,12 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
 - [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
+
+## 4o. Novedades 0.15.0
+- [ ] Carrera: sin franja FASTEST LAP; el aviso «Mejor vuelta» del juego sale normal, arriba en el centro.
+- [ ] NEW RACE LEADER centrada arriba (donde sale el aviso del juego), más grande, con el apellido, el bloque del color
+      del equipo y su logo, cada vez que cambia el líder desde la vuelta 2.
+- [ ] ADDON SETTINGS ya no tiene *Fastest lap banner*.
 
 ## 4n. Novedades 0.14.1
 - [ ] Las franjas centradas donde sale el aviso del juego (arriba en el centro) y del ancho de la foto de la tele.

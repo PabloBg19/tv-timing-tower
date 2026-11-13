@@ -546,3 +546,14 @@ cuando», no estaban centradas y eran más cortas que las de la emisión.
   juego avisaba de HAMILTON 1:28.157, así que la nuestra nunca saltaba y salía el aviso del juego. Dos filtros: ninguna
   vuelta a más de 75 m/s de media (270 km/h; Monza ronda los 260) y la vuelta rápida de la sesión necesita 8 vueltas
   medidas y no puede quedar más de un 4 % por debajo de su mediana.
+
+## 0.15.0
+
+**D76 — Fuera la franja FASTEST LAP.** En carrera, el aviso «Mejor vuelta» del juego (HAMILTON 1:28.157, luego ROSBERG
+1:30.075 en la vuelta 2) salía mientras nuestra franja no saltaba: nuestra vuelta rápida sale del reloj propio y no
+coincide con la del juego ni en el piloto ni en el momento. Swofty no da ninguna forma de saberla (`live` sin tiempos,
+`session.lap` sin tiempo, `laps.recorded` solo en Contrarreloj). La alternativa era reestilar el aviso del propio juego
+(`restyle`), pero cambia todos sus avisos, no se puede activar en ADDON SETTINGS y choca con otros addons que lo
+reestilan; el usuario eligió quitar la franja. Se van la franja, su ajuste, el arte y el `wrap` que ocultaba la
+notificación central del juego (D74). NEW RACE LEADER se queda: el orden sí lo da el juego. El icono morado de vuelta
+rápida en las filas sigue con el reloj propio y sus filtros (D75).

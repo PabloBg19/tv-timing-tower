@@ -31,8 +31,8 @@ tiempos de la retransmisión de F1 2026. **La dibuja el propio HUD del juego**: 
   - `IN PIT` en verde menta, `+1 Lap`, `Out`/`DSQ`/`NC`;
   - sanciones con el cuadrado rojo «!», vuelta rápida en morado, triángulos de posición y bandera a cuadros;
   - en los adelantamientos, las filas se desvanecen y vuelven con el orden nuevo;
-  - franjas arriba en el centro, como en la emisión: `NEW RACE LEADER` cuando cambia el líder y `FASTEST LAP` con el
-    piloto y su tiempo cuando alguien mejora la vuelta rápida.
+  - franja `NEW RACE LEADER` arriba en el centro, como en la emisión, cuando cambia el líder (la vuelta rápida la
+    anuncia el propio juego).
 - **Banderas como en la señal de FOM:** bloque de color con el logo FIA para `SAFETY CAR`, `VIRTUAL SAFETY CAR`,
   `SC ENDING`, `VSC ENDING`, `YELLOW FLAG` + sector, `RED FLAG` y `TRACK CLEAR`. Con Safety Car o
   bandera roja la torre muestra solo los nombres.
@@ -64,7 +64,7 @@ paquete solo en español.
 | Rows | All | Todas / Top 10 + yo / Compacta |
 | Names | Auto | Auto (abreviatura con datos, apellido sin datos) / Apellido / Abreviatura |
 | Race gaps | Auto | Auto (como en TV) / Intervalo / Al líder / Ganadas-perdidas / Paradas / Neumáticos |
-| New race leader banner · Fastest lap banner | Sí · Sí | Franjas arriba en el centro en carrera |
+| New race leader banner | Sí | Franja NEW RACE LEADER arriba en el centro en carrera |
 | Race gap decimals | 2026 | 2026 (`+0.9`) / Clásico (`+0.934`, como en los F1 anteriores) |
 | Tyres · Tyre age | Sí · No | Compuesto; vueltas con el juego actual |
 | Background | Broadcast | Opacidad del fondo |
@@ -127,7 +127,7 @@ broadcast timing tower, **drawn by the game's own HUD**: no external app, no ove
 - **Races:** STARTING TYRES on the grid; one-decimal intervals (or classic thousandths, a setting) and the gap to the leader on laps 5, 15, 25…;
   GAINED / LOST as lap 2 starts; TYRES (laps on the set) on laps 7, 17…; PIT STOPS on laps 10, 20…; the gaps at the
   line and a chequered flag per finisher at the end; penalties as the red "!" square; mint `IN PIT`; penalties, fastest lap, position triangles, chequered flag and row
-  fades on overtakes; NEW RACE LEADER and FASTEST LAP banners top centre.
+  fades on overtakes; a NEW RACE LEADER banner top centre.
 - **Flags:** FOM-style blocks with the FIA logo. Names only under the safety car or a red flag.
 
 Everything comes from the game (drivers, names, teams, colours, badges, order), so careers, My Team and team or

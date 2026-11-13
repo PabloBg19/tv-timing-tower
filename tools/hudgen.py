@@ -65,15 +65,13 @@ REF = {
 LAYOUT = {
     "offset_y": -40.0,       # the whole tower, from the stock board's origin (into the hidden lap counter's space)
     "extra_up": 24.0,        # added on top of offset_y while more than 22 rows show (D62, not measured in game)
-    # banners top centre (NEW RACE LEADER, FASTEST LAP), where the game puts its own centre notification. Measured
+    # the NEW RACE LEADER banner top centre, where the game puts its own centre notification. Measured
     # on a full-screen 2000 x 1125 capture at the default HUD place: the tower's left edge at 41 px, 207 px wide
     # (1.88 px a unit), so the screen's centre is 510 units right of it, and the game's toast starts 27 units
     # above the tower's top. Sized as the broadcast's: 37 % of the screen's width.
     "ban_cx": 510.0, "ban_y": -27.0,
-    "ban_h": 38.0, "ban_lw": 364.0, "ban_fw": 393.0, "ban_cap": 12.0, "ban_fcap": 11.4,
-    "ban_name_w": 138.0, "ban_lab_x": 157.0,
-    "ban_team_w": 49.0, "ban_label_w": 127.0, "ban_chev": 12.0, "ban_logo": 21.0, "ban_trail": 15.0,
-    "ban_fname_r": 273.0, "ban_flogo": 290.0, "ban_ftime": 306.0, "ban_round": 6.0,
+    "ban_h": 38.0, "ban_lw": 364.0, "ban_cap": 12.0,
+    "ban_name_w": 138.0, "ban_lab_x": 157.0, "ban_team_w": 49.0, "ban_chev": 12.0,
     "row": ROW_UNITS,
     "width": u(REF["width"]),
     "pos_w": u(REF["pos_w"]), "pos_x": u(REF["pos_x"]),
@@ -120,8 +118,7 @@ LAYOUT = {
         "clear": "#1E9E3E",
         "arrow_up": "#32BF36",
         "arrow_dn": "#E8102A",
-        "ban_dark": [20, 19, 30], "ban_fl_dark": [17, 14, 24], "ban_purple": ["#B44BE2", "#9330C9"],
-        "ban_trail": ["#7A2AAA", "#561F7C", "#371550"], "ban_time": "#B566F5", "ban_label": "#D8D6E2", "ban_flabel": "#F6E8FF",
+        "ban_dark": [20, 19, 30], "ban_label": "#D8D6E2",
         "tyres": {"S": "#E8303A", "M": "#F0D23A", "H": "#E6E6E6", "I": "#3CB043", "W": "#2E7CD6"},
     },
 }
@@ -298,33 +295,6 @@ def make_art(art: Path):
     tb = [lw - tw - sl, 0, lw, bh]
     add("ban_team", poly(tw + sl, bh, [([(sl, 0), (tw + sl, 0), (tw + sl, bh), (0, bh)], (255, 255, 255, 255))]), tb)
     add("ban_team_d", poly(tw + sl, bh, [([(sl, 0), (tw + sl, 0), (tw + sl, bh), (0, bh)], (120, 120, 132, 255))]), tb)
-    # FASTEST LAP (as the broadcast): a near-black pill with rounded left corners, the purple label ending in a
-    # chevron, and a trail of two darker chevrons fading into the bar
-    fw, lab, tr, rr = L["ban_fw"], L["ban_label_w"], L["ban_trail"], L["ban_round"]
-    p0, p1 = hexrgba(C["ban_purple"][0]), hexrgba(C["ban_purple"][1])
-    purple = lambda t: tuple(int(p0[k] + (p1[k] - p0[k]) * t) for k in range(3)) + (252,)
-
-    def rounded_left(x1, tip):
-        pts = []
-        for k in range(9):  # the top-left and bottom-left quarter circles
-            a = math.pi / 2 * k / 8
-            pts.append((rr - rr * math.cos(a), rr - rr * math.sin(a)))
-        pts += [(x1, 0), (x1 + tip, bh / 2), (x1, bh)]
-        for k in range(9):
-            a = math.pi / 2 * k / 8
-            pts.append((rr - rr * math.sin(a), bh - rr + rr * math.cos(a)))
-        return pts
-
-    def chevron(x0, w):
-        return [(x0, 0), (x0 + w, 0), (x0 + w + sl, bh / 2), (x0 + w, bh), (x0, bh), (x0 + sl, bh / 2)]
-
-    add("ban_f_bg", poly(fw, bh, [
-        (rounded_left(fw, 0), shade(C["ban_fl_dark"], 246)),
-        (chevron(lab + 2 * tr - 2.0, tr - 2.0), hexrgba(C["ban_trail"][2], 255)),
-        (chevron(lab + tr - 1.0, tr - 2.0), hexrgba(C["ban_trail"][1], 255)),
-        (chevron(lab, tr - 2.0), hexrgba(C["ban_trail"][0], 255)),
-        (rounded_left(lab, sl), purple),
-    ]), [0, 0, fw, bh])
     return sprites
 
 
@@ -682,59 +652,38 @@ def unique_ids(elements):
 
 
 def banners(logos_found):
-    """NEW RACE LEADER and FASTEST LAP, top centre. Each: a group (no fade: a motion trigger on our own leaf is not
-    reliable in game, and a missed one left a banner invisible) holding the art and
-    texts (shown with the leaf) and, straight under it, the per-car name / colour slots and the team logo, which
-    the DLL switches only while the banner shows (a change under a hidden node is lost)."""
+    """NEW RACE LEADER, top centre: "LECLERC NEW RACE LEADER" and the team's colour block with its logo where the
+    broadcast puts the driver's face. A group (no fade: a motion trigger on our own leaf is not reliable in game,
+    and a missed one left the banner invisible) holding the art and label (shown with the leaf) and, straight under
+    it, the per-car name / colour slots and the team logo, which the DLL switches only while the banner shows (a
+    change under a hidden node is lost). FASTEST LAP was dropped in 0.15 (DECISIONES.md D76)."""
     L = LAYOUT
     C = L["colours"]
-    bh, cap, R = L["ban_h"], L["ban_cap"], L["row"]
+    bh, cap = L["ban_h"], L["ban_cap"]
     ty = bh / 2 + cap / 2
-    out = []
-    for k, label in (("bnl", "NEW RACE LEADER"), ("bnf", "FASTEST LAP")):
-        lead = k == "bnl"
-        if lead:
-            # "LECLERC NEW RACE LEADER": the surname right-aligned against the label (the game gives no text width)
-            logo_cx = L["ban_lw"] - L["ban_team_w"] / 2
-            name_x, name_box = L["ban_lab_x"] - 6.0, L["ban_name_w"]
-        else:
-            # "ANTONELLI (logo) 1:37.477" flush against the time, the trail of chevrons before it
-            logo_cx = L["ban_flogo"]
-            name_x, name_box = L["ban_fname_r"], L["ban_fname_r"] - L["ban_label_w"] - 3 * L["ban_trail"] - 6.0
-            cap = L["ban_fcap"]
-            ty = bh / 2 + cap / 2
-        # layers as the rows': the background under the game's team badge unit, which always draws at 30 (0.14.0
-        # drew the background at 40, over the badge, and the label did not show either)
-        art = [sprite(f"{k}bg", "ban_l_bg" if lead else "ban_f_bg", 20)]
-        if lead:
-            art.append(group(f"{k}tdg", [sprite(f"{k}td", "ban_team_d", 21)], visible=vm("demo")))
-            art.append(text(f"{k}lab", "OSD_24_bold", "left", 120.0, cap, [L["ban_lab_x"], ty], literal=label,
-                            colour=C["ban_label"] + "ff"))
-        else:
-            art.append(text(f"{k}lab", "OSD_24_bold", "left", L["ban_label_w"], cap, [10.0, ty], literal=label,
-                            colour=C["ban_flabel"] + "ff"))
-            art.append(text(f"{k}tm", "OSD_24_bold", "left", 80.0, cap, [L["ban_ftime"], ty],
-                            value=vm(f"{k}_t"), colour=C["ban_time"] + "ff", case="none"))
-        align = "right"
-        art.append(group(f"{k}dn", [text(f"{k}dnm", "OSD_24_bold", align, name_box, cap, [name_x, ty],
-                                         value=vm(f"{k}_nm"), wrap="clampwidth", case="upper")], visible=vm("demo")))
-        slot = [text(f"{k}sn", "OSD_24_bold", align, name_box, cap, [name_x, ty],
-                     value={"session_car": "driver.second_name", "slot_var": "V"}, wrap="clampwidth", case="upper")]
-        if lead:
-            slot.insert(0, sprite(f"{k}tc", "ban_team", 21, tint={"session_car": "nub_colour", "slot_var": "V",
-                                                                    "default": "#00000000"}))
-        cars = group(f"{k}v", slot, visible=vm(f"{k}_c{{VV}}"), repeat={"count": SLOTS, "var": "V"})
-        # the team logo: the broadcast icon (private build) by one-hot, else the game's badge
-        lg = []
-        for i in logos_found:
-            lg.append(group(f"{k}tm{i:02d}g", [sprite(f"{k}tm{i:02d}", f"tmb_{TEAMS[i]}", 27)],
-                            at=[logo_cx, bh / 2], visible=vm(f"{k}_tm{i:02d}")))
-        lg.append({"kind": "unit", "id": f"{k}lg", "unit": "team_logo", "at": [logo_cx, bh / 2],
-                   "size": L["unit_logo"] * 1.7, "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
-        g = group(f"{k}g", [group(f"{k}art", art, visible=vm(k)), cars] + lg)
-        g["at"] = [-(L["ban_lw"] if lead else L["ban_fw"]) / 2, 0]
-        out.append(g)
-    return group("ban", out, at=[L["ban_cx"], L["offset_y"] + L["ban_y"]])
+    k = "bnl"
+    # the surname right-aligned against the label (the game gives no text width)
+    logo_cx = L["ban_lw"] - L["ban_team_w"] / 2
+    name_x, name_box = L["ban_lab_x"] - 6.0, L["ban_name_w"]
+    # layers as the rows': the background under the game's team badge unit, which always draws at 30
+    art = [sprite(f"{k}bg", "ban_l_bg", 20),
+           group(f"{k}tdg", [sprite(f"{k}td", "ban_team_d", 21)], visible=vm("demo")),
+           text(f"{k}lab", "OSD_24_bold", "left", 120.0, cap, [L["ban_lab_x"], ty], literal="NEW RACE LEADER",
+                colour=C["ban_label"] + "ff"),
+           group(f"{k}dn", [text(f"{k}dnm", "OSD_24_bold", "right", name_box, cap, [name_x, ty],
+                                 value=vm(f"{k}_nm"), wrap="clampwidth", case="upper")], visible=vm("demo"))]
+    slot = [sprite(f"{k}tc", "ban_team", 21, tint={"session_car": "nub_colour", "slot_var": "V",
+                                                    "default": "#00000000"}),
+            text(f"{k}sn", "OSD_24_bold", "right", name_box, cap, [name_x, ty],
+                 value={"session_car": "driver.second_name", "slot_var": "V"}, wrap="clampwidth", case="upper")]
+    cars = group(f"{k}v", slot, visible=vm(f"{k}_c{{VV}}"), repeat={"count": SLOTS, "var": "V"})
+    # the team logo: the broadcast icon (private build) by one-hot, else the game's badge
+    lg = [group(f"{k}tm{i:02d}g", [sprite(f"{k}tm{i:02d}", f"tmb_{TEAMS[i]}", 27)], at=[logo_cx, bh / 2],
+                visible=vm(f"{k}_tm{i:02d}")) for i in logos_found]
+    lg.append({"kind": "unit", "id": f"{k}lg", "unit": "team_logo", "at": [logo_cx, bh / 2],
+               "size": L["unit_logo"] * 1.7, "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
+    g = group(f"{k}g", [group(f"{k}art", art, visible=vm(k)), cars] + lg, at=[-L["ban_lw"] / 2, 0])
+    return group("ban", [g], at=[L["ban_cx"], L["offset_y"] + L["ban_y"]])
 
 
 def record(flavour, sprites, logos_found):
@@ -769,10 +718,6 @@ def record(flavour, sprites, logos_found):
              "while": vm("show")},
             {"template": "hud_left_notification_dynamic.osd_visibility_option.left_notification.left_message",
              "hide": ["boundless"], "while": vm("show")},
-            # the game's own centre notification (its FASTEST LAP toast) gives way while our FASTEST LAP banner shows
-            {"template": "hud_notifications_dynamic.osd_visibility_option.hud_notifications_dynamic.notification_0.hud_message",
-             "scene": "eaid://ui_package/art/osd/components/message_system/message_system.idf",
-             "wrap": ["centre"], "while": vm("bnf")},
         ],
         "editor": {"rows": 5, "preview": preview_leaves()},
     }

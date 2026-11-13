@@ -85,7 +85,7 @@ inline Snapshot make(int sc, double t)
             for (int i = 0; i < 22; i++)
                 order[size_t(i)] = start[i];
         }
-        // banners: P2 takes the lead (NEW RACE LEADER), then a new fastest lap
+        // banners: P2 takes the lead (NEW RACE LEADER); the fastest lap moves (the row's purple icon)
         if (sc == banners && t > 0.5)
             std::swap(order[0], order[1]);
         // a pass for P6 halfway through
@@ -125,7 +125,7 @@ inline Snapshot make(int sc, double t)
         }
         // states
         CarIn *pitter = &snap.cars[13];
-        if (sc == banners && t > 3.5) { // a first fastest lap while NEW RACE LEADER shows (it waits), then beaten
+        if (sc == banners && t > 3.5) { // a first fastest lap, then beaten
             s.fastest_vid = int(snap.cars[4].vid);
             s.fastest_ms = 78450;
             if (t > 7.5) { // beaten: the banner

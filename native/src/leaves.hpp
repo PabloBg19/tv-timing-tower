@@ -66,15 +66,14 @@ public:
 
         form = L.boolean("form");
         wide = L.boolean("wide");
-        for (int b = 0; b < 2; b++) {
-            BannerLeaves &x = ban[b];
-            std::string k = b == 0 ? "bnl" : "bnf";
+        {
+            BannerLeaves &x = ban;
+            std::string k = "bnl";
             x.on = L.boolean(k);
             x.car = L.one_hot(k + "_c", kSlots, 2);
             x.tm = L.one_hot(k + "_tm", kTeams, 2);
             x.badge = L.text(k + "_badge", 96);
             x.bdg = L.boolean(k + "_bdg");
-            x.time = L.text(k + "_t", 12);
             x.nm = L.text(k + "_nm", 24); // demo: the simulated driver's name
         }
         gained = L.boolean("gained");
@@ -165,11 +164,11 @@ public:
 
         L.set(form, h.on && h.race && h.formation);
         L.set(wide, h.on && h.wide);
-        // banners: their name / logo slots sit straight under an always-shown group, so they change while
+        // the banner: its name / logo slots sit straight under an always-shown group, so they change while
         // visible (see the rows below); hidden, every slot is off
-        for (int b = 0; b < 2; b++) {
-            BannerLeaves &x = ban[b];
-            const bool mine = h.on && h.banner == (b == 0 ? banner_leader : banner_fastest);
+        {
+            BannerLeaves &x = ban;
+            const bool mine = h.on && h.banner == banner_leader;
             hud::Leaves::Atomic group(L);
             L.set(x.on, mine);
             const bool icon = mine && cfg.logos == Config::Logos::tv && h.ban_team >= 0 && has_team(h.ban_team);
@@ -177,7 +176,6 @@ public:
             L.set(x.tm, icon ? h.ban_team : -1);
             L.set(x.badge, mine && !icon ? h.ban_badge : std::string());
             L.set(x.bdg, mine && !icon && !h.ban_badge.empty());
-            L.set(x.time, mine ? h.ban_time : std::string());
             L.set(x.nm, mine && h.demo ? h.ban_name : std::string());
         }
 
@@ -282,9 +280,9 @@ public:
     struct BannerLeaves {
         hud::BoolLeaf on, bdg;
         hud::OneHot car, tm;
-        hud::TextLeaf badge, time, nm;
+        hud::TextLeaf badge, nm;
     };
-    BannerLeaves ban[2]; // 0 NEW RACE LEADER, 1 FASTEST LAP
+    BannerLeaves ban; // NEW RACE LEADER
 
     static constexpr double kFadeHold = 0.16; // the row's fade out (generic_fade_on) before the swap
     static constexpr int kMaxFades = 4;       // more rows changing at once: no fade (a start, a restart)

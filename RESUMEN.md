@@ -1,5 +1,13 @@
 # Resumen — TV Timing Tower
 
+## 0.15.0 (13-11-2026)
+
+- Fuera la franja FASTEST LAP y su ajuste (D76): el juego no da tiempos a los addons, así que nunca coincidía con el
+  aviso «Mejor vuelta» del juego, que vuelve a salir sin ocultarse. Se queda NEW RACE LEADER (el orden lo da el juego),
+  centrada y más grande.
+
+---
+
 ## 0.14.1 (13-11-2026)
 
 - Franjas centradas y a la altura del aviso del juego, medido en una captura de pantalla completa (2000 × 1125); un

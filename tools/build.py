@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.14.1"
+VERSION = "0.15.0"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
@@ -113,10 +113,6 @@ OPTIONS = [
     ("ban_leader", "toggle", "Aviso de nuevo líder", "New race leader banner",
      "Carrera: franja arriba en el centro con NEW RACE LEADER cuando cambia el líder (desde la vuelta 2).",
      "Races: a banner top centre with NEW RACE LEADER when the lead changes hands (from lap 2).", {"default": True}),
-    ("ban_fastest", "toggle", "Aviso de vuelta rápida", "Fastest lap banner",
-     "Carrera: franja arriba en el centro con FASTEST LAP, el piloto y su tiempo cuando alguien mejora la vuelta rápida.",
-     "Races: a banner top centre with FASTEST LAP, the driver and the time when someone beats the fastest lap.",
-     {"default": True}),
     ("tyres", "toggle", "Neumáticos", "Tyres", "Muestra el compuesto actual de cada coche.",
      "Shows each car's current compound.", {"default": True}),
     ("tyre_age", "toggle", "Vueltas del neumático", "Tyre age",
@@ -169,7 +165,7 @@ OPTIONS = [
                  ("practice", "Libres", "Practice"), ("sprint_quali", "Clasificación sprint", "Sprint qualifying"),
                  ("gained", "Ganadas/perdidas", "Gained/lost"), ("grid", "Parrilla (neumáticos de salida)", "Grid (starting tyres)"),
                  ("tyres", "Vista de neumáticos", "Tyres view"),
-                 ("banners", "Avisos (líder y vuelta rápida)", "Banners (leader, fastest lap)")],
+                 ("banners", "Aviso de nuevo líder", "New race leader banner")],
       "default": "cycle"}),
     ("debug_log", "toggle", "Log detallado", "Verbose log",
      "Escribe en swofty/loader.log el coste de cada actualización y los cambios de estado.",

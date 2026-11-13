@@ -241,10 +241,11 @@ static void test_banners()
 {
     Config cfg;
     {
-        // demo "banners": P2 takes the lead at 0.5 s, a new fastest lap at 7.5 s
+        // demo "banners": P2 takes the lead at 0.5 s: NEW RACE LEADER for 6 s, and nothing for the fastest lap
+        // (FASTEST LAP was dropped: the game's own toast stays)
         Tower t;
-        int leader_at = -1, fastest_at = -1, both = 0;
-        std::string ftime, lname;
+        int leader_at = -1, shown = 0;
+        std::string lname;
         int lvid = -1;
         for (int i = 0; i <= 140; i++) {
             double now = i * 0.1;
@@ -254,23 +255,18 @@ static void test_banners()
                 lvid = v.h.ban_vid;
                 lname = v.h.ban_name;
             }
-            if (v.h.banner == banner_fastest && fastest_at < 0) {
-                fastest_at = i;
-                ftime = v.h.ban_time;
-            }
-            both += v.h.banner != banner_none;
+            CHECK(v.h.banner == banner_none || v.h.banner == banner_leader);
+            shown += v.h.banner != banner_none;
         }
         Snapshot s1 = demo::make(demo::banners, 1.0);
         CHECK(leader_at >= 15 && leader_at <= 17);            // held 1 s after the change
         CHECK(lvid == int(s1.cars[0].vid) && !lname.empty());
-        CHECK(fastest_at >= 81 && fastest_at <= 84);          // after the leader's 6 s and the gap
-        CHECK(ftime == "1:17.938");
-        CHECK(both >= 110 && both <= 125);                    // two banners of 6 s
+        CHECK(shown >= 58 && shown <= 62);                    // one banner of 6 s
     }
     {
         // switched off: none
         Config off = cfg;
-        off.ban_leader = off.ban_fastest = false;
+        off.ban_leader = false;
         Tower t;
         int any = 0;
         for (int i = 0; i <= 140; i++)

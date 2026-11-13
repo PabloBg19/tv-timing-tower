@@ -241,7 +241,6 @@ struct Config {
     // auto: codes beside data (gaps, times), full surnames when the data column is empty (as on TV)
     enum class Names { autoswitch, surname, code } names = Names::autoswitch;
     bool ban_leader = true;    // NEW RACE LEADER banner
-    bool ban_fastest = true;   // FASTEST LAP banner
     // practice and qualifying times (off: the core gives no lap times there and the game's counter does not move,
     // so the addon cannot time them reliably; on again once Swofty exposes the game's own best laps)
     bool timed_times = false;
@@ -260,8 +259,9 @@ struct Config {
 };
 
 // ---------------------------------------------------------------------------------------------- outputs
-// The banners top centre (races): NEW RACE LEADER and FASTEST LAP, as on the broadcast.
-enum Banner : int { banner_none = 0, banner_leader = 1, banner_fastest = 2 };
+// The banner top centre (races): NEW RACE LEADER, as on the broadcast. (FASTEST LAP was dropped in 0.15: the
+// game gives addons no lap times, so ours never matched the game's own fastest-lap toast.)
+enum Banner : int { banner_none = 0, banner_leader = 1 };
 
 enum Card : int { card_none = 0, card_sc = 1, card_vsc = 2, card_red = 3, card_chq = 4, card_yellow = 5,
                   card_sc_end = 6 /* unused since 0.8.0: SC ENDING */, card_vsc_end = 7, card_clear = 8, card_sc_ending = 9 };
@@ -320,7 +320,6 @@ struct Header {
     int ban_vid = -1;
     int ban_team = -1;         // the car's team index (TV icons), -1 none
     std::string ban_badge;     // the game's badge texture path, "" none
-    std::string ban_time;      // FASTEST LAP: the lap time
     std::string ban_name;      // the demo's driver name (in game the record reads the game's own name)
     std::string sub;           // the line under the logo: "SPRINT" or ""
     bool lead = false;         // gaps are to the leader
@@ -479,7 +478,6 @@ public:
         gained_shown_ = false;
         leader_vid_ = -1;
         leader_cand_ = -1;
-        new_fastest_ = false;
         ban_ = Pending{};
         ban_until_ = -1;
         ban_next_ = 0;
@@ -974,14 +972,12 @@ private:
                 fastest_flash_vid_ = snap.s.fastest_vid;
                 fastest_flash_until_ = now + 5.0;
             }
-            new_fastest_ = true; // every new fastest lap of the race, the first too (as the game's own toast)
             fastest_ms_ = snap.s.fastest_ms;
         }
     }
 
-    // ---- banners: NEW RACE LEADER when the lead changes hands from lap 2 (held 1 s, so a re-sort or a torn read
-    // does not count), FASTEST LAP when a lap beats the race's fastest so far. Each shows kBannerSeconds; one waiting
-    // for the other follows it after a short gap. Races only.
+    // ---- banner: NEW RACE LEADER when the lead changes hands from lap 2 (held 1 s, so a re-sort or a torn read
+    // does not count), for kBannerSeconds; a change while one shows follows it after a short gap. Races only.
     static constexpr double kBannerSeconds = 6.0;
     static constexpr double kBannerGap = 0.6;
 
@@ -990,7 +986,6 @@ private:
         if (kind != Kind::race || snap.cars.empty()) {
             leader_vid_ = -1;
             leader_cand_ = -1;
-            new_fastest_ = false;
             queue_.clear();
             ban_until_ = -1;
             return;
@@ -1008,17 +1003,12 @@ private:
                 leader_cand_t_ = now;
             } else if (now - leader_cand_t_ >= 1.0) {
                 if (cfg.ban_leader)
-                    push(Pending{banner_leader, v, 0});
+                    push(Pending{banner_leader, v});
                 leader_vid_ = v;
                 leader_cand_ = -1;
             }
         } else {
             leader_cand_ = -1;
-        }
-        if (new_fastest_) {
-            new_fastest_ = false;
-            if (cfg.ban_fastest && !s.chequered && s.fastest_vid >= 0)
-                push(Pending{banner_fastest, s.fastest_vid, s.fastest_ms});
         }
         if (ban_until_ >= 0 && now >= ban_until_) {
             ban_until_ = -1;
@@ -1029,8 +1019,7 @@ private:
             queue_.erase(queue_.begin());
             ban_until_ = now + kBannerSeconds;
         }
-        if (ban_until_ < 0 || (ban_.kind == banner_leader && !cfg.ban_leader) ||
-            (ban_.kind == banner_fastest && !cfg.ban_fastest))
+        if (ban_until_ < 0 || !cfg.ban_leader)
             return;
         h.banner = ban_.kind;
         h.ban_vid = ban_.vid;
@@ -1040,14 +1029,11 @@ private:
                 h.ban_name = c.name;
                 h.ban_badge = c.badge.empty() ? "" : "#overrides.osd.timing_tower.team_badges_broadcast." + c.badge;
             }
-        if (ban_.kind == banner_fastest)
-            h.ban_time = fmt_lap(ban_.ms);
     }
 
     struct Pending {
         int kind = banner_none;
         int vid = -1;
-        int ms = 0;
     };
 
     // a newer banner of the same kind replaces the one waiting (the latest leader, the latest fastest lap)
@@ -1095,7 +1081,6 @@ private:
     double fastest_flash_until_ = 0;
     int leader_vid_ = -1, leader_cand_ = -1;
     double leader_cand_t_ = 0;
-    bool new_fastest_ = false;
     Pending ban_;
     double ban_until_ = -1, ban_next_ = 0;
     std::vector<Pending> queue_;
