@@ -143,4 +143,4 @@ inferred; Time Trial, replays and the spectator view keep the game's board; with
 instead of compressing its rows; rows fade instead of sliding.
 
 **Build:** `python tools/fetch_assets.py && python tools/build.py`. MIT licence. Credits: Swofty SDK (MIT);
-Project Halo by nyannoying.
+Project Halo by nyannoying https://github.com/nyannoying1337/f1-25-project-halo.
