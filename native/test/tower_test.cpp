@@ -47,8 +47,10 @@ static void test_format()
     CHECK(team_index("ferrari_2026") == 1);
     CHECK(team_index("red_bull_2026") == 2);
     CHECK(team_index("racing_bulls_2026") == 7);
-    CHECK(team_index("rb_2025") == 7);
-    CHECK(team_index("kick_sauber_2025") == 9);
+    // other seasons keep the game's own badge (the broadcast icons are 2026's): no Kick icon on an old Alfa Romeo
+    CHECK(team_index("rb_2025") == -1);
+    CHECK(team_index("kick_sauber_2025") == -1);
+    CHECK(team_index("alfa_romeo") == -1 && team_index("alfa_romeo_23") == -1 && team_index("ferrari") == -1);
     CHECK(team_index("audi_2026") == 10);
     CHECK(team_index("cadillac_2026") == 11);
     CHECK(team_index("aston_martin_2026") == 4);
@@ -639,6 +641,31 @@ static void test_leaves_and_record()
     CHECK(core.number("view_model_data.hud_tvt_r00_c00") == 0);
     pub.off();
     CHECK(core.number("view_model_data.hud_tvt_show") == 0);
+
+    // the safety car block: under the LAP band with 22 cars; over the header's logo with 24 (the tower keeps its
+    // height, so a My Team grid does not run off the screen)
+    {
+        Tower ts;
+        Snapshot sc22 = demo::make(demo::safety_car, 1.0);
+        pub.publish(ts.update(sc22, cfg, 1.0), cfg);
+        CHECK(core.number("view_model_data.hud_tvt_c_sc") == 1 && core.number("view_model_data.hud_tvt_t_sc") == 0);
+        CHECK(core.number("view_model_data.hud_tvt_cardtop") == 0);
+        Snapshot sc24 = sc22;
+        for (int k = 0; k < 2; k++) {
+            CarIn extra = sc24.cars.back();
+            extra.vid = uint32_t(22 + k);
+            extra.pos = 23 + k;
+            sc24.cars.push_back(extra);
+        }
+        sc24.s.racers = 24;
+        Tower t24;
+        const View &v24 = t24.update(sc24, cfg, 1.0);
+        CHECK(v24.shown == 24 && v24.h.wide && v24.h.card == card_sc);
+        pub.publish(v24, cfg);
+        CHECK(core.number("view_model_data.hud_tvt_c_sc") == 0 && core.number("view_model_data.hud_tvt_t_sc") == 1);
+        CHECK(core.number("view_model_data.hud_tvt_cardtop") == 1);
+        pub.off();
+    }
 
     // live rows: the per-car slot changes only while the row shows (never under a hidden node)
     Snapshot live = demo::make(demo::quali_q2, 0.5);

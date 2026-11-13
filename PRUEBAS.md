@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.12.0
+# Checklist de pruebas en el juego — TV Timing Tower 0.13.0
 
 Antes de empezar: instala `dist/tv-timing-tower.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.12.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.13.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -66,6 +66,12 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
 - [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
+
+## 4j. Novedades 0.13.0 (comentarios de OverTake)
+- [ ] Mi Equipo con 24 coches y Safety Car / amarilla / VSC: el bloque sale encima del logo F1 de la cabecera y la
+      torre no crece ni se sale por abajo. Con 22 coches sigue saliendo debajo de la cabecera.
+- [ ] Una temporada que no sea la 2026 (la base de F1 25 u otra): cada equipo con el escudo del juego, ninguno con el
+      icono de Kick que no le toca.
 
 ## 4i. Novedades 0.12.0
 - [ ] Libres y clasificación: sin tiempos ni diferencias, apellidos completos, `P` de boxes, zona de eliminación y

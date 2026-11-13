@@ -490,12 +490,14 @@ def header(flavour, sprites):
             group("clkd", [text("clkdn", "OSD_24_regular", "left", u(50), ln, [u(3.0), 0], value=vm("dclk"))],
                   visible=vm("demo")),
         ]}], visible=vm("timed"))
-    top = group("top", bgs + [logo] + subs + [race, timed])
+    # the logo and the lockup make way for a flag block on a 24-car grid (see the cards below)
+    brand = group("brand", [logo] + subs, visible=vm("cardtop", True, True))
+    top = group("top", bgs + [brand, race, timed])
 
     tx = L["block_text_x"]
     cap = L["cap_block"]
 
-    def block(id_, colour_key, lines, ink="#0E0E10ff", value=None, fia="k"):
+    def block(id_, colour_key, lines, ink="#0E0E10ff", value=None, fia="k", pre="c_"):
         """A flag block: the FIA badge at the left, two or three lines of heavy text."""
         n = len(lines)
         hb = L[f"block{n}"]
@@ -514,7 +516,7 @@ def header(flavour, sprites):
                 e.pop("literal", None)
                 e["value"] = value
             kids.append(e)
-        return group(id_, kids, visible=vm("c_" + id_))
+        return group(id_, kids, visible=vm(pre + id_))
 
     def band(id_, label, leaf):
         """A line of the dark LAP band (as GAINED / LOST): the view the data column shows."""
@@ -541,6 +543,18 @@ def header(flavour, sprites):
         block("clear", "clear", ["TRACK", "CLEAR"], "#FFFFFFff", fia="w"),
         block("yel", "sc", ["YELLOW", "FLAG", None], value=vm("ysec")),
     ]}
+    # More than 22 rows (a 24-car My Team grid): the block takes the logo's place at the top of the header instead
+    # of growing the tower under it (a user's 24-car tower ran off the bottom of the screen under the safety car).
+    # Its own leaves (t_*), so no copy changes under a hidden parent.
+    top["children"].append(group("cardt", [
+        block("red", "red", ["RED", "FLAG"], "#FFFFFFff", fia="w", pre="t_"),
+        block("sc", "sc", ["SAFETY", "CAR"], pre="t_"),
+        block("vsc", "sc", ["VIRTUAL", "SAFETY", "CAR"], pre="t_"),
+        block("vscend", "sc", ["VSC", "ENDING"], pre="t_"),
+        block("scending", "sc", ["SC", "ENDING"], pre="t_"),
+        block("clear", "clear", ["TRACK", "CLEAR"], "#FFFFFFff", fia="w", pre="t_"),
+        block("yel", "sc", ["YELLOW", "FLAG", None], value=vm("ysec"), pre="t_"),
+    ]))
     return top, cards
 
 

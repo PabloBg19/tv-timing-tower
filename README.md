@@ -69,7 +69,7 @@ paquete solo en español.
 | Tyres · Tyre age | Sí · No | Compuesto; vueltas con el juego actual |
 | Background | Broadcast | Opacidad del fondo |
 | Position arrows | Sí | Triángulo verde o rojo 3 s al ganar o perder puestos (carrera) |
-| Team logos | TV | TV (iconos de la emisión) / Game (escudos del juego, en color; siguen a los mods) / Game white |
+| Team logos | TV | TV (iconos de la emisión de 2026; en otras temporadas, el escudo del juego) / Game (escudos del juego, en color; siguen a los mods) / Game white |
 | Animations | Sí | Fundido de las filas en los adelantamientos |
 | Team colour bar · Highlight my car | No · Sí | |
 | In practice / qualifying / sprint qualifying / races | Sí | Por tipo de sesión |
@@ -90,9 +90,9 @@ que cambian. Cada actualización cuesta unos 23 µs en un PC de pruebas; en el j
 - `SC ENDING` y `VSC ENDING` se deducen: el juego no avisa a los addons de «safety car en esta vuelta», así que
   `SC ENDING` sale cuando el coche de seguridad entra al pit lane y `VSC ENDING` justo al acabar el VSC.
 - Contrarreloj, repeticiones y modo espectador usan el tablero del juego.
-- La TV junta las filas cuando hay un bloque de bandera; aquí la torre crece. Con 24 coches (Mi Equipo) la torre
-  sube algo más por su cuenta, pero si aun así se corta por arriba o por abajo, escálala o muévela en el editor de
-  HUD.
+- La TV junta las filas cuando hay un bloque de bandera; aquí la torre crece. Con 24 coches (Mi Equipo) el bloque
+  va encima del logo de la cabecera, así la torre no crece, y además sube algo por su cuenta; si aun así no cabe,
+  escálala o muévela en el editor de HUD.
 - No hay deslizamiento de filas como en la TV (el compositor de Swofty no lo permite sin saltos); se usa un fundido.
 
 ## Desinstalación
@@ -147,8 +147,8 @@ anti-cheat related.
 
 **Known issues:** no lap times in practice and qualifying yet; SC ENDING (from the safety car entering the pit lane)
 and VSC ENDING are inferred; Time Trial, replays and the spectator view keep the game's board; with a flag block the tower
-grows instead of compressing its rows; with 24 cars (My Team) it slides a bit further up on its own, by an amount
-not yet confirmed in game; rows fade instead of sliding.
+grows instead of compressing its rows (with 24 cars the block covers the header's logo instead, so the tower keeps its
+height); with 24 cars it also slides a bit further up on its own; rows fade instead of sliding.
 
 **Build:** `python tools/fetch_assets.py && python tools/build.py`. MIT licence. Credits: Swofty SDK (MIT);
 Project Halo by nyannoying.

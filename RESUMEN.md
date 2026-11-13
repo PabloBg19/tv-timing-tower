@@ -1,5 +1,16 @@
 # Resumen — TV Timing Tower
 
+## 0.13.0 (13-11-2026, comentario de OverTake, más de 400 descargas)
+
+- Temporadas que no son la 2026: un equipo salía con el icono de Kick. Los iconos de la tele son los de 2026 y se
+  elegían por la clave del escudo (`alfa_romeo` es Sauber/Alfa Romeo en otros años). Ahora solo las claves de 2026
+  (`…_26`) llevan icono; el resto, el escudo del propio juego (D70).
+- 24 coches con bandera: el bloque va encima del logo de la cabecera en lugar de debajo, y la torre no crece (D71).
+- `build.py`: con Swofty 1.9.41 la comprobación de perfil en una carpeta temporal falla incluso sin addons
+  (`the tooltips already have mod_menu`); lo detecta y lo avisa. El perfil real compila bien.
+
+---
+
 ## 0.12.0 (13-11-2026)
 
 - Sin tiempos en libres y clasificación (D69): la Q1 de prueba demostró que el addon no puede medirlos (tiempo

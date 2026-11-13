@@ -483,3 +483,18 @@ Decisión del usuario: quitar los tiempos de libres y clasificación hasta que S
 desarrolladores). `Config::timed_times` (apagado) deja la lógica entera (P1 su vuelta, diferencias a P1, al corte,
 destellos), con sus tests, para encenderla con los tiempos oficiales. Sin datos, los nombres salen completos, como en
 la tele. El reloj de vueltas sigue para la vuelta rápida de carrera.
+
+## 0.13.0
+
+**D70 — Iconos de la tele solo en la temporada 2026.** Comentario en OverTake: «en temporadas antiguas, un equipo
+sale con el logo de Kick». Los iconos de la emisión del paquete son los de los equipos de 2026 y se eligen por la
+clave del escudo del juego. En otras temporadas, Sauber/Alfa Romeo se llama `alfa_romeo` (sin `_26`) y caía en el
+icono de Kick, y lo mismo podía pasar con Toro Rosso/AlphaTauri o Renault. Ahora un escudo solo lleva icono de la
+tele si su clave es de 2026 (acaba en `26`: `ferrari_26`, `alfa_romeo_26`); cualquier otro usa el escudo del propio
+juego, que siempre es el de esa temporada (y sigue a los mods de logos).
+
+**D71 — 24 coches con bandera: el bloque encima del logo.** Mismo comentario: con 24 coches, al salir el Safety Car o
+una amarilla, la torre se salía por abajo (el bloque añade 44-54 unidades bajo la cabecera). Con más de 22 filas, el
+bloque se dibuja sobre la parte del logo de la cabecera (49,5 unidades), que se oculta, y la torre no cambia de
+altura; no depende de la animación de D62. Es una segunda copia de los bloques con sus propias hojas (`t_*`) y una
+hoja `cardtop`, así ninguna cambia bajo un nodo oculto. Con 22 coches o menos sigue como en la tele, bajo la cabecera.

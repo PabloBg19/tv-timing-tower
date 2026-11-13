@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.12.0"
+VERSION = "0.13.0"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
@@ -300,6 +300,17 @@ def profile_check(archive, flavour):
     run(base + ["addons", "enable", aid], capture_output=True)
     r = subprocess.run(base + ["build"], capture_output=True, text=True)
     if r.returncode:
+        # the same build of an empty profile tells a launcher problem (1.9.41: "the tooltips already have mod_menu"
+        # in any scratch data dir) from one of this package
+        empty = BUILD / flavour / "swofty-empty"
+        if empty.exists():
+            shutil.rmtree(empty)
+        empty.mkdir(parents=True)
+        e = subprocess.run([exe, "--data-dir", str(empty), "build"], capture_output=True, text=True)
+        last = lambda out: (out.strip().splitlines() or [""])[-1]
+        if e.returncode and last(e.stdout + e.stderr) == last(r.stdout + r.stderr):
+            print(f"profile check inconclusive: an empty profile fails the same way ({last(e.stdout + e.stderr)})")
+            return
         print((r.stdout + r.stderr)[-3000:])
         sys.exit(f"profile build failed with the {flavour} package")
     print(f"profile check: {flavour} package installs and builds")

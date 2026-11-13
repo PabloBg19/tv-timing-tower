@@ -150,6 +150,11 @@ inline int team_index(const std::string &badge)
     auto has = [&](const char *s) { return k.find(s) != std::string::npos; };
     if (k.empty())
         return -1;
+    // The broadcast icons are the 2026 teams'. Only the 2026 season's badges (keys ending in 26: "ferrari_26",
+    // "alfa_romeo_26") get one; any other season keeps the game's own badge, which is right for it (an older
+    // season's "alfa_romeo" is Sauber / Alfa Romeo, not 2026's Audi, and used to come out as Kick).
+    if (k.size() < 2 || k.compare(k.size() - 2, 2, "26") != 0)
+        return -1;
     if (has("mercedes"))
         return 0;
     if (has("ferrari"))
