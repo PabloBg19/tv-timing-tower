@@ -1,5 +1,15 @@
 # Resumen — TV Timing Tower
 
+## 0.13.2 (13-11-2026)
+
+- Fuera la variante de 24 coches de la 0.13.0 (bloque sobre el logo): tenía un fallo que quitaba el logo de la
+  cabecera en toda la carrera con 24 coches, y el usuario quiere todas las torres iguales. El bloque va siempre bajo
+  la cabecera; con 24 coches y bandera, escalar en el editor de HUD (D73).
+- Amarilla en tres sectores: `ALL SECTORS` (antes `SECTORS 1, 2 & 3` se salía del bloque); textos de los bloques
+  limitados a su caja.
+
+---
+
 ## 0.13.1 (13-11-2026)
 
 - Escudos del juego más grandes (cuadrado de 19 en vez de 13, centrado en el hueco entre la posición y el nombre):

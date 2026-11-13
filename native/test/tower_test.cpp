@@ -223,6 +223,20 @@ static void test_field_persists_across_quali_segments()
     CHECK(t7.update(make_timed(7, 16, 16), cfg, 0.0).shown == 10);
 }
 
+static void test_yellow_texts()
+{
+    Config cfg;
+    Snapshot s = demo::make(demo::race, 1.0);
+    s.s.yellow = 0x7; // sectors 1, 2 and 3: "SECTORS 1, 2 & 3" ran past the block's edge
+    Tower t;
+    const View &v = t.update(s, cfg, 1.0);
+    CHECK(v.h.card == card_yellow && v.h.ysec == "ALL SECTORS");
+    s.s.yellow = 0x5;
+    Tower t2;
+    const View &v2 = t2.update(s, cfg, 1.0);
+    CHECK(v2.h.ysec == "SECTORS 1 & 3");
+}
+
 static void test_banners()
 {
     Config cfg;
@@ -642,30 +656,6 @@ static void test_leaves_and_record()
     pub.off();
     CHECK(core.number("view_model_data.hud_tvt_show") == 0);
 
-    // the safety car block: under the LAP band with 22 cars; over the header's logo with 24 (the tower keeps its
-    // height, so a My Team grid does not run off the screen)
-    {
-        Tower ts;
-        Snapshot sc22 = demo::make(demo::safety_car, 1.0);
-        pub.publish(ts.update(sc22, cfg, 1.0), cfg);
-        CHECK(core.number("view_model_data.hud_tvt_c_sc") == 1 && core.number("view_model_data.hud_tvt_t_sc") == 0);
-        CHECK(core.number("view_model_data.hud_tvt_cardtop") == 0);
-        Snapshot sc24 = sc22;
-        for (int k = 0; k < 2; k++) {
-            CarIn extra = sc24.cars.back();
-            extra.vid = uint32_t(22 + k);
-            extra.pos = 23 + k;
-            sc24.cars.push_back(extra);
-        }
-        sc24.s.racers = 24;
-        Tower t24;
-        const View &v24 = t24.update(sc24, cfg, 1.0);
-        CHECK(v24.shown == 24 && v24.h.wide && v24.h.card == card_sc);
-        pub.publish(v24, cfg);
-        CHECK(core.number("view_model_data.hud_tvt_c_sc") == 0 && core.number("view_model_data.hud_tvt_t_sc") == 1);
-        CHECK(core.number("view_model_data.hud_tvt_cardtop") == 1);
-        pub.off();
-    }
 
     // live rows: the per-car slot changes only while the row shows (never under a hidden node)
     Snapshot live = demo::make(demo::quali_q2, 0.5);
@@ -787,6 +777,7 @@ int main()
     test_field_persists_across_quali_segments();
     test_cards();
     test_banners();
+    test_yellow_texts();
     test_lap_clock();
     test_session_views();
     test_live_adapter();

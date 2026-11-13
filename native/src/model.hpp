@@ -306,7 +306,7 @@ struct Header {
     std::string clock;         // demo only (else the game's binding)
     bool demo = false;
     int card = card_none;
-    std::string ysec;          // "S2", "S1 S3"
+    std::string ysec;          // "SECTOR 2", "SECTORS 1 & 3", "ALL SECTORS"
     bool abbr = false;         // three-letter codes in the rows (else full surnames)
     bool bare = false;         // names only: no data column, no tyres (lap 1, safety car, red flag)
     bool gained = false;       // the "GAINED / LOST" view
@@ -843,6 +843,11 @@ private:
                 s.push_back(i + 1);
         if (s.empty())
             return "";
+        // three or more do not fit the block ("SECTORS 1, 2 & 3" ran past its edge)
+        if (s.size() >= 3)
+            return s.size() == 3 && s.front() == 1 && s.back() == 3
+                       ? "ALL SECTORS"
+                       : "SECTORS " + std::to_string(s.front()) + "-" + std::to_string(s.back());
         std::string t = s.size() == 1 ? "SECTOR " : "SECTORS ";
         for (size_t i = 0; i < s.size(); i++) {
             if (i)

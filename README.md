@@ -90,9 +90,8 @@ que cambian. Cada actualización cuesta unos 23 µs en un PC de pruebas; en el j
 - `SC ENDING` y `VSC ENDING` se deducen: el juego no avisa a los addons de «safety car en esta vuelta», así que
   `SC ENDING` sale cuando el coche de seguridad entra al pit lane y `VSC ENDING` justo al acabar el VSC.
 - Contrarreloj, repeticiones y modo espectador usan el tablero del juego.
-- La TV junta las filas cuando hay un bloque de bandera; aquí la torre crece. Con 24 coches (Mi Equipo) el bloque
-  va encima del logo de la cabecera, así la torre no crece, y además sube algo por su cuenta; si aun así no cabe,
-  escálala o muévela en el editor de HUD.
+- La TV junta las filas cuando hay un bloque de bandera; aquí la torre crece. Con 24 coches (Mi Equipo) y bandera
+  puede no caber en pantalla: escálala un poco en el editor de HUD (Ajustes → HUD → Personalizar).
 - No hay deslizamiento de filas como en la TV (el compositor de Swofty no lo permite sin saltos); se usa un fundido.
 
 ## Desinstalación
@@ -147,8 +146,7 @@ anti-cheat related.
 
 **Known issues:** no lap times in practice and qualifying yet; SC ENDING (from the safety car entering the pit lane)
 and VSC ENDING are inferred; Time Trial, replays and the spectator view keep the game's board; with a flag block the tower
-grows instead of compressing its rows (with 24 cars the block covers the header's logo instead, so the tower keeps its
-height); with 24 cars it also slides a bit further up on its own; rows fade instead of sliding.
+grows instead of compressing its rows (with 24 cars and a flag, scale it down a little in the HUD editor); rows fade instead of sliding.
 
 **Build:** `python tools/fetch_assets.py && python tools/build.py`. MIT licence. Credits: Swofty SDK (MIT);
 Project Halo by nyannoying.

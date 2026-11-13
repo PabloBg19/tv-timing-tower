@@ -505,3 +505,13 @@ hoja `cardtop`, así ninguna cambia bajo un nodo oculto. Con 22 coches o menos s
 India, Lotus, Manor) se veían diminutos: el `team_logo` del juego es una textura cuadrada y un logo ancho ocupa solo
 una franja. El cuadrado pasa de 13 a 19 px de la referencia (un 46 % más) y se centra en el hueco entre la caja de
 posición (19) y el nombre (42), sin tocar ninguno. Los iconos de la tele (2026) no cambian.
+
+## 0.13.2
+
+**D73 — Todas las torres iguales (se quita D71).** La variante de 24 coches (bloque de bandera sobre el logo de la
+cabecera) tenía un fallo: la hoja `cardtop` se encendía con 24 coches aunque no hubiera bandera, y la cabecera perdía
+el logo F1 y el lockup toda la carrera. Además, el usuario prefiere que la torre de 24 se vea exactamente igual que
+las demás. Se quita entera: el bloque va siempre bajo la cabecera, como en la tele. El compositor solo deja deslizar
+o fundir un grupo, no escalarlo, así que con 24 coches y bandera la torre puede no caber: se escala en el editor de
+HUD. Se queda el arreglo de los textos: una amarilla en tres sectores dice `ALL SECTORS` (`SECTORS 1, 2 & 3` se salía
+del bloque) y las líneas de los bloques llevan `clampwidth`.
