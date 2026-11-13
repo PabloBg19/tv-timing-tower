@@ -35,7 +35,10 @@ def u(px):
 REF = {
     "width": 135.0,
     "pos_w": 19.0, "pos_x": 9.5,
-    "logo_x": 29.0, "logo_w": 15.0, "logo_h": 11.0, "unit_logo": 13.0,
+    "logo_x": 29.0, "logo_w": 15.0, "logo_h": 11.0,
+    # the game's own badge: a square texture, so a wide logo (Force India, Lotus, Manor) fills only a band of it;
+    # the square uses the whole gap between the position box (19) and the name (42)
+    "unit_logo": 19.0, "unit_x": 30.5,
     "name_x": 42.0,
     "gap_right": 117.5,
     "tyre_x": 127.0,
@@ -71,7 +74,7 @@ LAYOUT = {
     "row": ROW_UNITS,
     "width": u(REF["width"]),
     "pos_w": u(REF["pos_w"]), "pos_x": u(REF["pos_x"]),
-    "logo_x": u(REF["logo_x"]), "logo_w": u(REF["logo_w"]), "logo_h": u(REF["logo_h"]), "unit_logo": u(REF["unit_logo"]),
+    "logo_x": u(REF["logo_x"]), "logo_w": u(REF["logo_w"]), "logo_h": u(REF["logo_h"]), "unit_logo": u(REF["unit_logo"]), "unit_x": u(REF["unit_x"]),
     "name_x": u(REF["name_x"]),
     "name_box": u(REF["gap_right"] - REF["name_x"] - 2),
     "gap_right": u(REF["gap_right"]), "gap_box": u(70),
@@ -579,7 +582,7 @@ def row(flavour, logos_found):
     # team logo: the broadcast's icons (private build) by one-hot, else the game's own badge (colour or white)
     for i in logos_found:
         k.append(sprite(f"tm{i:02d}", f"tm_{TEAMS[i]}", 27, visible=vm(r + f"tm{i:02d}")))
-    k.append({"kind": "unit", "id": "lg", "unit": "team_logo", "at": [L["logo_x"], R / 2], "size": L["unit_logo"],
+    k.append({"kind": "unit", "id": "lg", "unit": "team_logo", "at": [L["unit_x"], R / 2], "size": L["unit_logo"],
               "visible": vm(r + "bdg"), "texture": vm(r + "badge")})
 
     # driver name: the game's own per-car values, one slot per vehicle id (changed only while the row shows)

@@ -498,3 +498,10 @@ una amarilla, la torre se salía por abajo (el bloque añade 44-54 unidades bajo
 bloque se dibuja sobre la parte del logo de la cabecera (49,5 unidades), que se oculta, y la torre no cambia de
 altura; no depende de la animación de D62. Es una segunda copia de los bloques con sus propias hojas (`t_*`) y una
 hoja `cardtop`, así ninguna cambia bajo un nodo oculto. Con 22 coches o menos sigue como en la tele, bajo la cabecera.
+
+## 0.13.1
+
+**D72 — Escudos del juego más grandes.** En una temporada 2015 (escudos del juego, D70) los logos alargados (Force
+India, Lotus, Manor) se veían diminutos: el `team_logo` del juego es una textura cuadrada y un logo ancho ocupa solo
+una franja. El cuadrado pasa de 13 a 19 px de la referencia (un 46 % más) y se centra en el hueco entre la caja de
+posición (19) y el nombre (42), sin tocar ninguno. Los iconos de la tele (2026) no cambian.

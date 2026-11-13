@@ -1,5 +1,12 @@
 # Resumen — TV Timing Tower
 
+## 0.13.1 (13-11-2026)
+
+- Escudos del juego más grandes (cuadrado de 19 en vez de 13, centrado en el hueco entre la posición y el nombre):
+  en temporadas antiguas los logos alargados salían diminutos (D72).
+
+---
+
 ## 0.13.0 (13-11-2026, comentario de OverTake, más de 400 descargas)
 
 - Temporadas que no son la 2026: un equipo salía con el icono de Kick. Los iconos de la tele son los de 2026 y se
