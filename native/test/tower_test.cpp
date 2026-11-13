@@ -210,7 +210,7 @@ static void test_cards()
     {
         Tower t;
         CHECK(t.update(demo::make(demo::safety_car, 1), cfg, 1).h.card == card_sc);
-        CHECK(t.update(demo::make(demo::safety_car, 4), cfg, 4).h.card == card_sc_end);   // SAFETY CAR IN THIS LAP
+        CHECK(t.update(demo::make(demo::safety_car, 4), cfg, 4).h.card == card_sc_ending); // SC heading in: SC ENDING
         CHECK(t.update(demo::make(demo::safety_car, 6), cfg, 6).h.card == card_sc_ending); // "SC" / "ENDING"
         CHECK(t.update(demo::make(demo::safety_car, 10), cfg, 10).h.card == card_clear);
         CHECK(t.update(demo::make(demo::safety_car, 14), cfg, 14).h.card == card_none);

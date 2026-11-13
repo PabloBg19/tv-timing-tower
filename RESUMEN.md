@@ -7,7 +7,8 @@
 - Arreglados los tiempos que no salían en libres y clasificación: si el filtro de coherencia no encuentra nada,
   se muestra el tiempo real del coche en vez de dejarlo en blanco (D59).
 - Arreglado IN PIT para que salga siempre, también durante GAINED/LOST, PIT STOPS, TYRES y con Safety Car (D60).
-- Añadido SC ENDING, igual que VSC ENDING, para el Safety Car real (D61).
+- `SC ENDING` sustituye a `SAFETY CAR IN THIS LAP`: sale cuando el coche de seguridad entra al pit lane y sigue 4 s
+  tras el relanzamiento (D61).
 - La torre sube un poco más con 24 coches (Mi Equipo); cantidad estimada, pendiente de confirmar en el juego (D62).
 - Tests nuevos para cada arreglo y para el caso de 24 coches.
 - Revisado después con Opus: Q2 sin Q1 e IN PIT con Safety Car, que seguían fallando.

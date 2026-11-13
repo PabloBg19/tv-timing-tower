@@ -31,7 +31,7 @@ tiempos de la retransmisión de F1 2026. **La dibuja el propio HUD del juego**: 
   - sanciones con el cuadrado rojo «!», vuelta rápida en morado, triángulos de posición y bandera a cuadros;
   - en los adelantamientos, las filas se desvanecen y vuelven con el orden nuevo.
 - **Banderas como en la señal de FOM:** bloque de color con el logo FIA para `SAFETY CAR`, `VIRTUAL SAFETY CAR`,
-  `SAFETY CAR IN THIS LAP`, `SC ENDING`, `VSC ENDING`, `YELLOW FLAG` + sector, `RED FLAG` y `TRACK CLEAR`. Con Safety Car o
+  `SC ENDING`, `VSC ENDING`, `YELLOW FLAG` + sector, `RED FLAG` y `TRACK CLEAR`. Con Safety Car o
   bandera roja la torre muestra solo los nombres.
 - **Todo sale del juego:** pilotos, nombres, equipos, colores, escudos, orden, estados y vueltas totales. Funciona
   con carreras rápidas, fin de semana, Mi Equipo con 24 coches y mods de equipos o logos.
@@ -82,7 +82,8 @@ que cambian. Cada actualización cuesta unos 23 µs en un PC de pruebas; en el j
 
 - Los tiempos de libres y clasificación los mide el addon, porque el estado en vivo de Swofty no los da. Error de
   unas centésimas.
-- `SAFETY CAR IN THIS LAP`, `SC ENDING` y `VSC ENDING` se deducen.
+- `SC ENDING` y `VSC ENDING` se deducen: el juego no avisa a los addons de «safety car en esta vuelta», así que
+  `SC ENDING` sale cuando el coche de seguridad entra al pit lane y `VSC ENDING` justo al acabar el VSC.
 - Contrarreloj, repeticiones y modo espectador usan el tablero del juego.
 - La TV junta las filas cuando hay un bloque de bandera; aquí la torre crece. Con 24 coches (Mi Equipo) la torre
   sube algo más por su cuenta, pero si aun así se corta por arriba o por abajo, escálala o muévela en el editor de
@@ -139,8 +140,8 @@ anti-cheat related.
 
 **Performance:** 30 updates a second, about 23 µs each, and only changed values are written.
 
-**Known issues:** practice and qualifying lap times are measured by the addon; SC IN THIS LAP, SC ENDING and VSC
-ENDING are inferred; Time Trial, replays and the spectator view keep the game's board; with a flag block the tower
+**Known issues:** practice and qualifying lap times are measured by the addon; SC ENDING (from the safety car entering the pit lane)
+and VSC ENDING are inferred; Time Trial, replays and the spectator view keep the game's board; with a flag block the tower
 grows instead of compressing its rows; with 24 cars (My Team) it slides a bit further up on its own, by an amount
 not yet confirmed in game; rows fade instead of sliding.
 

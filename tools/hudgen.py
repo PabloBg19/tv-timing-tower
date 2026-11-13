@@ -467,7 +467,6 @@ def header(flavour, sprites):
         band("sty", "STARTING TYRES", "stty"),
 
         block("red", "red", ["RED", "FLAG"], "#FFFFFFff", fia="w"),
-        block("scend", "sc", ["SAFETY CAR", "IN THIS", "LAP"]),
         block("sc", "sc", ["SAFETY", "CAR"]),
         block("vsc", "sc", ["VIRTUAL", "SAFETY", "CAR"]),
         block("vscend", "sc", ["VSC", "ENDING"]),

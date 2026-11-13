@@ -73,8 +73,8 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Clasificación sprint con 20 coches: SQ2 muestra 15 filas.
 - [ ] Carrera: un coche que entra a boxes muestra `IN PIT` **siempre**, también si la torre está en ese momento en
       `GAINED / LOST`, `PIT STOPS` o `TYRES`, y con Safety Car (aunque la torre muestre solo los nombres).
-- [ ] Safety Car real: al terminar aparece primero `SC` / `ENDING` 4 s (con el escudo FIA) y luego `TRACK CLEAR`,
-      igual que ya hacía el VSC.
+- [ ] Safety Car real: cuando el coche de seguridad entra al pit lane aparece `SC` / `ENDING` (con el escudo FIA),
+      sigue 4 s tras el relanzamiento y luego `TRACK CLEAR`. Anota cuánto antes del relanzamiento sale.
 - [ ] Mi Equipo con 24 coches, filas = Todas: la torre sube un poco más que con una parrilla normal. Si se corta
       por arriba (tapa otro elemento del HUD) o sigue sin caber por abajo, dilo con una captura.
 
@@ -110,8 +110,8 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] VSC: bloque `VIRTUAL / SAFETY CAR` con escudo FIA; siguen las abreviaturas y los intervalos. Al terminar,
       `VSC / ENDING` 4 s y luego `TRACK CLEAR` verde 4 s.
 - [ ] Safety Car: bloque `SAFETY / CAR`; la torre pasa a apellidos completos, sin diferencias ni neumáticos. Cuando
-      el coche de seguridad entra al pit lane, `SAFETY CAR / IN THIS LAP`; al desactivarse, `SC / ENDING` 4 s y
-      luego `TRACK CLEAR` verde 4 s (igual que el VSC).
+      el coche de seguridad entra al pit lane, `SC / ENDING`, que sigue 4 s tras el relanzamiento; luego
+      `TRACK CLEAR` verde 4 s.
 - [ ] Bandera roja: bloque rojo `RED FLAG`, solo nombres.
 - [ ] El escudo FIA del bloque se ve (es una textura del juego; si sale vacío o raro, haz una captura).
 - [ ] Compara con la TV: si FOM lo muestra distinto, manda una captura de la emisión.

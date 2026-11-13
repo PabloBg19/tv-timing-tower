@@ -245,7 +245,7 @@ struct Config {
 
 // ---------------------------------------------------------------------------------------------- outputs
 enum Card : int { card_none = 0, card_sc = 1, card_vsc = 2, card_red = 3, card_chq = 4, card_yellow = 5,
-                  card_sc_end = 6, card_vsc_end = 7, card_clear = 8, card_sc_ending = 9 };
+                  card_sc_end = 6 /* unused since 0.8.0: SC ENDING */, card_vsc_end = 7, card_clear = 8, card_sc_ending = 9 };
 
 struct Row {
     bool on = false;
@@ -789,7 +789,9 @@ private:
         if (s.red)
             return card_red;
         if (sc == 1)
-            return s.sc_in ? card_sc_end : card_sc;
+            // the safety car heads into the pit lane: "SC" / "ENDING" (the engineer's "safety car in this lap"; the
+            // game gives no earlier sign), kept 4 s past the restart and then TRACK CLEAR
+            return s.sc_in ? card_sc_ending : card_sc;
         if (sc == 2)
             return card_vsc;
         if (trans_card_ != card_none && now < trans_until_)

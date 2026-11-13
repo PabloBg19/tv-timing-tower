@@ -378,6 +378,11 @@ el tiempo de reserva de D59 ya no baja el mínimo que se exige a los coches de d
 fase de transición, a diferencia del VSC, que sí la tiene (`VSC ENDING` 4 s y luego `TRACK CLEAR`). Se añade la
 misma transición para el SC real: al pasar de activo a desactivado aparece un bloque `SC` / `ENDING` 4 s (mismo
 color y escudo FIA que los demás bloques amarillos) y después `TRACK CLEAR`, igual que el VSC.
+Revisión: en la tele `SC ENDING` es lo que el ingeniero llama «safety car en esta vuelta», así que sustituye a
+`SAFETY CAR IN THIS LAP` (bloque quitado). Ni el juego ni Swofty dan esa señal a los addons (el evento `flag` no
+se dispara y `live` solo da 0/1/2); lo primero que se ve es el coche de seguridad metiéndose al pit lane, así que
+`SC ENDING` sale desde ahí y sigue 4 s tras el relanzamiento. El VSC no tiene ninguna señal previa: `VSC ENDING`
+sigue saliendo los 4 s posteriores a que el juego lo quite.
 
 **D62 — Mi Equipo con 24 coches: la torre sube un poco más.** Con más de 22 filas visibles (23 o 24, solo posible
 con Mi Equipo y sus 12 equipos) la torre es más alta que con una parrilla normal de 20-22, porque las filas que se

@@ -49,7 +49,6 @@ public:
         dclk = L.text("dclk", 12);
         c_chq = L.boolean("c_chq");
         c_red = L.boolean("c_red");
-        c_scend = L.boolean("c_scend");
         c_sc = L.boolean("c_sc");
         c_vsc = L.boolean("c_vsc");
         c_vscend = L.boolean("c_vscend");
@@ -140,7 +139,6 @@ public:
         L.set(dclk, h.clock);
         L.set(c_chq, h.card == card_chq);
         L.set(c_red, h.card == card_red);
-        L.set(c_scend, h.card == card_sc_end);
         L.set(c_sc, h.card == card_sc);
         L.set(c_vsc, h.card == card_vsc);
         L.set(c_vscend, h.card == card_vsc_end);
@@ -249,7 +247,7 @@ public:
     hud::BoolLeaf show, on, timed, race, demo, abbr, colbar;
     hud::OneHot bg;
     hud::TextLeaf sess, lap, dlaps, dclk;
-    hud::BoolLeaf c_chq, c_red, c_scend, c_sc, c_vsc, c_vscend, c_scending, c_clear, c_yel;
+    hud::BoolLeaf c_chq, c_red, c_sc, c_vsc, c_vscend, c_scending, c_clear, c_yel;
     hud::TextLeaf ysec;
     hud::TextLeaf clock;
     hud::OneHot ld;
