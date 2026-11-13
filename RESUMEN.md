@@ -1,5 +1,15 @@
 # Resumen — TV Timing Tower
 
+## 0.10.0 (13-11-2026, primera parte de la 1.0)
+
+- Franjas arriba en el centro, como en la emisión: `NEW RACE LEADER` (apellido, bloque del color del equipo y su
+  logo donde la tele pone la cara) y `FASTEST LAP` (etiqueta morada, logo, apellido y tiempo). 6 s cada una, con
+  fundido; si coinciden, una detrás de otra (D67).
+- Ajustes para quitarlas y escenario demo «Avisos». Tests del modelo y visor actualizados.
+- Sin ver en el juego: la posición exacta (calculada con las proporciones de la emisión respecto a la torre).
+
+---
+
 ## 0.9.0 (13-11-2026, comentarios de OverTake)
 
 - Ajuste *Race gap decimals*: 2026 (`+0.9`) o Clásico (`+0.934`) (D65).

@@ -204,6 +204,63 @@ static void test_field_persists_across_quali_segments()
     CHECK(t7.update(make_timed(7, 16, 16), cfg, 0.0).shown == 10);
 }
 
+static void test_banners()
+{
+    Config cfg;
+    {
+        // demo "banners": P2 takes the lead at 0.5 s, a new fastest lap at 7.5 s
+        Tower t;
+        int leader_at = -1, fastest_at = -1, both = 0;
+        std::string ftime, lname;
+        int lvid = -1;
+        for (int i = 0; i <= 140; i++) {
+            double now = i * 0.1;
+            const View &v = t.update(demo::make(demo::banners, now), cfg, now);
+            if (v.h.banner == banner_leader && leader_at < 0) {
+                leader_at = i;
+                lvid = v.h.ban_vid;
+                lname = v.h.ban_name;
+            }
+            if (v.h.banner == banner_fastest && fastest_at < 0) {
+                fastest_at = i;
+                ftime = v.h.ban_time;
+            }
+            both += v.h.banner != banner_none;
+        }
+        Snapshot s1 = demo::make(demo::banners, 1.0);
+        CHECK(leader_at >= 15 && leader_at <= 17);            // held 1 s after the change
+        CHECK(lvid == int(s1.cars[0].vid) && !lname.empty());
+        CHECK(fastest_at >= 81 && fastest_at <= 84);          // after the leader's 6 s and the gap
+        CHECK(ftime == "1:17.938");
+        CHECK(both >= 110 && both <= 125);                    // two banners of 6 s
+    }
+    {
+        // switched off: none
+        Config off = cfg;
+        off.ban_leader = off.ban_fastest = false;
+        Tower t;
+        int any = 0;
+        for (int i = 0; i <= 140; i++)
+            any += t.update(demo::make(demo::banners, i * 0.1), off, i * 0.1).h.banner != banner_none;
+        CHECK(any == 0);
+    }
+    {
+        // the start (the grid, lap 1) and other sessions: none
+        Tower t;
+        int any = 0;
+        for (int i = 0; i <= 60; i++) {
+            Snapshot g = demo::make(demo::grid, i * 0.1);
+            if (i > 20)
+                std::swap(g.cars[0], g.cars[1]);
+            any += t.update(g, cfg, i * 0.1).h.banner != banner_none;
+        }
+        Tower q;
+        for (int i = 0; i <= 60; i++)
+            any += q.update(demo::make(demo::quali_q1, i * 0.1), cfg, i * 0.1).h.banner != banner_none;
+        CHECK(any == 0);
+    }
+}
+
 static void test_cards()
 {
     Config cfg;
@@ -659,6 +716,7 @@ int main()
     test_quali();
     test_field_persists_across_quali_segments();
     test_cards();
+    test_banners();
     test_lap_clock();
     test_session_views();
     test_live_adapter();

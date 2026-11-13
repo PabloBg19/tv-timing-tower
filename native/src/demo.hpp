@@ -33,13 +33,13 @@ inline const Driver kGrid[22] = {
 
 enum Scenario : int {
     race = 0, quali_q1, quali_q2, safety_car, vsc, red_flag, finish, practice, sprint_quali, gained, grid, tyres,
-    count
+    banners, count
 };
 
 inline const char *scenario_name(int s)
 {
     static const char *n[] = {"race", "quali_q1", "quali_q2", "safety_car", "vsc", "red_flag", "finish",
-                              "practice", "sprint_quali", "gained", "grid", "tyres"};
+                              "practice", "sprint_quali", "gained", "grid", "tyres", "banners"};
     return s >= 0 && s < count ? n[s] : "";
 }
 
@@ -73,7 +73,7 @@ inline Snapshot make(int sc, double t)
     };
 
     const bool is_race = sc == race || sc == safety_car || sc == vsc || sc == red_flag || sc == finish || sc == gained ||
-                         sc == grid || sc == tyres;
+                         sc == grid || sc == tyres || sc == banners;
     if (is_race) {
         s.type = 15;
         s.laps_total = 57;
@@ -85,6 +85,9 @@ inline Snapshot make(int sc, double t)
             for (int i = 0; i < 22; i++)
                 order[size_t(i)] = start[i];
         }
+        // banners: P2 takes the lead (NEW RACE LEADER), then a new fastest lap
+        if (sc == banners && t > 0.5)
+            std::swap(order[0], order[1]);
         // a pass for P6 halfway through
         if (sc == race && t > 6.0)
             std::swap(order[5], order[6]);
@@ -122,6 +125,14 @@ inline Snapshot make(int sc, double t)
         }
         // states
         CarIn *pitter = &snap.cars[13];
+        if (sc == banners) {
+            s.fastest_vid = int(snap.cars[4].vid);
+            s.fastest_ms = 78450;
+            if (t > 7.5) { // beaten: the banner
+                s.fastest_vid = int(snap.cars[2].vid);
+                s.fastest_ms = 77938;
+            }
+        }
         if (sc == race) {
             pitter->in_pit = t > 3.0 && t < 9.0;
             snap.cars[8].pen_s = 5.f;

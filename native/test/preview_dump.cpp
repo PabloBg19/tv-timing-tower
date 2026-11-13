@@ -66,9 +66,11 @@ int main(int argc, char **argv)
                 const Header &h = v.h;
                 std::fprintf(f,
                              "%s{\"t\":%.1f,\"h\":{\"race\":%d,\"sess\":\"%s\",\"lap\":\"%s\",\"laps\":\"%s\","
-                             "\"clock\":\"%s\",\"card\":%d,\"abbr\":%d,\"gained\":%d,\"pits\":%d,\"form\":%d,\"tyv\":%d,\"sty\":%d,\"fcl\":%d,\"sprint\":%d,\"ysec\":\"%s\",\"lead\":%d},\"rows\":[",
+                             "\"clock\":\"%s\",\"card\":%d,\"abbr\":%d,\"gained\":%d,\"pits\":%d,\"form\":%d,\"tyv\":%d,\"sty\":%d,\"fcl\":%d,\"sprint\":%d,\"ysec\":\"%s\",\"lead\":%d,"
+                             "\"ban\":%d,\"bnm\":\"%s\",\"btm\":%d,\"bt\":\"%s\"},\"rows\":[",
                              k ? "," : "", time, h.race, h.sess.c_str(), h.lap.c_str(), h.laps_total.c_str(),
-                             h.clock.c_str(), h.card, h.abbr, h.gained, h.pitstops, h.formation, h.tyres, h.start_tyres, h.final_cls, int(!h.sub.empty()), h.ysec.c_str(), h.lead);
+                             h.clock.c_str(), h.card, h.abbr, h.gained, h.pitstops, h.formation, h.tyres, h.start_tyres, h.final_cls, int(!h.sub.empty()), h.ysec.c_str(), h.lead,
+                             h.banner, h.ban_name.c_str(), h.ban_team, h.ban_time.c_str());
                 for (int i = 0; i < v.shown; i++) {
                     const Row &r = v.rows[size_t(i)];
                     const CarIn *car = nullptr;

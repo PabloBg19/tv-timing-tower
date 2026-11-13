@@ -431,3 +431,24 @@ compatible» era `compat.game_builds: [">=25251167"]`: es el número de build de
 game build 25251167 (yours: …)» en cualquier otra copia. Se quita (vacío = cualquier build; si el estado en vivo no
 está, la torre ya se apaga sola y vuelve la del juego). `platforms` sigue en `steam` hasta que alguien lo pruebe en
 EA. Si en EA siguiera sin verse, las líneas `[tv-tower] source:` y `[live]` del `loader.log` dicen por qué.
+
+## 0.10.0
+
+**D67 — Franjas NEW RACE LEADER y FASTEST LAP.** Como en la emisión, arriba en el centro unos segundos.
+- **Dónde:** dentro del mismo registro de la torre (pantalla `standings`): el compositor solo pone sprites en el
+  tablero de posiciones o en los relojes, y un `scene` no admite sprites. Se colocan con las proporciones medidas en
+  la emisión respecto a la torre: empiezan 2,07 anchos de torre a la derecha de su borde, a la altura de su parte de
+  arriba, y miden 0,26 anchos de alto. Fuera del grupo de la torre, así no suben con la animación de 24 coches. Si
+  se escala o mueve la torre en el editor de HUD, las franjas van con ella.
+- **NEW RACE LEADER:** cuando el líder cambia durante 1 s seguido (un reordenamiento o una lectura rota no cuentan),
+  desde la vuelta 2, sin formación, bandera roja ni cuadros. El apellido en blanco (un texto no puede tomar el color
+  del coche), pegado a la etiqueta por la derecha (el juego no da el ancho de un texto), y el bloque del color del
+  equipo con su logo en el sitio de la cara.
+- **FASTEST LAP:** cuando una vuelta mejora la vuelta rápida de la carrera (la primera no se anuncia, como en la
+  tele). Etiqueta morada con su chevron, logo, apellido y tiempo en morado claro. El nombre de pila no existe en los
+  datos del juego que puede leer el HUD (solo apellido y abreviatura). El tiempo sale del reloj de vueltas propio.
+- **Nombres:** la franja usa el apellido del propio juego por coche (`session_car`, 30 huecos) como las filas. Los
+  huecos van directamente bajo un grupo siempre visible, porque el juego pierde los cambios bajo un nodo oculto, y se
+  apagan todos con la franja.
+- 6 s cada una, fundido de 0,25 s (`motion`), y si llegan dos a la vez, una detrás de otra; una nueva del mismo tipo
+  sustituye a la que espera. Ajustes *New race leader banner* y *Fastest lap banner*. +60 copias en el registro.

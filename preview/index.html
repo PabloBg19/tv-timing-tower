@@ -88,6 +88,8 @@
     else { e.style.left = x + 'px'; if (box) { e.style.maxWidth = box + 'px'; e.style.overflow = 'hidden'; } }
     return e;
   }
+  const TEAMCOL = { mercedes: '#00D7B6', ferrari: '#ED1131', redbull: '#4781D7', mclaren: '#F47600', astonmartin: '#229971',
+    alpine: '#00A1E8', williams: '#1868DB', racingbulls: '#6C98FF', haas: '#9C9FA2', audi: '#B2102C', cadillac: '#AAAAAD' };
   const BLOCKS = { 1: ['sc', ['SAFETY', 'CAR'], '#0E0E10', 'k'], 2: ['sc', ['VIRTUAL', 'SAFETY', 'CAR'], '#0E0E10', 'k'],
     3: ['red', ['RED', 'FLAG'], '#fff', 'w'], 5: ['sc', ['YELLOW', 'FLAG', null], '#0E0E10', 'k'],
     6: ['sc', ['SAFETY CAR', 'IN THIS', 'LAP'], '#0E0E10', 'k'], 7: ['sc', ['VSC', 'ENDING'], '#0E0E10', 'k'],
@@ -172,6 +174,33 @@
       if (r.out || r.elim) add(spr('dim', 0, 0, 45));
       tower.append(g);
     });
+    // banners top centre, as in game: ban_x tower widths right of the tower, level with its top
+    if (h.ban) {
+      const bx = L.ban_x * W, bh = L.ban_h, cap = L.ban_cap, ty = bh / 2 + cap / 2, lead = h.ban === 1;
+      const b = document.createElement('div'); b.className = 'el';
+      Object.assign(b.style, { left: bx + 'px', top: '0px', width: (lead ? L.ban_lw : L.ban_fw) + 'px', height: bh + 'px' });
+      const add = e => e && b.append(e);
+      add(spr(lead ? 'ban_l_bg' : 'ban_f_bg', 0, 0, 40));
+      let logoCx, nameX, box;
+      if (lead) {
+        logoCx = L.ban_lw - L.ban_team_w / 2; nameX = L.ban_lab_x - 5; box = L.ban_name_w;
+        // the white team block tinted with the team's colour (the game tints it with the car's nub colour)
+        const sb = S.ban_team;
+        if (sb) { const d = document.createElement('div'); d.className = 'el'; const bb = sb.bounds, u = 'url(data/' + sb.png + ')';
+          Object.assign(d.style, { left: bb[0] + 'px', top: bb[1] + 'px', width: (bb[2] - bb[0]) + 'px', height: (bb[3] - bb[1]) + 'px',
+            zIndex: 41, backgroundColor: TEAMCOL[L.teams[h.btm]] || '#888', webkitMaskImage: u, maskImage: u,
+            webkitMaskSize: '100% 100%', maskSize: '100% 100%' });
+          add(d); }
+        add(txt('NEW RACE LEADER', L.ban_lab_x, ty, cap, 'left', C.ban_label, 700));
+      } else {
+        logoCx = L.ban_label_w + L.ban_chev + 4 + L.ban_logo / 2; nameX = logoCx + L.ban_logo / 2 + 5; box = 110;
+        add(txt('FASTEST LAP', 8, ty, cap, 'left', '#fff', 700));
+        add(txt(h.bt, L.ban_fw - 8, ty, cap, 'right', C.ban_time, 700));
+      }
+      add(txt(h.bnm, nameX, ty, cap, lead ? 'right' : 'left', '#fff', 700, box));
+      if (logos && h.btm >= 0) add(spr('tm_' + L.teams[h.btm], logoCx - L.logo_x, bh / 2 - R / 2, 43));
+      tower.append(b);
+    }
     $('tv').textContent = t.toFixed(1) + ' s';
     $('t').value = Math.round(t / F.step);
   }

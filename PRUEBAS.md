@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.9.0
+# Checklist de pruebas en el juego — TV Timing Tower 0.10.0
 
 Antes de empezar: instala `dist/tv-timing-tower.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.9.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.10.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -66,6 +66,17 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
 - [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
+
+## 4g. Novedades 0.10.0 (franjas)
+- [ ] Demo (Ctrl+F8, o *Escenario demo* = Avisos): `VERSTAPPEN NEW RACE LEADER` con el bloque azul y el logo a la
+      derecha, y luego `FASTEST LAP · LECLERC · 1:17.938`, arriba en el centro. Captura de pantalla completa: ¿quedan
+      centradas y a la altura de la torre?
+- [ ] Carrera real: al cambiar el líder (desde la vuelta 2) sale `NEW RACE LEADER` 6 s con su apellido, el color y el
+      logo de su equipo. No sale en la salida ni con bandera roja.
+- [ ] Carrera real: al mejorar alguien la vuelta rápida sale `FASTEST LAP` con su apellido, logo y tiempo (la primera
+      vuelta rápida de la carrera no la anuncia, igual que la emisión).
+- [ ] Las franjas aparecen y desaparecen con un fundido (si no, salen de golpe: también vale).
+- [ ] ADDON SETTINGS: *New race leader banner* y *Fastest lap banner* = No las quitan.
 
 ## 4f. Novedades 0.9.0
 - [ ] ADDON SETTINGS → *Race gap decimals* = Clásico: en carrera los intervalos salen con milésimas (`+0.934`),

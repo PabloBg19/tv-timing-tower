@@ -61,7 +61,12 @@ REF = {
 
 LAYOUT = {
     "offset_y": -40.0,       # the whole tower, from the stock board's origin (into the hidden lap counter's space)
-    "extra_up": 24.0,        # added on top of offset_y while more than 22 rows show (D62, not measured in game)
+    "extra_up": 24.0,
+    # banners top centre (NEW RACE LEADER, FASTEST LAP): placed and sized from the broadcast relative to the tower
+    # (the banner starts 2.07 tower widths right of the tower's left edge, level with its top; 0.26 widths tall)
+    "ban_x": 2.07, "ban_h": 28.0, "ban_lw": 218.0, "ban_fw": 300.0, "ban_cap": 8.5,
+    "ban_name_w": 64.0, "ban_lab_x": 79.0,
+    "ban_team_w": 30.0, "ban_label_w": 102.0, "ban_chev": 9.0, "ban_logo": 14.0,        # added on top of offset_y while more than 22 rows show (D62, not measured in game)
     "row": ROW_UNITS,
     "width": u(REF["width"]),
     "pos_w": u(REF["pos_w"]), "pos_x": u(REF["pos_x"]),
@@ -108,6 +113,8 @@ LAYOUT = {
         "clear": "#1E9E3E",
         "arrow_up": "#32BF36",
         "arrow_dn": "#E8102A",
+        "ban_dark": [20, 19, 30], "ban_fl_dark": [36, 28, 54], "ban_purple": ["#B957E0", "#8A3DC2"],
+        "ban_time": "#E48CFF", "ban_label": "#D8D6E2",
         "tyres": {"S": "#E8303A", "M": "#F0D23A", "H": "#E6E6E6", "I": "#3CB043", "W": "#2E7CD6"},
     },
 }
@@ -252,6 +259,46 @@ def make_art(art: Path):
             d.rectangle([0, 0, img.size[0], int(round(L["block_gap"] * img.size[1] / h)) - 1], fill=(*C["band"], 255))
             add(f"blk{lines}_{key}", img, [0, 0, W, h])
     add("blk_chq", chequer(W, L["chq_h"]), [0, 0, W, L["chq_h"]])
+
+    # banners: drawn 4x and scaled down (smooth slanted edges)
+    bh, sl = L["ban_h"], L["ban_chev"]
+
+    def poly(w, h, shapes):
+        img = flat(w, h, (0, 0, 0, 0))
+        big = img.resize((img.size[0] * 4, img.size[1] * 4))
+        d = ImageDraw.Draw(big)
+        kx, ky = big.size[0] / w, big.size[1] / h
+        for pts, fill in shapes:
+            if callable(fill):  # a vertical gradient
+                mask = Image.new("L", big.size, 0)
+                ImageDraw.Draw(mask).polygon([(x * kx, y * ky) for x, y in pts], fill=255)
+                grad = Image.new("RGBA", big.size)
+                gd = ImageDraw.Draw(grad)
+                for y in range(big.size[1]):
+                    gd.line([(0, y), (big.size[0], y)], fill=fill(y / max(1, big.size[1] - 1)))
+                big.paste(grad, (0, 0), mask)
+            else:
+                d.polygon([(x * kx, y * ky) for x, y in pts], fill=fill)
+        return big.resize(img.size, Image.LANCZOS)
+
+    def shade(rgb, a=242):
+        return lambda t: (*[int(c * (1.08 - 0.16 * t)) for c in rgb], a)
+
+    lw, tw = L["ban_lw"], L["ban_team_w"]
+    # NEW RACE LEADER: the dark bar, and the team colour block on its left (white, tinted with the car's colour)
+    add("ban_l_bg", poly(lw, bh, [([(0, 0), (lw, 0), (lw, bh), (0, bh)], shade(C["ban_dark"]))]), [0, 0, lw, bh])
+    # the team block at the right end (where the broadcast puts the driver's face), its left edge slanted
+    tb = [lw - tw - sl, 0, lw, bh]
+    add("ban_team", poly(tw + sl, bh, [([(sl, 0), (tw + sl, 0), (tw + sl, bh), (0, bh)], (255, 255, 255, 255))]), tb)
+    add("ban_team_d", poly(tw + sl, bh, [([(sl, 0), (tw + sl, 0), (tw + sl, bh), (0, bh)], (120, 120, 132, 255))]), tb)
+    # FASTEST LAP: the purple label with its chevron, over the dark bar
+    fw, lab = L["ban_fw"], L["ban_label_w"]
+    p0, p1 = hexrgba(C["ban_purple"][0]), hexrgba(C["ban_purple"][1])
+    purple = lambda t: tuple(int(p0[k] + (p1[k] - p0[k]) * t) for k in range(3)) + (250,)
+    add("ban_f_bg", poly(fw, bh, [
+        ([(0, 0), (fw, 0), (fw, bh), (0, bh)], shade(C["ban_fl_dark"])),
+        ([(0, 0), (lab, 0), (lab + sl, bh / 2), (lab, bh), (0, bh)], purple),
+    ]), [0, 0, fw, bh])
     return sprites
 
 
@@ -605,6 +652,57 @@ def unique_ids(elements):
     return elements
 
 
+def banners(logos_found):
+    """NEW RACE LEADER and FASTEST LAP, top centre. Each: a fading group (motion on its leaf) holding the art and
+    texts (shown with the leaf) and, straight under it, the per-car name / colour slots and the team logo, which
+    the DLL switches only while the banner shows (a change under a hidden node is lost)."""
+    L = LAYOUT
+    C = L["colours"]
+    bh, cap, R = L["ban_h"], L["ban_cap"], L["row"]
+    ty = bh / 2 + cap / 2
+    out = []
+    for k, label in (("bnl", "NEW RACE LEADER"), ("bnf", "FASTEST LAP")):
+        lead = k == "bnl"
+        if lead:
+            # "LECLERC NEW RACE LEADER": the surname right-aligned against the label (the game gives no text width)
+            logo_cx = L["ban_lw"] - L["ban_team_w"] / 2
+            name_x, name_box = L["ban_lab_x"] - 5.0, L["ban_name_w"]
+        else:
+            logo_cx = L["ban_label_w"] + L["ban_chev"] + 4.0 + L["ban_logo"] / 2
+            name_x, name_box = logo_cx + L["ban_logo"] / 2 + 5.0, 110.0
+        art = [sprite(f"{k}bg", "ban_l_bg" if lead else "ban_f_bg", 40)]
+        if lead:
+            art.append(group(f"{k}tdg", [sprite(f"{k}td", "ban_team_d", 41)], visible=vm("demo")))
+            art.append(text(f"{k}lab", "OSD_24_bold", "left", 90.0, cap, [L["ban_lab_x"], ty], literal=label,
+                            colour=C["ban_label"] + "ff"))
+        else:
+            art.append(text(f"{k}lab", "OSD_24_bold", "left", L["ban_label_w"], cap, [8.0, ty], literal=label,
+                            colour="#FFFFFFff"))
+            art.append(text(f"{k}tm", "OSD_24_bold", "right", 60.0, cap, [L["ban_fw"] - 8.0, ty],
+                            value=vm(f"{k}_t"), colour=C["ban_time"] + "ff", case="none"))
+        align = "right" if lead else "left"
+        art.append(group(f"{k}dn", [text(f"{k}dnm", "OSD_24_bold", align, name_box, cap, [name_x, ty],
+                                         value=vm(f"{k}_nm"), wrap="clampwidth", case="upper")], visible=vm("demo")))
+        slot = [text(f"{k}sn", "OSD_24_bold", align, name_box, cap, [name_x, ty],
+                     value={"session_car": "driver.second_name", "slot_var": "V"}, wrap="clampwidth", case="upper")]
+        if lead:
+            slot.insert(0, sprite(f"{k}tc", "ban_team", 41, tint={"session_car": "nub_colour", "slot_var": "V",
+                                                                    "default": "#00000000"}))
+        cars = group(f"{k}v", slot, visible=vm(f"{k}_c{{VV}}"), repeat={"count": SLOTS, "var": "V"})
+        # the team logo: the broadcast icon (private build) by one-hot, else the game's badge
+        lg = []
+        for i in logos_found:
+            lg.append(group(f"{k}tm{i:02d}g", [sprite(f"{k}tm{i:02d}", f"tm_{TEAMS[i]}", 43)],
+                            at=[logo_cx - L["logo_x"], bh / 2 - R / 2], visible=vm(f"{k}_tm{i:02d}")))
+        lg.append({"kind": "unit", "id": f"{k}lg", "unit": "team_logo", "at": [logo_cx, bh / 2],
+                   "size": L["unit_logo"], "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
+        g = group(f"{k}g", [group(f"{k}art", art, visible=vm(k)), cars] + lg)
+        g["motion"] = {"id": k, "keys": [[0, 0.0], [0.25, 1.0]], "curve": "generic_fade_on", "play_on": vm(k)}
+        out.append(g)
+    x = L["ban_x"] * L["width"]
+    return group("ban", out, at=[x, L["offset_y"]])
+
+
 def record(flavour, sprites, logos_found):
     top, cards = header(flavour, sprites)
     rows = group("rows", [row(flavour, logos_found)])
@@ -616,7 +714,7 @@ def record(flavour, sprites, logos_found):
     # else or off the bottom.
     tower["motion"] = {"id": "wide", "keys": [[0, [0, 0]], [0.4, [0, -LAYOUT["extra_up"]]]],
                        "curve": "generic_fade_on", "play_on": vm("wide")}
-    elements = unique_ids([tower])
+    elements = unique_ids([tower, banners(logos_found)])
     rec = {
         "$comment": "TV Timing Tower: generated by tools/hudgen.py - edit the generator, not this file.",
         "prefix": "tvtt",
