@@ -16,13 +16,14 @@ tiempos de la retransmisión de F1 2026. **La dibuja el propio HUD del juego**: 
     Equipo, lleva una ficha con su color;
   - abreviatura (`RUS`) cuando hay datos al lado y apellido completo cuando no;
   - el dato de la derecha y la letra del neumático en su color.
-- **Libres:** mejor vuelta de P1 y diferencia de los demás con P1; `P` blanca en boxes o en el garaje.
+- **Libres:** el orden del juego con los apellidos completos y la `P` blanca en boxes o en el garaje.
 - **Clasificación y clasificación sprint:**
   - tiempo restante de la sesión;
-  - P1 con su vuelta y los demás con la diferencia con P1;
-  - los coches en la zona de eliminación, con la diferencia con el último que pasa;
-  - los eliminados de la ronda anterior salen de la torre;
-  - destellos en verde (mejor personal) o morado (mejor de la sesión).
+  - la zona de eliminación en rojo, con la línea del corte;
+  - los eliminados de la ronda anterior salen de la torre.
+- Libres y clasificación no muestran tiempos por ahora: Swofty no da los tiempos de vuelta en esas sesiones y el
+  addon no puede medirlos bien (con el tiempo adelantado en el garaje, las vueltas son simuladas). Volverán cuando
+  Swofty los dé.
 - **Carrera y sprint:**
   - intervalos con un decimal, como en 2026; la diferencia con el líder en las vueltas 5, 15, 25…;
   - `STARTING TYRES` en parrilla, `GAINED / LOST` al empezar la vuelta 2, `TYRES` (vueltas de cada juego) en las
@@ -85,8 +86,7 @@ que cambian. Cada actualización cuesta unos 23 µs en un PC de pruebas; en el j
 
 ## Problemas conocidos
 
-- Los tiempos de libres y clasificación los mide el addon, porque el estado en vivo de Swofty no los da. Error de
-  unas centésimas.
+- Sin tiempos en libres y clasificación (ver arriba).
 - `SC ENDING` y `VSC ENDING` se deducen: el juego no avisa a los addons de «safety car en esta vuelta», así que
   `SC ENDING` sale cuando el coche de seguridad entra al pit lane y `VSC ENDING` justo al acabar el VSC.
 - Contrarreloj, repeticiones y modo espectador usan el tablero del juego.
@@ -122,9 +122,9 @@ broadcast timing tower, **drawn by the game's own HUD**: no external app, no ove
   `Q2 08:12` or `P1 33:56`.
 - **Rows (up to 24 cars, My Team included):** position, team icon or the game's badge (a team colour chip when
   the game has none), the code beside data or the full surname without, the data column and the tyre letter.
-- **Practice:** gaps to P1.
-- **Qualifying:** the session clock and gaps to P1; the knockout zone shows the gap to the last car through, and
-  cars knocked out earlier leave the tower.
+- **Practice:** the game's order with full surnames and the pit box.
+- **Qualifying:** the session clock and the knockout zone; cars knocked out earlier leave the tower. No lap times in
+  practice or qualifying for now: Swofty gives none there and the addon can't time them reliably.
 - **Races:** STARTING TYRES on the grid; one-decimal intervals (or classic thousandths, a setting) and the gap to the leader on laps 5, 15, 25…;
   GAINED / LOST as lap 2 starts; TYRES (laps on the set) on laps 7, 17…; PIT STOPS on laps 10, 20…; the gaps at the
   line and a chequered flag per finisher at the end; penalties as the red "!" square; mint `IN PIT`; penalties, fastest lap, position triangles, chequered flag and row
@@ -145,7 +145,7 @@ anti-cheat related.
 
 **Performance:** 30 updates a second, about 23 µs each, and only changed values are written.
 
-**Known issues:** practice and qualifying lap times are measured by the addon; SC ENDING (from the safety car entering the pit lane)
+**Known issues:** no lap times in practice and qualifying yet; SC ENDING (from the safety car entering the pit lane)
 and VSC ENDING are inferred; Time Trial, replays and the spectator view keep the game's board; with a flag block the tower
 grows instead of compressing its rows; with 24 cars (My Team) it slides a bit further up on its own, by an amount
 not yet confirmed in game; rows fade instead of sliding.

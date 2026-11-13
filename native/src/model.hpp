@@ -237,6 +237,9 @@ struct Config {
     enum class Names { autoswitch, surname, code } names = Names::autoswitch;
     bool ban_leader = true;    // NEW RACE LEADER banner
     bool ban_fastest = true;   // FASTEST LAP banner
+    // practice and qualifying times (off: the core gives no lap times there and the game's counter does not move,
+    // so the addon cannot time them reliably; on again once Swofty exposes the game's own best laps)
+    bool timed_times = false;
     bool gap_ms = false;       // race gaps in thousandths ("+0.934", earlier F1 games) instead of 2026's tenths
     bool tyres = true;
     bool tyre_age = false;
@@ -399,7 +402,7 @@ public:
                 h.lead = true; // the final classification: gaps to the winner
         }
         bool any_data = h.race ? !h.bare : false;
-        if (!h.race)
+        if (!h.race && cfg.timed_times)
             for (const CarIn &c : snap.cars)
                 any_data = any_data || c.best_ms > 0;
         h.abbr = cfg.names == Config::Names::code || (cfg.names == Config::Names::autoswitch && any_data);
@@ -407,7 +410,8 @@ public:
         // field size for the knockout cut: the most racers seen in this session
         field_ = std::max(field_, std::max(s.racers, int(snap.cars.size())));
 
-        best_flash(snap, kind, now);
+        if (cfg.timed_times)
+            best_flash(snap, kind, now);
         fastest_flash(snap, kind, now);
 
         // qualifying: the knockout zone shows the gap to the last car through (as on TV)
@@ -751,7 +755,7 @@ private:
                     r.elim = true;
             }
             // P1 its lap time; the rest the gap to P1; the knockout zone the gap to the last car through
-            if (best > 0) {
+            if (best > 0 && cfg.timed_times) {
                 if (idx == 0 || lead_best <= 0)
                     r.gap = fmt_lap(best);
                 else if (r.ko && cut_best_ > 0 && best >= cut_best_)
@@ -759,7 +763,7 @@ private:
                 else
                     r.gap = fmt_gap_ms(best - lead_best);
             }
-            if (c.vid < flash_.size() && now < flash_[c.vid].until && flash_[c.vid].ms > 0) {
+            if (cfg.timed_times && c.vid < flash_.size() && now < flash_[c.vid].until && flash_[c.vid].ms > 0) {
                 r.gap = fmt_lap(flash_[c.vid].ms);
                 r.gap_purple = flash_[c.vid].purple;
                 r.gap_green = !flash_[c.vid].purple;

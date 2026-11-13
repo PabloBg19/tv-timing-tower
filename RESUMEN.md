@@ -1,5 +1,13 @@
 # Resumen — TV Timing Tower
 
+## 0.12.0 (13-11-2026)
+
+- Sin tiempos en libres y clasificación (D69): la Q1 de prueba demostró que el addon no puede medirlos (tiempo
+  adelantado en el garaje = vueltas simuladas) y Swofty no los da, ni por memoria ni por UDP en la build Steam.
+  La lógica se queda apagada para cuando Swofty dé los tiempos del juego. Fuera la línea `laps:` del log.
+
+---
+
 ## 0.11.0 (13-11-2026)
 
 - **Tiempos de clasificación y libres, por fin.** El log de una Q1 dio `10 line wraps, 0 crossings`: en esas

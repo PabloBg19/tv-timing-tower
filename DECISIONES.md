@@ -467,3 +467,19 @@ carrera con las dos señales (cada paso contado una vez).
 FASTEST LAP, segunda versión (D67): la primera no se parecía a la emisión. Ahora, como en la captura: más estrecha
 (236 × 28), esquinas izquierdas redondeadas, etiqueta morada con su flecha y una estela de tres flechas cada vez más
 oscuras, fondo casi negro, apellido en blanco pegado al logo y el tiempo en morado intenso a la derecha.
+
+## 0.12.0
+
+**D69 — Sin tiempos en libres y clasificación.** Con D68 el reloj ya veía los pasos por meta, pero en la Q1 de prueba
+el jugador adelantó el tiempo desde el garaje: en 3,5 minutos reales la sesión pasó 8 minutos y las IA hicieron sus
+vueltas simuladas, sin cruzar la meta en pista. Medirlas es imposible. Vías comprobadas para los tiempos del juego:
+- `swofty::live`: no da tiempos de vuelta.
+- `swofty::telemetry`: los tiempos vienen solo de los paquetes UDP (cero en el formato 2026), y en la build Steam el
+  core no engancha `sendto` porque todos los grupos se leen de memoria (`telemetry_wants_udp` falso; en el log no
+  hay `[udp] sendto hooked`).
+- El HUD del juego: por coche, la plantilla solo enlaza `name_code`, `second_name` y `nub_colour`.
+- Leer la memoria como Project Halo (`lap_s` de las entradas de resultados) va contra D2.
+Decisión del usuario: quitar los tiempos de libres y clasificación hasta que Swofty los dé (petición enviada a sus
+desarrolladores). `Config::timed_times` (apagado) deja la lógica entera (P1 su vuelta, diferencias a P1, al corte,
+destellos), con sus tests, para encenderla con los tiempos oficiales. Sin datos, los nombres salen completos, como en
+la tele. El reloj de vueltas sigue para la vuelta rápida de carrera.

@@ -116,8 +116,25 @@ static void test_leader_mode_and_rows()
 
 static void test_quali()
 {
+    // off by default (0.12): no times in practice and qualifying, full surnames, no flashes
+    {
+        Tower t0;
+        Config off;
+        const View &v0 = t0.update(demo::make(demo::quali_q1, 0.5), off, 0.5);
+        bool any = false;
+        for (int i = 0; i < v0.shown; i++)
+            any = any || !v0.rows[i].gap.empty();
+        CHECK(!any && !v0.h.abbr && v0.rows[16].ko);
+        Tower tp0;
+        const View &p0 = tp0.update(demo::make(demo::practice, 0.5), off, 0.5);
+        any = false;
+        for (int i = 0; i < p0.shown; i++)
+            any = any || !p0.rows[i].gap.empty();
+        CHECK(!any);
+    }
     Tower t;
     Config cfg;
+    cfg.timed_times = true; // the timing logic, kept for when the core gives the game's own lap times
     const View &v = t.update(demo::make(demo::quali_q1, 0.5), cfg, 0.5);
     CHECK(v.h.timed && v.h.sess == "Q1");
     CHECK(v.rows[0].gap.find(':') != std::string::npos); // leader shows the lap time
@@ -434,6 +451,7 @@ static void test_lap_clock()
 static void test_session_views()
 {
     Config cfg;
+    cfg.timed_times = true;
     // qualifying: P1 its time, the others the gap to P1, the knockout zone the gap to the last car through
     Tower t;
     const View &q = t.update(demo::make(demo::quali_q1, 0.5), cfg, 0.5);
