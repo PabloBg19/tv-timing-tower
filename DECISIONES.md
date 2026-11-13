@@ -394,3 +394,11 @@ podido medir en el juego cuánto margen hay realmente por encima antes de chocar
 torre se corta por arriba o sigue saliéndose por abajo con 24 coches, hay que avisar para ajustar
 `extra_up` en `tools/hudgen.py`. Esta animación es del mismo tipo que la de los adelantamientos (D41), cuyo
 funcionamiento en el juego aún está por confirmar del todo.
+
+## 0.8.1
+
+**D63 — F8 solo dentro de una sesión.** En una prueba la torre no salía: el log mostraba `tower hidden (hotkey)`
+pulsado en el Team HQ de la carrera, donde la torre no se ve, y esa ocultación seguía en todas las sesiones de esa
+partida. Ahora la tecla solo oculta o muestra la torre con una sesión en marcha (o la demo), y al empezar una
+sesión nueva la torre vuelve a mostrarse aunque se hubiera ocultado en la anterior. Para quitarla siempre está el
+ajuste *TV tower* = No.

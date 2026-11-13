@@ -17,7 +17,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.8.0"
+#define TVT_VERSION "0.8.1"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -225,7 +225,8 @@ void handle_keys()
             int cur = g->demo_pick >= 0 ? g->demo_pick : (g->last_scenario >= 0 ? g->last_scenario : 0);
             g->demo_pick = (cur + 1) % tvt::demo::count;
             swofty::log("%s demo scenario %s", kTag, tvt::demo::scenario_name(g->demo_pick));
-        } else {
+        } else if (g->last_why == tvt::LiveSource::Why::ok || g->set.demo || g->demo_key) {
+            // only in a session: a press in the menus (where the tower can't be seen) used to hide it unnoticed
             g->hidden = !g->hidden;
             swofty::log("%s tower %s (hotkey)", kTag, g->hidden ? "hidden" : "shown");
         }
@@ -293,6 +294,11 @@ void frame(double dt, void *)
         tvt::LiveSource::Why why = g->src.read(snap, step, g->now);
         if (why != g->last_why) {
             swofty::log("%s source: %s", kTag, why_name(why));
+            // a new session shows the tower again: F8 hides it for the session it was pressed in
+            if (why == tvt::LiveSource::Why::ok && g->hidden) {
+                g->hidden = false;
+                swofty::log("%s tower shown again (new session)", kTag);
+            }
             g->last_why = why;
         }
         have = why == tvt::LiveSource::Why::ok;

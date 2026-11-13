@@ -1,5 +1,12 @@
 # Resumen — TV Timing Tower
 
+## 0.8.1 (13-11-2026)
+
+- La torre no salía: se había pulsado F8 en un menú de la carrera (Team HQ) y quedaba oculta en todas las
+  sesiones siguientes. Ahora F8 solo actúa dentro de una sesión y cada sesión nueva vuelve a mostrar la torre (D63).
+
+---
+
 ## 0.8.0 (13-11-2026, reportes tras 100 descargas)
 
 - Arreglado el corte mal hecho en Q2/Q3 (se cortaba en el piloto 13 en vez de donde correspondía): `field_` no se

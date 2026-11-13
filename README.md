@@ -67,7 +67,7 @@ paquete solo en español.
 | Animations | Sí | Fundido de las filas en los adelantamientos |
 | Team colour bar · Highlight my car | No · Sí | |
 | In practice / qualifying / sprint qualifying / races | Sí | Por tipo de sesión |
-| Show/hide key | F8 | F8 muestra u oculta · **Ctrl+F8** demo · **Mayús+F8** siguiente escenario |
+| Show/hide key | F8 | F8 muestra u oculta (solo en sesión; cada sesión nueva la vuelve a mostrar) · **Ctrl+F8** demo · **Mayús+F8** siguiente escenario |
 | Demo mode · Demo scenario | No · Cycle | Datos simulados |
 | Verbose log | No | Coste por actualización y cambios de estado en el log |
 
