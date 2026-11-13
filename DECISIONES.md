@@ -531,3 +531,18 @@ cuando», no estaban centradas y eran más cortas que las de la emisión.
 - **En lugar del aviso del juego:** `stock_nodes` envuelve (`wrap`) la pieza `centre` de `message_system.idf` bajo
   `hud_notifications_dynamic…hud_message` y la oculta mientras sale nuestra FASTEST LAP (`hide` no vale: el juego ya
   la controla). Esa notificación central sirve para más avisos, así que esos 6 s se oculta cualquiera.
+
+## 0.14.1
+
+**D75 — Franjas: medidas en una captura completa, capas y una vuelta rápida que se parezca a la del juego.**
+- **Sitio y tamaño:** en una captura de 2000 × 1125 con el HUD en su sitio por defecto, la torre empieza a 41 px y mide
+  207 px (1,88 px por unidad): el centro de la pantalla queda a 510 unidades de su borde (estaba en 364, de ahí que
+  saliera desplazada) y el aviso central del juego empieza 27 unidades por encima de su parte de arriba. Las franjas
+  van ahí, y miden el 37 % del ancho de la pantalla como en la emisión (FASTEST LAP 393 × 38, NEW RACE LEADER 364 × 38).
+  Si se mueve o escala la torre en el editor de HUD, las franjas la siguen.
+- **Capas:** el fondo estaba en la capa 40 y la unidad `team_logo` del juego siempre dibuja en la 30: el escudo quedaba
+  debajo, y el texto «FASTEST LAP» tampoco salía. Fondo en 20-21 y logos en 27, como en las filas.
+- **Vuelta rápida:** el juego no deja leer la suya. Una carrera mostró 0:59.0 (imposible) y otra marcaba ERI mientras el
+  juego avisaba de HAMILTON 1:28.157, así que la nuestra nunca saltaba y salía el aviso del juego. Dos filtros: ninguna
+  vuelta a más de 75 m/s de media (270 km/h; Monza ronda los 260) y la vuelta rápida de la sesión necesita 8 vueltas
+  medidas y no puede quedar más de un 4 % por debajo de su mediana.

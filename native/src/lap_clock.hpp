@@ -5,6 +5,7 @@
 // the times. A lap is not counted when the car used the pit lane during it, when its track-limit warnings went
 // up during it (the game invalidates those laps), or when the session jumped (flashback, restart).
 #pragma once
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -40,6 +41,7 @@ public:
         pending_ = 0;
         fastest_vid_ = -1;
         fastest_ms_ = -1;
+        all_.clear();
         stats_ = Stats{};
         epoch_++;
     }
@@ -47,6 +49,7 @@ public:
     // dt: seconds since the last call. Call once per new snapshot of the game.
     void step(double dt, float track_m, const std::vector<LapSample> &cars)
     {
+        track_m_ = track_m;
         bool moved = false;
         int jumps = 0, seen = 0;
         std::array<bool, kCars> back{};
@@ -176,6 +179,17 @@ public:
 
 private:
     struct Car;
+    // A session's fastest lap is never far under the run of the field's laps: once 8 laps are timed, a "fastest" lap
+    // more than 4 % under their median is a crossing measured wrong (the game once said HAMILTON 1:28.157 while the
+    // clock kept an impossible lap of another car's as the fastest, and nobody could beat it)
+    bool plausible_fastest(int ms) const
+    {
+        if (all_.size() < 8)
+            return false;
+        std::vector<int> v(all_);
+        std::nth_element(v.begin(), v.begin() + v.size() / 2, v.end());
+        return ms >= int(0.96 * v[v.size() / 2]);
+    }
     // one crossing of the line at sim time `cross`: closes the lap in progress (timed when clean) and opens the next
     void cross_at(Car &c, const LapSample &s, double cross);
     // the car went from the end of a lap to its start with the counter unchanged
@@ -202,6 +216,8 @@ private:
     int fastest_vid_ = -1, fastest_ms_ = -1;
     uint32_t epoch_ = 0;
     Stats stats_;
+    float track_m_ = 0;
+    std::vector<int> all_; // every timed lap of the session, every car
 };
 
 inline void LapClock::cross_at(Car &c, const LapSample &s, double cross)
@@ -218,9 +234,12 @@ inline void LapClock::cross_at(Car &c, const LapSample &s, double cross)
         stats_.warn++;
     if (c.cross_t >= 0) {
         int ms = int(std::lround((cross - c.cross_t) * 1000.0));
-        if (valid && (ms < 15000 || ms > 600000))
+        // no F1 car laps faster than 75 m/s (270 km/h) on average (Monza, the fastest, is about 260): a shorter
+        // time is a missed crossing or a reset, not a lap (a race once showed a 0:59.0 fastest lap nobody beat)
+        const int min_ms = track_m_ > 100.f ? int(track_m_ / 75.f * 1000.f) : 15000;
+        if (valid && (ms < min_ms || ms > 600000))
             stats_.range++;
-        if (ms < 15000 || ms > 600000)
+        if (ms < min_ms || ms > 600000)
             valid = false;
         if (valid) {
             stats_.timed++;
@@ -229,7 +248,9 @@ inline void LapClock::cross_at(Car &c, const LapSample &s, double cross)
                 c.laps[size_t(c.n++)] = ms;
             if (c.best_ms < 0 || ms < c.best_ms)
                 c.best_ms = ms;
-            if (fastest_ms_ < 0 || ms < fastest_ms_) {
+            if (all_.size() < 4000)
+                all_.push_back(ms);
+            if ((fastest_ms_ < 0 || ms < fastest_ms_) && plausible_fastest(ms)) {
                 fastest_ms_ = ms;
                 fastest_vid_ = int(s.vid);
             }

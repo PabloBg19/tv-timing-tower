@@ -65,12 +65,15 @@ REF = {
 LAYOUT = {
     "offset_y": -40.0,       # the whole tower, from the stock board's origin (into the hidden lap counter's space)
     "extra_up": 24.0,        # added on top of offset_y while more than 22 rows show (D62, not measured in game)
-    # banners top centre (NEW RACE LEADER, FASTEST LAP), level with the tower's top, both centred on ban_cx (units right of the tower's left edge: the screen's centre at the default HUD place,
-    # measured on the broadcast; tune with a full-screen capture) and as long as the broadcast's (2.9 tower widths)
-    "ban_cx": 364.0, "ban_h": 31.0, "ban_lw": 296.0, "ban_fw": 320.0, "ban_cap": 9.8, "ban_fcap": 9.3,
-    "ban_name_w": 112.0, "ban_lab_x": 128.0,
-    "ban_team_w": 40.0, "ban_label_w": 103.0, "ban_chev": 10.0, "ban_logo": 17.0, "ban_trail": 12.0,
-    "ban_fname_r": 222.0, "ban_flogo": 236.0, "ban_ftime": 249.0, "ban_round": 5.0,
+    # banners top centre (NEW RACE LEADER, FASTEST LAP), where the game puts its own centre notification. Measured
+    # on a full-screen 2000 x 1125 capture at the default HUD place: the tower's left edge at 41 px, 207 px wide
+    # (1.88 px a unit), so the screen's centre is 510 units right of it, and the game's toast starts 27 units
+    # above the tower's top. Sized as the broadcast's: 37 % of the screen's width.
+    "ban_cx": 510.0, "ban_y": -27.0,
+    "ban_h": 38.0, "ban_lw": 364.0, "ban_fw": 393.0, "ban_cap": 12.0, "ban_fcap": 11.4,
+    "ban_name_w": 138.0, "ban_lab_x": 157.0,
+    "ban_team_w": 49.0, "ban_label_w": 127.0, "ban_chev": 12.0, "ban_logo": 21.0, "ban_trail": 15.0,
+    "ban_fname_r": 273.0, "ban_flogo": 290.0, "ban_ftime": 306.0, "ban_round": 6.0,
     "row": ROW_UNITS,
     "width": u(REF["width"]),
     "pos_w": u(REF["pos_w"]), "pos_x": u(REF["pos_x"]),
@@ -377,7 +380,7 @@ def private_art(art: Path, logos: Path, sprites: dict):
         x = L["logo_x"]
         add(f"tm_{t}", fit_into(src, w, h), [x - w / 2, R / 2 - h / 2, x + w / 2, R / 2 + h / 2])
         # the banners' larger copy, centred on its own origin
-        bw, bh2 = w * 1.6, h * 1.6
+        bw, bh2 = w * 2.0, h * 2.0
         add(f"tmb_{t}", fit_into(src, bw, bh2), [-bw / 2, -bh2 / 2, bw / 2, bh2 / 2])
         found.append(i)
     return found
@@ -693,22 +696,24 @@ def banners(logos_found):
         if lead:
             # "LECLERC NEW RACE LEADER": the surname right-aligned against the label (the game gives no text width)
             logo_cx = L["ban_lw"] - L["ban_team_w"] / 2
-            name_x, name_box = L["ban_lab_x"] - 5.0, L["ban_name_w"]
+            name_x, name_box = L["ban_lab_x"] - 6.0, L["ban_name_w"]
         else:
             # "ANTONELLI (logo) 1:37.477" flush against the time, the trail of chevrons before it
             logo_cx = L["ban_flogo"]
             name_x, name_box = L["ban_fname_r"], L["ban_fname_r"] - L["ban_label_w"] - 3 * L["ban_trail"] - 6.0
             cap = L["ban_fcap"]
             ty = bh / 2 + cap / 2
-        art = [sprite(f"{k}bg", "ban_l_bg" if lead else "ban_f_bg", 40)]
+        # layers as the rows': the background under the game's team badge unit, which always draws at 30 (0.14.0
+        # drew the background at 40, over the badge, and the label did not show either)
+        art = [sprite(f"{k}bg", "ban_l_bg" if lead else "ban_f_bg", 20)]
         if lead:
-            art.append(group(f"{k}tdg", [sprite(f"{k}td", "ban_team_d", 41)], visible=vm("demo")))
-            art.append(text(f"{k}lab", "OSD_24_bold", "left", 90.0, cap, [L["ban_lab_x"], ty], literal=label,
+            art.append(group(f"{k}tdg", [sprite(f"{k}td", "ban_team_d", 21)], visible=vm("demo")))
+            art.append(text(f"{k}lab", "OSD_24_bold", "left", 120.0, cap, [L["ban_lab_x"], ty], literal=label,
                             colour=C["ban_label"] + "ff"))
         else:
-            art.append(text(f"{k}lab", "OSD_24_bold", "left", L["ban_label_w"], cap, [8.0, ty], literal=label,
+            art.append(text(f"{k}lab", "OSD_24_bold", "left", L["ban_label_w"], cap, [10.0, ty], literal=label,
                             colour=C["ban_flabel"] + "ff"))
-            art.append(text(f"{k}tm", "OSD_24_bold", "left", 50.0, cap, [L["ban_ftime"], ty],
+            art.append(text(f"{k}tm", "OSD_24_bold", "left", 80.0, cap, [L["ban_ftime"], ty],
                             value=vm(f"{k}_t"), colour=C["ban_time"] + "ff", case="none"))
         align = "right"
         art.append(group(f"{k}dn", [text(f"{k}dnm", "OSD_24_bold", align, name_box, cap, [name_x, ty],
@@ -716,20 +721,20 @@ def banners(logos_found):
         slot = [text(f"{k}sn", "OSD_24_bold", align, name_box, cap, [name_x, ty],
                      value={"session_car": "driver.second_name", "slot_var": "V"}, wrap="clampwidth", case="upper")]
         if lead:
-            slot.insert(0, sprite(f"{k}tc", "ban_team", 41, tint={"session_car": "nub_colour", "slot_var": "V",
+            slot.insert(0, sprite(f"{k}tc", "ban_team", 21, tint={"session_car": "nub_colour", "slot_var": "V",
                                                                     "default": "#00000000"}))
         cars = group(f"{k}v", slot, visible=vm(f"{k}_c{{VV}}"), repeat={"count": SLOTS, "var": "V"})
         # the team logo: the broadcast icon (private build) by one-hot, else the game's badge
         lg = []
         for i in logos_found:
-            lg.append(group(f"{k}tm{i:02d}g", [sprite(f"{k}tm{i:02d}", f"tmb_{TEAMS[i]}", 43)],
+            lg.append(group(f"{k}tm{i:02d}g", [sprite(f"{k}tm{i:02d}", f"tmb_{TEAMS[i]}", 27)],
                             at=[logo_cx, bh / 2], visible=vm(f"{k}_tm{i:02d}")))
         lg.append({"kind": "unit", "id": f"{k}lg", "unit": "team_logo", "at": [logo_cx, bh / 2],
-                   "size": L["unit_logo"] * 1.4, "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
+                   "size": L["unit_logo"] * 1.7, "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
         g = group(f"{k}g", [group(f"{k}art", art, visible=vm(k)), cars] + lg)
         g["at"] = [-(L["ban_lw"] if lead else L["ban_fw"]) / 2, 0]
         out.append(g)
-    return group("ban", out, at=[L["ban_cx"], L["offset_y"]])
+    return group("ban", out, at=[L["ban_cx"], L["offset_y"] + L["ban_y"]])
 
 
 def record(flavour, sprites, logos_found):

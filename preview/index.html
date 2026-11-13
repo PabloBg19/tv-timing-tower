@@ -178,12 +178,12 @@
     if (h.ban) {
       const bx = L.ban_cx - (h.ban === 1 ? L.ban_lw : L.ban_fw) / 2, bh = L.ban_h, lead = h.ban === 1, cap = lead ? L.ban_cap : L.ban_fcap, ty = bh / 2 + cap / 2;
       const b = document.createElement('div'); b.className = 'el';
-      Object.assign(b.style, { left: bx + 'px', top: '0px', width: (lead ? L.ban_lw : L.ban_fw) + 'px', height: bh + 'px' });
+      Object.assign(b.style, { left: bx + 'px', top: L.ban_y + 'px', width: (lead ? L.ban_lw : L.ban_fw) + 'px', height: bh + 'px' });
       const add = e => e && b.append(e);
       add(spr(lead ? 'ban_l_bg' : 'ban_f_bg', 0, 0, 40));
       let logoCx, nameX, box;
       if (lead) {
-        logoCx = L.ban_lw - L.ban_team_w / 2; nameX = L.ban_lab_x - 5; box = L.ban_name_w;
+        logoCx = L.ban_lw - L.ban_team_w / 2; nameX = L.ban_lab_x - 6; box = L.ban_name_w;
         // the white team block tinted with the team's colour (the game tints it with the car's nub colour)
         const sb = S.ban_team;
         if (sb) { const d = document.createElement('div'); d.className = 'el'; const bb = sb.bounds, u = 'url(data/' + sb.png + ')';
@@ -194,7 +194,7 @@
         add(txt('NEW RACE LEADER', L.ban_lab_x, ty, cap, 'left', C.ban_label, 700));
       } else {
         logoCx = L.ban_flogo; nameX = L.ban_fname_r; box = 60;
-        add(txt('FASTEST LAP', 8, ty, cap, 'left', C.ban_flabel, 700));
+        add(txt('FASTEST LAP', 10, ty, cap, 'left', C.ban_flabel, 700));
         add(txt(h.bt, L.ban_ftime, ty, cap, 'left', C.ban_time, 700));
       }
       add(txt(h.bnm, nameX, ty, cap, 'right', '#fff', 700, box));

@@ -348,7 +348,28 @@ static void test_lap_clock()
         }
     }
     CHECK(c.best_ms(0) > 99950 && c.best_ms(0) < 100050);
-    CHECK(c.fastest_vid() == 0);
+    CHECK(c.fastest_vid() == -1); // the session's fastest needs 8 timed laps to judge against (see below)
+    // the fastest lap: 10 cars at ~100 s a lap; one car's bogus 90 s "lap" (10 % under the field) is not the fastest
+    {
+        LapClock fl;
+        std::vector<float> dd(10);
+        for (int k = 0; k < 10; k++)
+            dd[size_t(k)] = 4000.f - float(k) * 30.f;
+        for (int i = 0; i < 60 * 330; i++) {
+            std::vector<LapSample> v;
+            for (int k = 0; k < 10; k++) {
+                float sp = 50.f + float(k) * 0.05f;   // 99.0 .. 100 s laps
+                if (k == 9 && i > 60 * 210 && i < 60 * 225)
+                    sp = 400.f;                        // a jump forward: one short "lap"
+                dd[size_t(k)] += sp * float(dt);
+                int l = int(dd[size_t(k)] / len);
+                v.push_back(LapSample{uint32_t(k), l, dd[size_t(k)] - float(l) * len, false, 0});
+            }
+            fl.step(dt, len, v);
+        }
+        CHECK(fl.fastest_ms() > 98000 && fl.fastest_ms() < 100100);
+        CHECK(fl.best_ms(9) > 0 && fl.best_ms(9) < 95000); // the bogus lap is the car's own, not the session's
+    }
     // the lap distance wraps at the line a few frames before the game's counter goes up (or after): still timed,
     // from the wrap, and not taken for the car going back
     for (int lag : {-12, 12}) {
@@ -393,6 +414,18 @@ static void test_lap_clock()
         }
         CHECK(rc.best_ms(0) > 99950 && rc.best_ms(0) < 100050);
         CHECK(rc.stats().crossings == 4); // 4000 m -> 20500 m: the line at 5, 10, 15 and 20 km, once each
+    }
+    // a "lap" faster than 75 m/s on average is not a lap (a race once showed a 0:59.0 fastest lap): a car at
+    // 100 m/s on a 5000 m track would lap in 50 s; none of it is timed
+    {
+        LapClock fast;
+        float df = 4000.f;
+        for (int i = 0; i < 60 * 200; i++) {
+            df += 100.f * float(dt);
+            int lap = int(df / len);
+            fast.step(dt, len, {LapSample{0, lap, df - float(lap) * len, false, 0}});
+        }
+        CHECK(fast.best_ms(0) < 0 && fast.stats().range > 0);
     }
     // a track-limit warning during a lap voids it
     LapClock w;

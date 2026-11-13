@@ -1,5 +1,16 @@
 # Resumen — TV Timing Tower
 
+## 0.14.1 (13-11-2026)
+
+- Franjas centradas y a la altura del aviso del juego, medido en una captura de pantalla completa (2000 × 1125); un
+  23 % más grandes (37 % del ancho de la pantalla, como la tele) (D75).
+- El fondo de las franjas pasa a la capa 20: en la 40 tapaba el escudo del juego (que siempre va en la 30) y el texto
+  FASTEST LAP no se veía.
+- Vuelta rápida más fiable: una vuelta por debajo de 75 m/s de media no existe (la de 0:59.0) y la de la sesión no
+  puede quedar más de un 4 % por debajo de la mediana de las vueltas medidas (el juego decía HAMILTON y el addon ERI).
+
+---
+
 ## 0.14.0 (13-11-2026)
 
 - Franjas sin fundido (la animación de Swofty no es fiable y a veces las dejaba invisibles): salen siempre (D74).
