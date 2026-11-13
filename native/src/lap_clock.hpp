@@ -25,6 +25,14 @@ public:
     static constexpr int kCars = 32;
     static constexpr int kMaxLaps = 96;
 
+    // What happened to the line crossings since the reset, for the log (why a session has no times)
+    struct Stats {
+        int crossings = 0, timed = 0;
+        int first = 0, dirty = 0, pit = 0, warn = 0, range = 0; // crossings not timed, by reason
+        int resets = 0, jumps = 0, wraps = 0, skips = 0;        // car resets, flashbacks, early line wraps, counter jumps
+    };
+    const Stats &stats() const { return stats_; }
+
     void reset()
     {
         cars_.fill(Car{});
@@ -32,6 +40,7 @@ public:
         pending_ = 0;
         fastest_vid_ = -1;
         fastest_ms_ = -1;
+        stats_ = Stats{};
         epoch_++;
     }
 
@@ -50,8 +59,9 @@ public:
             seen++;
             if (s.lap != c.lap || std::fabs(s.lap_m - c.lap_m) > 0.001f)
                 moved = true;
-            // a car going back: its own reset (back to the garage, a teleport to the pit lane) ...
-            if (s.lap < c.lap || (s.lap == c.lap && s.lap_m < c.lap_m - 40.f)) {
+            // a car going back: its own reset (back to the garage, a teleport to the pit lane) ... but not the lap
+            // distance wrapping at the line a moment before the game's counter goes up
+            if (s.lap < c.lap || (s.lap == c.lap && s.lap_m < c.lap_m - 40.f && !line_wrap(c, s, track_m))) {
                 back[s.vid] = true;
                 jumps++;
             }
@@ -65,12 +75,16 @@ public:
             pending_ += dt; // paused, or every car stopped: the clock waits
         }
         if (jumped) { // a flashback or a restart: every lap in progress is unusable
+            stats_.jumps++;
             for (Car &c : cars_)
                 c.cross_t = -1;
         }
         for (const LapSample &s : cars)
             if (s.vid < kCars && back[s.vid] && cars_[s.vid].seen) { // that car's lap in progress is unusable
+                if (!jumped)
+                    stats_.resets++;
                 cars_[s.vid].cross_t = -1;
+                cars_[s.vid].wrap_t = -1;
                 cars_[s.vid].dirty = true;
             }
 
@@ -96,11 +110,32 @@ public:
                         f = before / (before + after);
                 }
                 double cross = c.t + f * (sim_ - c.t);
+                if (track_m > 100.f && s.lap_m > track_m * 0.8f && s.lap_m > c.lap_m && sim_ > c.t) {
+                    // the counter went up before the distance wrapped: the line is still ahead, reached at this speed
+                    double v = double(s.lap_m - c.lap_m) / (sim_ - c.t);
+                    cross = sim_ + double(track_m - s.lap_m) / v;
+                }
+                if (c.wrap_t >= 0 && sim_ - c.wrap_t < 20.0)
+                    cross = c.wrap_t; // the distance wrapped at the line first: that was the crossing
+                c.wrap_t = -1;
                 bool valid = c.cross_t >= 0 && !c.dirty && !s.in_pit && s.warnings == c.warn0;
+                stats_.crossings++;
+                if (c.cross_t < 0)
+                    stats_.first++;
+                else if (s.in_pit)
+                    stats_.pit++;
+                else if (c.dirty)
+                    stats_.dirty++;
+                else if (s.warnings != c.warn0)
+                    stats_.warn++;
                 if (c.cross_t >= 0) {
                     int ms = int(std::lround((cross - c.cross_t) * 1000.0));
+                    if (valid && (ms < 15000 || ms > 600000))
+                        stats_.range++;
                     if (ms < 15000 || ms > 600000)
                         valid = false;
+                    if (valid)
+                        stats_.timed++;
                     if (valid) {
                         c.last_ms = ms;
                         if (c.n < kMaxLaps)
@@ -120,8 +155,18 @@ public:
                 c.warn0 = s.warnings;
             } else if (s.lap != c.lap) {
                 c.cross_t = -1; // a counter jump we did not see happen
+                c.wrap_t = -1;
                 c.dirty = true;
                 c.warn0 = s.warnings;
+                if (!jumped && !back[s.vid])
+                    stats_.skips++;
+            } else if (line_wrap(c, s, track_m) && !jumped) {
+                // the distance wrapped at the line, the counter has not moved yet: remember when it crossed
+                double before = std::fmax(0.0, double(track_m) - c.lap_m);
+                double after = std::fmax(0.0, double(s.lap_m));
+                double f = before + after > 0.01 ? before / (before + after) : 1.0;
+                c.wrap_t = c.t + f * (sim_ - c.t);
+                stats_.wraps++;
             }
             if (s.in_pit)
                 c.dirty = true;
@@ -156,12 +201,20 @@ public:
     }
 
 private:
+    struct Car;
+    // the car went from the end of a lap to its start with the counter unchanged
+    static bool line_wrap(const Car &c, const LapSample &s, float track_m)
+    {
+        return track_m > 100.f && s.lap == c.lap && c.lap_m > track_m * 0.8f && s.lap_m < track_m * 0.2f;
+    }
+
     struct Car {
         bool seen = false;
         int lap = 0;
         float lap_m = 0;
         double t = 0;          // sim time of the last sample
         double cross_t = -1;   // sim time of the last crossing, -1 unknown
+        double wrap_t = -1;    // sim time the lap distance wrapped at the line before the counter moved
         bool dirty = true;
         int warn0 = 0;
         int last_ms = -1, best_ms = -1;
@@ -172,6 +225,7 @@ private:
     double sim_ = 0, pending_ = 0;
     int fastest_vid_ = -1, fastest_ms_ = -1;
     uint32_t epoch_ = 0;
+    Stats stats_;
 };
 
 // Laps on the current set of tyres, counted from the last pit stop seen (or the start of the session).

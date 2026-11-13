@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.8.1
+# Checklist de pruebas en el juego — TV Timing Tower 0.8.2
 
 Antes de empezar: instala `dist/tv-timing-tower.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.8.1 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.8.2 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -69,6 +69,8 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 4e. Novedades 0.8.0 (arreglos reportados)
 - [ ] Libres y clasificación: salen tiempos en casi todos los coches (antes se quedaban en blanco con frecuencia).
+      Cada minuto el log escribe `[tv-tower] laps: …` con cuántos coches tienen tiempo y por qué no se cronometró
+      cada paso por meta; manda esas líneas si siguen sin salir.
 - [ ] Clasificación con 22 coches: Q2 muestra **16 filas** (no se corta en el 13), Q3 muestra 10. Prueba también
       simulando la Q1 y entrando directamente en Q2.
 - [ ] Clasificación sprint con 20 coches: SQ2 muestra 15 filas.

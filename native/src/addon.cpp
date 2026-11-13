@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -17,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.8.1"
+#define TVT_VERSION "0.8.2"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -235,6 +236,31 @@ void handle_keys()
     g->key_prev = down;
 }
 
+// Once a minute in practice and qualifying, while anything changed: what the lap clock made of the line crossings,
+// so a session without times can be explained from the log (the core gives no lap times in those sessions)
+void log_laps(const tvt::Snapshot &snap)
+{
+    static tvt::LapClock::Stats last{};
+    static int last_best = -1;
+    tvt::Kind k = tvt::kind_of(snap.s.type);
+    if (g->set.demo || g->demo_key || g->last_why != tvt::LiveSource::Why::ok || (k != tvt::Kind::practice && k != tvt::Kind::quali &&
+                                                    k != tvt::Kind::sprint_quali))
+        return;
+    const tvt::LapClock::Stats &s = g->src.clock().stats();
+    int best = 0;
+    for (const tvt::CarIn &c : snap.cars)
+        best += c.best_ms > 0 ? 1 : 0;
+    if (std::memcmp(&s, &last, sizeof s) == 0 && best == last_best)
+        return;
+    last = s;
+    last_best = best;
+    swofty::log("%s laps: %d of %zu cars with a time; %d crossings, %d timed; not timed: %d first, %d pit, %d dirty, "
+                "%d warnings, %d out of range; %d car resets, %d flashbacks, %d line wraps, %d counter jumps; "
+                "track %.0f m",
+                kTag, best, snap.cars.size(), s.crossings, s.timed, s.first, s.pit, s.dirty, s.warn, s.range,
+                s.resets, s.jumps, s.wraps, s.skips, double(snap.s.track_m));
+}
+
 void frame(double dt, void *)
 {
     if (!g || !g->pub)
@@ -331,6 +357,7 @@ void frame(double dt, void *)
         g->cost_sum = g->cost_max = 0;
         g->cost_n = 1;
         g->next_cost_log = g->now + 60;
+        log_laps(snap);
     }
 }
 

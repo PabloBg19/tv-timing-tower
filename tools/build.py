@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.8.1"
+VERSION = "0.8.2"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
@@ -272,6 +272,11 @@ def profile_check(archive, flavour):
     if not exe:
         print("profile check skipped: swofty.exe not found")
         return
+    if game_running():
+        # a build reads (and a real one rewrites) the game's UI archives: with the game open they are already
+        # overlaid, and rewriting them under a running game crashed it once
+        print("profile check skipped: F1 25 is running (close it and build again)")
+        return
     data = BUILD / flavour / "swofty-data"
     if data.exists():
         shutil.rmtree(data)
@@ -285,6 +290,13 @@ def profile_check(archive, flavour):
         print((r.stdout + r.stderr)[-3000:])
         sys.exit(f"profile build failed with the {flavour} package")
     print(f"profile check: {flavour} package installs and builds")
+
+
+def game_running():
+    if os.name != "nt":
+        return False
+    r = subprocess.run(["tasklist", "/FI", "IMAGENAME eq F1_25.exe", "/NH"], capture_output=True, text=True)
+    return "F1_25.exe" in r.stdout
 
 
 def package(name, stage):

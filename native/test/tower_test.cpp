@@ -259,6 +259,26 @@ static void test_lap_clock()
     }
     CHECK(c.best_ms(0) > 99950 && c.best_ms(0) < 100050);
     CHECK(c.fastest_vid() == 0);
+    // the lap distance wraps at the line a few frames before the game's counter goes up (or after): still timed,
+    // from the wrap, and not taken for the car going back
+    for (int lag : {-12, 12}) {
+        LapClock lw;
+        float dw = 4000.f;
+        for (int i = 0; i < 60 * 330; i++) {
+            dw += 50.f * float(dt);
+            float m = std::fmod(dw, len);
+            int lap = int(dw / len);
+            // the counter moves `lag` frames late (lag > 0) or early (lag < 0) against the distance
+            int lap_c = int((dw - 50.f * float(dt) * float(lag)) / len);
+            lw.step(dt, len, {LapSample{0, lag > 0 ? lap_c : lap_c, m, false, 0}});
+            (void)lap;
+        }
+        if (!(lw.best_ms(0) > 99950 && lw.best_ms(0) < 100050))
+            std::printf("lag %d best %d timed %d resets %d wraps %d first %d skips %d\n", lag, lw.best_ms(0),
+                        lw.stats().timed, lw.stats().resets, lw.stats().wraps, lw.stats().first, lw.stats().skips);
+        CHECK(lw.best_ms(0) > 99950 && lw.best_ms(0) < 100050);
+        CHECK(lw.stats().timed >= 2 && lw.stats().resets == 0);
+    }
     // a track-limit warning during a lap voids it
     LapClock w;
     d = 4000.f;

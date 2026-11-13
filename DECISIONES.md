@@ -402,3 +402,17 @@ pulsado en el Team HQ de la carrera, donde la torre no se ve, y esa ocultación 
 partida. Ahora la tecla solo oculta o muestra la torre con una sesión en marcha (o la demo), y al empezar una
 sesión nueva la torre vuelve a mostrarse aunque se hubiera ocultado en la anterior. Para quitarla siempre está el
 ajuste *TV tower* = No.
+
+## 0.8.2
+
+**D64 — Clasificación sin tiempos: paso por meta y diagnóstico.** En el juego, una Q1 no mostró ningún tiempo.
+Swofty no da tiempos ni diferencias en libres y clasificación (su doc: el sistema de diferencias del juego no se
+alimenta en esas sesiones), y leerlos de la memoria del juego como hace Project Halo va contra D2. El reloj propio
+tenía un punto débil: si la distancia de la vuelta vuelve a 0 en la meta unos fotogramas antes de que suba el
+contador del juego, ese salto atrás se tomaba como un coche que retrocede (garaje, teletransporte) y anulaba la
+vuelta, en todas las vueltas de todos los coches. Ahora ese salto se reconoce como el paso por meta y su momento es
+el que cuenta; si el contador sube antes, el paso se calcula con la velocidad. Tests para los dos órdenes.
+Como no se ha podido confirmar que esa fuera la causa, cada minuto (si algo cambió) el log escribe
+`[tv-tower] laps:` con los coches con tiempo, los pasos por meta y por qué no se cronometró cada uno (primera
+vuelta, boxes, vuelta sucia, avisos de límites, fuera de rango), los retrocesos, flashbacks, saltos de meta y saltos
+de contador. Sin tiempo, la fila se queda vacía, como en la emisión.

@@ -1,5 +1,17 @@
 # Resumen — TV Timing Tower
 
+## 0.8.2 (13-11-2026)
+
+- Clasificación sin ningún tiempo en el juego: el reloj de vueltas ya no confunde el paso por meta (la distancia
+  vuelve a 0 un momento antes o después que el contador del juego) con un coche que retrocede, que anulaba la vuelta.
+- Línea `[tv-tower] laps:` en el log cada minuto en libres y clasificación, para ver qué pasa si sigue sin tiempos
+  (D64). Sin ver en el juego.
+- El cierre del juego de la 01:24 lo provocó un `swofty build` del perfil lanzado desde aquí con el juego abierto
+  (reescribe los archivos de interfaz). `build.py` ya no hace su comprobación con el juego abierto, y no se vuelve a
+  instalar ni compilar el perfil real mientras se juega.
+
+---
+
 ## 0.8.1 (13-11-2026)
 
 - La torre no salía: se había pulsado F8 en un menú de la carrera (Team HQ) y quedaba oculta en todas las
