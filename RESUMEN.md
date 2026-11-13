@@ -1,5 +1,17 @@
 # Resumen — TV Timing Tower
 
+## 0.11.0 (13-11-2026)
+
+- **Tiempos de clasificación y libres, por fin.** El log de una Q1 dio `10 line wraps, 0 crossings`: en esas
+  sesiones el contador de vueltas del juego no sube, y el reloj solo cronometraba cuando subía. Ahora el paso por
+  meta es la distancia volviendo a 0 o el contador, lo que llegue antes (en carrera llegan los dos y se cuenta uno)
+  (D68).
+- FASTEST LAP rehecha como la de la emisión: esquinas redondeadas, estela de tres flechas, fondo casi negro y
+  apellido, logo y tiempo pegados a la derecha (D67).
+- Sin ver en el juego.
+
+---
+
 ## 0.10.0 (13-11-2026, primera parte de la 1.0)
 
 - Franjas arriba en el centro, como en la emisión: `NEW RACE LEADER` (apellido, bloque del color del equipo y su

@@ -336,6 +336,31 @@ static void test_lap_clock()
         CHECK(lw.best_ms(0) > 99950 && lw.best_ms(0) < 100050);
         CHECK(lw.stats().timed >= 2 && lw.stats().resets == 0);
     }
+    // qualifying / practice: the game's lap counter never moves (seen in game: 10 wraps, 0 counter steps); the lap
+    // distance wrapping at the line is the crossing. An out lap from the pits is not timed, the laps after it are.
+    {
+        LapClock qc;
+        float dq = 3800.f; // leaving the pit lane near the end of the lap
+        for (int i = 0; i < 60 * 330; i++) {
+            dq += 50.f * float(dt);
+            bool pit = i < 60 * 4;
+            qc.step(dt, len, {LapSample{0, 0, std::fmod(dq, len), pit, 0}});
+        }
+        CHECK(qc.best_ms(0) > 99950 && qc.best_ms(0) < 100050);
+        CHECK(qc.stats().timed >= 2 && qc.stats().crossings >= 3 && qc.stats().resets == 0);
+    }
+    // a race: the counter and the wrap report the same crossing; it is counted once
+    {
+        LapClock rc;
+        float dr = 4000.f;
+        for (int i = 0; i < 60 * 330; i++) {
+            dr += 50.f * float(dt);
+            int lap_c = int((dr - 50.f * float(dt) * 5.f) / len); // the counter 5 frames after the wrap
+            rc.step(dt, len, {LapSample{0, lap_c, std::fmod(dr, len), false, 0}});
+        }
+        CHECK(rc.best_ms(0) > 99950 && rc.best_ms(0) < 100050);
+        CHECK(rc.stats().crossings == 4); // 4000 m -> 20500 m: the line at 5, 10, 15 and 20 km, once each
+    }
     // a track-limit warning during a lap voids it
     LapClock w;
     d = 4000.f;

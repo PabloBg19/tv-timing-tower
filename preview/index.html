@@ -176,7 +176,7 @@
     });
     // banners top centre, as in game: ban_x tower widths right of the tower, level with its top
     if (h.ban) {
-      const bx = L.ban_x * W, bh = L.ban_h, cap = L.ban_cap, ty = bh / 2 + cap / 2, lead = h.ban === 1;
+      const bx = L.ban_x * W, bh = L.ban_h, lead = h.ban === 1, cap = lead ? L.ban_cap : L.ban_fcap, ty = bh / 2 + cap / 2;
       const b = document.createElement('div'); b.className = 'el';
       Object.assign(b.style, { left: bx + 'px', top: '0px', width: (lead ? L.ban_lw : L.ban_fw) + 'px', height: bh + 'px' });
       const add = e => e && b.append(e);
@@ -193,11 +193,11 @@
           add(d); }
         add(txt('NEW RACE LEADER', L.ban_lab_x, ty, cap, 'left', C.ban_label, 700));
       } else {
-        logoCx = L.ban_label_w + L.ban_chev + 4 + L.ban_logo / 2; nameX = logoCx + L.ban_logo / 2 + 5; box = 110;
-        add(txt('FASTEST LAP', 8, ty, cap, 'left', '#fff', 700));
-        add(txt(h.bt, L.ban_fw - 8, ty, cap, 'right', C.ban_time, 700));
+        logoCx = L.ban_flogo; nameX = L.ban_fname_r; box = 60;
+        add(txt('FASTEST LAP', 8, ty, cap, 'left', C.ban_flabel, 700));
+        add(txt(h.bt, L.ban_ftime, ty, cap, 'left', C.ban_time, 700));
       }
-      add(txt(h.bnm, nameX, ty, cap, lead ? 'right' : 'left', '#fff', 700, box));
+      add(txt(h.bnm, nameX, ty, cap, 'right', '#fff', 700, box));
       if (logos && h.btm >= 0) add(spr('tm_' + L.teams[h.btm], logoCx - L.logo_x, bh / 2 - R / 2, 43));
       tower.append(b);
     }

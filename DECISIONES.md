@@ -452,3 +452,18 @@ EA. Si en EA siguiera sin verse, las líneas `[tv-tower] source:` y `[live]` del
   apagan todos con la franja.
 - 6 s cada una, fundido de 0,25 s (`motion`), y si llegan dos a la vez, una detrás de otra; una nueva del mismo tipo
   sustituye a la que espera. Ajustes *New race leader banner* y *Fastest lap banner*. +60 copias en el registro.
+
+## 0.11.0
+
+**D68 — En clasificación y libres el contador de vueltas no se mueve.** La línea `[tv-tower] laps:` de una Q1 real
+dio `0 crossings` y `10 line wraps`: los coches cruzaban la meta (la distancia de la vuelta volvía a 0), pero el
+contador de vueltas del juego no subía nunca en esa sesión, y el reloj solo cerraba una vuelta con el contador. Por
+eso no había tiempos en ninguna clasificación (los arreglos de D59 y D64 no llegaban a actuar). Ahora un paso por
+meta es lo primero que llegue de las dos señales: la distancia que vuelve del final de la vuelta al principio, o el
+contador que sube. En carrera llegan las dos a pocos fotogramas, en cualquier orden, y la segunda (dentro de 20 s)
+se descarta. Tests: clasificación con el contador quieto (vuelta de salida sin tiempo, las siguientes a ±50 ms) y
+carrera con las dos señales (cada paso contado una vez).
+
+FASTEST LAP, segunda versión (D67): la primera no se parecía a la emisión. Ahora, como en la captura: más estrecha
+(236 × 28), esquinas izquierdas redondeadas, etiqueta morada con su flecha y una estela de tres flechas cada vez más
+oscuras, fondo casi negro, apellido en blanco pegado al logo y el tiempo en morado intenso a la derecha.

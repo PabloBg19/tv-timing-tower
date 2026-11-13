@@ -64,9 +64,10 @@ LAYOUT = {
     "extra_up": 24.0,
     # banners top centre (NEW RACE LEADER, FASTEST LAP): placed and sized from the broadcast relative to the tower
     # (the banner starts 2.07 tower widths right of the tower's left edge, level with its top; 0.26 widths tall)
-    "ban_x": 2.07, "ban_h": 28.0, "ban_lw": 218.0, "ban_fw": 300.0, "ban_cap": 8.5,
+    "ban_x": 2.07, "ban_h": 28.0, "ban_lw": 218.0, "ban_fw": 236.0, "ban_cap": 8.5, "ban_fcap": 7.5,
     "ban_name_w": 64.0, "ban_lab_x": 79.0,
-    "ban_team_w": 30.0, "ban_label_w": 102.0, "ban_chev": 9.0, "ban_logo": 14.0,        # added on top of offset_y while more than 22 rows show (D62, not measured in game)
+    "ban_team_w": 30.0, "ban_label_w": 76.0, "ban_chev": 9.0, "ban_logo": 14.0, "ban_trail": 9.0,
+    "ban_fname_r": 164.0, "ban_flogo": 174.0, "ban_ftime": 183.0, "ban_round": 4.0,        # added on top of offset_y while more than 22 rows show (D62, not measured in game)
     "row": ROW_UNITS,
     "width": u(REF["width"]),
     "pos_w": u(REF["pos_w"]), "pos_x": u(REF["pos_x"]),
@@ -113,8 +114,8 @@ LAYOUT = {
         "clear": "#1E9E3E",
         "arrow_up": "#32BF36",
         "arrow_dn": "#E8102A",
-        "ban_dark": [20, 19, 30], "ban_fl_dark": [36, 28, 54], "ban_purple": ["#B957E0", "#8A3DC2"],
-        "ban_time": "#E48CFF", "ban_label": "#D8D6E2",
+        "ban_dark": [20, 19, 30], "ban_fl_dark": [17, 14, 24], "ban_purple": ["#B44BE2", "#9330C9"],
+        "ban_trail": ["#7A2AAA", "#561F7C", "#371550"], "ban_time": "#B566F5", "ban_label": "#D8D6E2", "ban_flabel": "#F6E8FF",
         "tyres": {"S": "#E8303A", "M": "#F0D23A", "H": "#E6E6E6", "I": "#3CB043", "W": "#2E7CD6"},
     },
 }
@@ -291,13 +292,32 @@ def make_art(art: Path):
     tb = [lw - tw - sl, 0, lw, bh]
     add("ban_team", poly(tw + sl, bh, [([(sl, 0), (tw + sl, 0), (tw + sl, bh), (0, bh)], (255, 255, 255, 255))]), tb)
     add("ban_team_d", poly(tw + sl, bh, [([(sl, 0), (tw + sl, 0), (tw + sl, bh), (0, bh)], (120, 120, 132, 255))]), tb)
-    # FASTEST LAP: the purple label with its chevron, over the dark bar
-    fw, lab = L["ban_fw"], L["ban_label_w"]
+    # FASTEST LAP (as the broadcast): a near-black pill with rounded left corners, the purple label ending in a
+    # chevron, and a trail of two darker chevrons fading into the bar
+    fw, lab, tr, rr = L["ban_fw"], L["ban_label_w"], L["ban_trail"], L["ban_round"]
     p0, p1 = hexrgba(C["ban_purple"][0]), hexrgba(C["ban_purple"][1])
-    purple = lambda t: tuple(int(p0[k] + (p1[k] - p0[k]) * t) for k in range(3)) + (250,)
+    purple = lambda t: tuple(int(p0[k] + (p1[k] - p0[k]) * t) for k in range(3)) + (252,)
+
+    def rounded_left(x1, tip):
+        pts = []
+        for k in range(9):  # the top-left and bottom-left quarter circles
+            a = math.pi / 2 * k / 8
+            pts.append((rr - rr * math.cos(a), rr - rr * math.sin(a)))
+        pts += [(x1, 0), (x1 + tip, bh / 2), (x1, bh)]
+        for k in range(9):
+            a = math.pi / 2 * k / 8
+            pts.append((rr - rr * math.sin(a), bh - rr + rr * math.cos(a)))
+        return pts
+
+    def chevron(x0, w):
+        return [(x0, 0), (x0 + w, 0), (x0 + w + sl, bh / 2), (x0 + w, bh), (x0, bh), (x0 + sl, bh / 2)]
+
     add("ban_f_bg", poly(fw, bh, [
-        ([(0, 0), (fw, 0), (fw, bh), (0, bh)], shade(C["ban_fl_dark"])),
-        ([(0, 0), (lab, 0), (lab + sl, bh / 2), (lab, bh), (0, bh)], purple),
+        (rounded_left(fw, 0), shade(C["ban_fl_dark"], 246)),
+        (chevron(lab + 2 * tr - 2.0, tr - 2.0), hexrgba(C["ban_trail"][2], 255)),
+        (chevron(lab + tr - 1.0, tr - 2.0), hexrgba(C["ban_trail"][1], 255)),
+        (chevron(lab, tr - 2.0), hexrgba(C["ban_trail"][0], 255)),
+        (rounded_left(lab, sl), purple),
     ]), [0, 0, fw, bh])
     return sprites
 
@@ -668,8 +688,11 @@ def banners(logos_found):
             logo_cx = L["ban_lw"] - L["ban_team_w"] / 2
             name_x, name_box = L["ban_lab_x"] - 5.0, L["ban_name_w"]
         else:
-            logo_cx = L["ban_label_w"] + L["ban_chev"] + 4.0 + L["ban_logo"] / 2
-            name_x, name_box = logo_cx + L["ban_logo"] / 2 + 5.0, 110.0
+            # "ANTONELLI (logo) 1:37.477" flush against the time, the trail of chevrons before it
+            logo_cx = L["ban_flogo"]
+            name_x, name_box = L["ban_fname_r"], L["ban_fname_r"] - L["ban_label_w"] - 3 * L["ban_trail"] - 6.0
+            cap = L["ban_fcap"]
+            ty = bh / 2 + cap / 2
         art = [sprite(f"{k}bg", "ban_l_bg" if lead else "ban_f_bg", 40)]
         if lead:
             art.append(group(f"{k}tdg", [sprite(f"{k}td", "ban_team_d", 41)], visible=vm("demo")))
@@ -677,10 +700,10 @@ def banners(logos_found):
                             colour=C["ban_label"] + "ff"))
         else:
             art.append(text(f"{k}lab", "OSD_24_bold", "left", L["ban_label_w"], cap, [8.0, ty], literal=label,
-                            colour="#FFFFFFff"))
-            art.append(text(f"{k}tm", "OSD_24_bold", "right", 60.0, cap, [L["ban_fw"] - 8.0, ty],
+                            colour=C["ban_flabel"] + "ff"))
+            art.append(text(f"{k}tm", "OSD_24_bold", "left", 50.0, cap, [L["ban_ftime"], ty],
                             value=vm(f"{k}_t"), colour=C["ban_time"] + "ff", case="none"))
-        align = "right" if lead else "left"
+        align = "right"
         art.append(group(f"{k}dn", [text(f"{k}dnm", "OSD_24_bold", align, name_box, cap, [name_x, ty],
                                          value=vm(f"{k}_nm"), wrap="clampwidth", case="upper")], visible=vm("demo")))
         slot = [text(f"{k}sn", "OSD_24_bold", align, name_box, cap, [name_x, ty],
