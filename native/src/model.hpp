@@ -244,6 +244,9 @@ struct Config {
     // practice and qualifying times (off: the core gives no lap times there and the game's counter does not move,
     // so the addon cannot time them reliably; on again once Swofty exposes the game's own best laps)
     bool timed_times = false;
+    // the race's fastest lap (the purple icon on a row and its time flashing purple): off, it came from the addon's
+    // own lap clock and did not always match the game's own fastest lap; on again with the game's lap times
+    bool race_fastest = false;
     bool gap_ms = false;       // race gaps in thousandths ("+0.934", earlier F1 games) instead of 2026's tenths
     bool tyres = true;
     bool tyre_age = false;
@@ -671,7 +674,7 @@ private:
         }
 
         if (race) {
-            r.fl = snap.s.fastest_vid >= 0 && uint32_t(snap.s.fastest_vid) == c.vid;
+            r.fl = cfg.race_fastest && snap.s.fastest_vid >= 0 && uint32_t(snap.s.fastest_vid) == c.vid;
             if (h.bare) {
                 // names only; under the safety car a car in the pits still shows it (stops are common then)
                 if (snap.s.sc == 1 && !snap.s.red && !h.start_tyres && !snap.s.formation && !retired && c.in_pit &&
@@ -731,7 +734,7 @@ private:
                     r.gap = "";
             }
             // a new fastest lap flashes the lap time in purple
-            if (!h.bare && !h.gained && !h.pitstops && !h.tyres && fastest_flash_vid_ == int(c.vid) && now < fastest_flash_until_ &&
+            if (cfg.race_fastest && !h.bare && !h.gained && !h.pitstops && !h.tyres && fastest_flash_vid_ == int(c.vid) && now < fastest_flash_until_ &&
                 fastest_ms_ > 0) {
                 r.gap = fmt_lap(fastest_ms_);
                 r.gap_purple = true;

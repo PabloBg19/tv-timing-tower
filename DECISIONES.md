@@ -557,3 +557,10 @@ coincide con la del juego ni en el piloto ni en el momento. Swofty no da ninguna
 reestilan; el usuario eligió quitar la franja. Se van la franja, su ajuste, el arte y el `wrap` que ocultaba la
 notificación central del juego (D74). NEW RACE LEADER se queda: el orden sí lo da el juego. El icono morado de vuelta
 rápida en las filas sigue con el reloj propio y sus filtros (D75).
+
+## 0.15.1
+
+**D77 — Sin vuelta rápida en las filas.** El icono morado de vuelta rápida y el destello de su tiempo en morado salían
+del mismo reloj propio que la franja quitada en D76, y en carrera marcaron a ERI mientras el juego decía HAMILTON. El
+usuario prefirió quitarlos (y no añadir «FINAL LAP» ni «DNF», que la emisión no usa: «Out» se queda). Apagados con
+`Config::race_fastest` (falso, sin ajuste), con su test encendido, para volver cuando Swofty dé los tiempos del juego.

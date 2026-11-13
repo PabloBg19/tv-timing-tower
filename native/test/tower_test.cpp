@@ -84,8 +84,16 @@ static void test_race_rows()
     CHECK(v2.rows[5].up && v2.rows[6].dn);
     t.update(demo::make(demo::race, 11.5), cfg, 11.5);
     CHECK(!t.view().rows[5].up);
-    // the fastest lap flashes purple then stays as the icon
-    CHECK(t.view().rows[1].fl);
+    // the race's fastest lap: off by default (no icon); on, it flashes purple then stays as the icon
+    CHECK(!t.view().rows[1].fl);
+    {
+        Config fc = cfg;
+        fc.race_fastest = true;
+        Tower tf;
+        tf.update(demo::make(demo::race, 7.0), fc, 7.0);
+        tf.update(demo::make(demo::race, 11.5), fc, 11.5);
+        CHECK(tf.view().rows[1].fl);
+    }
     CHECK(t.view().h.card == card_yellow && t.view().h.ysec == "SECTOR 2");
     CHECK(t.view().rows[21].gap == "Out" && t.view().rows[21].out);
 }

@@ -1,5 +1,12 @@
 # Resumen — TV Timing Tower
 
+## 0.15.1 (13-11-2026)
+
+- Fuera el icono morado de vuelta rápida y el destello del tiempo en morado en las filas: salían del reloj propio y no
+  siempre coincidían con el juego. Queda apagado (`Config::race_fastest`) para cuando Swofty dé los tiempos (D77).
+
+---
+
 ## 0.15.0 (13-11-2026)
 
 - Fuera la franja FASTEST LAP y su ajuste (D76): el juego no da tiempos a los addons, así que nunca coincidía con el

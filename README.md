@@ -29,7 +29,7 @@ tiempos de la retransmisión de F1 2026. **La dibuja el propio HUD del juego**: 
   - `STARTING TYRES` en parrilla, `GAINED / LOST` al empezar la vuelta 2, `TYRES` (vueltas de cada juego) en las
     vueltas 7, 17…, `PIT STOPS` en las 10, 20… y, al acabar, las diferencias en meta con la bandera a cuadros en cada coche;
   - `IN PIT` en verde menta, `+1 Lap`, `Out`/`DSQ`/`NC`;
-  - sanciones con el cuadrado rojo «!», vuelta rápida en morado, triángulos de posición y bandera a cuadros;
+  - sanciones con el cuadrado rojo «!», triángulos de posición y bandera a cuadros;
   - en los adelantamientos, las filas se desvanecen y vuelven con el orden nuevo;
   - franja `NEW RACE LEADER` arriba en el centro, como en la emisión, cuando cambia el líder (la vuelta rápida la
     anuncia el propio juego).
@@ -126,7 +126,7 @@ broadcast timing tower, **drawn by the game's own HUD**: no external app, no ove
   practice or qualifying for now: Swofty gives none there and the addon can't time them reliably.
 - **Races:** STARTING TYRES on the grid; one-decimal intervals (or classic thousandths, a setting) and the gap to the leader on laps 5, 15, 25…;
   GAINED / LOST as lap 2 starts; TYRES (laps on the set) on laps 7, 17…; PIT STOPS on laps 10, 20…; the gaps at the
-  line and a chequered flag per finisher at the end; penalties as the red "!" square; mint `IN PIT`; penalties, fastest lap, position triangles, chequered flag and row
+  line and a chequered flag per finisher at the end; penalties as the red "!" square; mint `IN PIT`; penalties, position triangles, chequered flag and row
   fades on overtakes; a NEW RACE LEADER banner top centre.
 - **Flags:** FOM-style blocks with the FIA logo. Names only under the safety car or a red flag.
 
