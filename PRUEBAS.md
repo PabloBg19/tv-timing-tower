@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.13.2
+# Checklist de pruebas en el juego — TV Timing Tower 0.14.0
 
 Antes de empezar: instala `dist/tv-timing-tower.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.13.2 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.14.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -66,6 +66,12 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
 - [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
+
+## 4m. Novedades 0.14.0 (franjas)
+- [ ] Demo (Ctrl+F8, *Escenario demo* = Avisos): `NEW RACE LEADER` y luego `FASTEST LAP`, más largas y grandes, **en el
+      centro** arriba. Manda una captura de pantalla completa (sin recortar) para centrarlas al píxel.
+- [ ] Carrera: salen **siempre** que cambia el líder (desde la vuelta 2) y con cada vuelta rápida, también la primera.
+- [ ] Mientras sale nuestra FASTEST LAP no sale la notificación central del juego (su aviso de vuelta rápida).
 
 ## 4l. Novedades 0.13.2
 - [ ] Mi Equipo con 24 coches: la cabecera con el logo F1 y el lockup en toda la carrera (la 0.13.0 los quitaba).

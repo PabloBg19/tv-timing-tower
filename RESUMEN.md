@@ -1,5 +1,15 @@
 # Resumen — TV Timing Tower
 
+## 0.14.0 (13-11-2026)
+
+- Franjas sin fundido (la animación de Swofty no es fiable y a veces las dejaba invisibles): salen siempre (D74).
+- Más largas y grandes, como la emisión (320 × 31 FASTEST LAP, 296 × 31 NEW RACE LEADER), centradas en un punto que
+  se ajusta con una captura de pantalla completa; logos de equipo más grandes en ellas.
+- FASTEST LAP sustituye al aviso del juego: la notificación central del juego se oculta mientras sale la nuestra, y
+  sale también con la primera vuelta rápida.
+
+---
+
 ## 0.13.2 (13-11-2026)
 
 - Fuera la variante de 24 coches de la 0.13.0 (bloque sobre el logo): tenía un fallo que quitaba el logo de la

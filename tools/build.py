@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.13.2"
+VERSION = "0.14.0"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"

@@ -64,13 +64,13 @@ REF = {
 
 LAYOUT = {
     "offset_y": -40.0,       # the whole tower, from the stock board's origin (into the hidden lap counter's space)
-    "extra_up": 24.0,
-    # banners top centre (NEW RACE LEADER, FASTEST LAP): placed and sized from the broadcast relative to the tower
-    # (the banner starts 2.07 tower widths right of the tower's left edge, level with its top; 0.26 widths tall)
-    "ban_x": 2.07, "ban_h": 28.0, "ban_lw": 218.0, "ban_fw": 236.0, "ban_cap": 8.5, "ban_fcap": 7.5,
-    "ban_name_w": 64.0, "ban_lab_x": 79.0,
-    "ban_team_w": 30.0, "ban_label_w": 76.0, "ban_chev": 9.0, "ban_logo": 14.0, "ban_trail": 9.0,
-    "ban_fname_r": 164.0, "ban_flogo": 174.0, "ban_ftime": 183.0, "ban_round": 4.0,        # added on top of offset_y while more than 22 rows show (D62, not measured in game)
+    "extra_up": 24.0,        # added on top of offset_y while more than 22 rows show (D62, not measured in game)
+    # banners top centre (NEW RACE LEADER, FASTEST LAP), level with the tower's top, both centred on ban_cx (units right of the tower's left edge: the screen's centre at the default HUD place,
+    # measured on the broadcast; tune with a full-screen capture) and as long as the broadcast's (2.9 tower widths)
+    "ban_cx": 364.0, "ban_h": 31.0, "ban_lw": 296.0, "ban_fw": 320.0, "ban_cap": 9.8, "ban_fcap": 9.3,
+    "ban_name_w": 112.0, "ban_lab_x": 128.0,
+    "ban_team_w": 40.0, "ban_label_w": 103.0, "ban_chev": 10.0, "ban_logo": 17.0, "ban_trail": 12.0,
+    "ban_fname_r": 222.0, "ban_flogo": 236.0, "ban_ftime": 249.0, "ban_round": 5.0,
     "row": ROW_UNITS,
     "width": u(REF["width"]),
     "pos_w": u(REF["pos_w"]), "pos_x": u(REF["pos_x"]),
@@ -376,6 +376,9 @@ def private_art(art: Path, logos: Path, sprites: dict):
         w, h = L["logo_w"], L["logo_h"]
         x = L["logo_x"]
         add(f"tm_{t}", fit_into(src, w, h), [x - w / 2, R / 2 - h / 2, x + w / 2, R / 2 + h / 2])
+        # the banners' larger copy, centred on its own origin
+        bw, bh2 = w * 1.6, h * 1.6
+        add(f"tmb_{t}", fit_into(src, bw, bh2), [-bw / 2, -bh2 / 2, bw / 2, bh2 / 2])
         found.append(i)
     return found
 
@@ -676,7 +679,8 @@ def unique_ids(elements):
 
 
 def banners(logos_found):
-    """NEW RACE LEADER and FASTEST LAP, top centre. Each: a fading group (motion on its leaf) holding the art and
+    """NEW RACE LEADER and FASTEST LAP, top centre. Each: a group (no fade: a motion trigger on our own leaf is not
+    reliable in game, and a missed one left a banner invisible) holding the art and
     texts (shown with the leaf) and, straight under it, the per-car name / colour slots and the team logo, which
     the DLL switches only while the banner shows (a change under a hidden node is lost)."""
     L = LAYOUT
@@ -718,15 +722,14 @@ def banners(logos_found):
         # the team logo: the broadcast icon (private build) by one-hot, else the game's badge
         lg = []
         for i in logos_found:
-            lg.append(group(f"{k}tm{i:02d}g", [sprite(f"{k}tm{i:02d}", f"tm_{TEAMS[i]}", 43)],
-                            at=[logo_cx - L["logo_x"], bh / 2 - R / 2], visible=vm(f"{k}_tm{i:02d}")))
+            lg.append(group(f"{k}tm{i:02d}g", [sprite(f"{k}tm{i:02d}", f"tmb_{TEAMS[i]}", 43)],
+                            at=[logo_cx, bh / 2], visible=vm(f"{k}_tm{i:02d}")))
         lg.append({"kind": "unit", "id": f"{k}lg", "unit": "team_logo", "at": [logo_cx, bh / 2],
-                   "size": L["unit_logo"], "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
+                   "size": L["unit_logo"] * 1.4, "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
         g = group(f"{k}g", [group(f"{k}art", art, visible=vm(k)), cars] + lg)
-        g["motion"] = {"id": k, "keys": [[0, 0.0], [0.25, 1.0]], "curve": "generic_fade_on", "play_on": vm(k)}
+        g["at"] = [-(L["ban_lw"] if lead else L["ban_fw"]) / 2, 0]
         out.append(g)
-    x = L["ban_x"] * L["width"]
-    return group("ban", out, at=[x, L["offset_y"]])
+    return group("ban", out, at=[L["ban_cx"], L["offset_y"]])
 
 
 def record(flavour, sprites, logos_found):
@@ -761,6 +764,10 @@ def record(flavour, sprites, logos_found):
              "while": vm("show")},
             {"template": "hud_left_notification_dynamic.osd_visibility_option.left_notification.left_message",
              "hide": ["boundless"], "while": vm("show")},
+            # the game's own centre notification (its FASTEST LAP toast) gives way while our FASTEST LAP banner shows
+            {"template": "hud_notifications_dynamic.osd_visibility_option.hud_notifications_dynamic.notification_0.hud_message",
+             "scene": "eaid://ui_package/art/osd/components/message_system/message_system.idf",
+             "wrap": ["centre"], "while": vm("bnf")},
         ],
         "editor": {"rows": 5, "preview": preview_leaves()},
     }

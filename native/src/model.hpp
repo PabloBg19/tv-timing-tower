@@ -974,7 +974,7 @@ private:
                 fastest_flash_vid_ = snap.s.fastest_vid;
                 fastest_flash_until_ = now + 5.0;
             }
-            new_fastest_ = fastest_ms_ > 0; // a lap beating the race's fastest so far: the banner (not the first)
+            new_fastest_ = true; // every new fastest lap of the race, the first too (as the game's own toast)
             fastest_ms_ = snap.s.fastest_ms;
         }
     }

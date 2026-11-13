@@ -515,3 +515,19 @@ las demás. Se quita entera: el bloque va siempre bajo la cabecera, como en la t
 o fundir un grupo, no escalarlo, así que con 24 coches y bandera la torre puede no caber: se escala en el editor de
 HUD. Se queda el arreglo de los textos: una amarilla en tres sectores dice `ALL SECTORS` (`SECTORS 1, 2 & 3` se salía
 del bloque) y las líneas de los bloques llevan `clampwidth`.
+
+## 0.14.0
+
+**D74 — Franjas: siempre, más grandes, centradas y en lugar del aviso del juego.** En el juego salían «solo de vez en
+cuando», no estaban centradas y eran más cortas que las de la emisión.
+- **Siempre:** llevaban un fundido con `motion`, cuyo disparador sobre una hoja propia Swofty avisa que no se ha
+  visto funcionar en el juego; si se perdía el evento de entrada, la franja se quedaba con opacidad 0. Fuera el
+  fundido: aparecen y desaparecen de golpe. FASTEST LAP sale con cada vuelta rápida de la carrera, también la primera,
+  como el aviso del juego.
+- **Tamaño:** como la emisión, 2,9 anchos de torre: FASTEST LAP 320 × 31, NEW RACE LEADER 296 × 31, textos más grandes
+  y logos propios (`tmb_*`, 1,6 veces los de las filas; el escudo del juego 1,4 veces).
+- **Centro:** las dos se centran en `ban_cx` (364 unidades a la derecha del borde de la torre, medido en la emisión).
+  El centro real depende de dónde pone el juego el tablero; se ajusta con una captura de pantalla completa.
+- **En lugar del aviso del juego:** `stock_nodes` envuelve (`wrap`) la pieza `centre` de `message_system.idf` bajo
+  `hud_notifications_dynamic…hud_message` y la oculta mientras sale nuestra FASTEST LAP (`hide` no vale: el juego ya
+  la controla). Esa notificación central sirve para más avisos, así que esos 6 s se oculta cualquiera.

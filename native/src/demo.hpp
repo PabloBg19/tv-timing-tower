@@ -125,7 +125,7 @@ inline Snapshot make(int sc, double t)
         }
         // states
         CarIn *pitter = &snap.cars[13];
-        if (sc == banners) {
+        if (sc == banners && t > 3.5) { // a first fastest lap while NEW RACE LEADER shows (it waits), then beaten
             s.fastest_vid = int(snap.cars[4].vid);
             s.fastest_ms = 78450;
             if (t > 7.5) { // beaten: the banner

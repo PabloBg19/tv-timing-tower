@@ -176,7 +176,7 @@
     });
     // banners top centre, as in game: ban_x tower widths right of the tower, level with its top
     if (h.ban) {
-      const bx = L.ban_x * W, bh = L.ban_h, lead = h.ban === 1, cap = lead ? L.ban_cap : L.ban_fcap, ty = bh / 2 + cap / 2;
+      const bx = L.ban_cx - (h.ban === 1 ? L.ban_lw : L.ban_fw) / 2, bh = L.ban_h, lead = h.ban === 1, cap = lead ? L.ban_cap : L.ban_fcap, ty = bh / 2 + cap / 2;
       const b = document.createElement('div'); b.className = 'el';
       Object.assign(b.style, { left: bx + 'px', top: '0px', width: (lead ? L.ban_lw : L.ban_fw) + 'px', height: bh + 'px' });
       const add = e => e && b.append(e);
@@ -198,7 +198,7 @@
         add(txt(h.bt, L.ban_ftime, ty, cap, 'left', C.ban_time, 700));
       }
       add(txt(h.bnm, nameX, ty, cap, 'right', '#fff', 700, box));
-      if (logos && h.btm >= 0) add(spr('tm_' + L.teams[h.btm], logoCx - L.logo_x, bh / 2 - R / 2, 43));
+      if (logos && h.btm >= 0) add(spr('tmb_' + L.teams[h.btm], logoCx, bh / 2, 43));
       tower.append(b);
     }
     $('tv').textContent = t.toFixed(1) + ' s';
