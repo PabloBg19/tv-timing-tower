@@ -20,6 +20,7 @@ struct RowLeaves {
     hud::TextLeaf pos, gap;
     hud::BoolLeaf gpu, gpg, glb, gip, gsp;
     hud::BoolLeaf tS, tM, tH, tI, tW;
+    hud::BoolLeaf sS, sM, sH, sI, sW; // STARTING TYRES: the compound's name
     hud::TextLeaf tage;
     hud::BoolLeaf tag, pit, pen;
     hud::TextLeaf pent;
@@ -100,6 +101,11 @@ public:
             r.tH = l.boolean("tH");
             r.tI = l.boolean("tI");
             r.tW = l.boolean("tW");
+            r.sS = l.boolean("sS");
+            r.sM = l.boolean("sM");
+            r.sH = l.boolean("sH");
+            r.sI = l.boolean("sI");
+            r.sW = l.boolean("sW");
             r.tage = l.text("tage", 4);
             r.tag = l.boolean("tag");
             r.pit = l.boolean("pit");
@@ -245,6 +251,11 @@ public:
             L.set(x.tH, r.tyre == 'H');
             L.set(x.tI, r.tyre == 'I');
             L.set(x.tW, r.tyre == 'W');
+            L.set(x.sS, r.start_tyre == 'S');
+            L.set(x.sM, r.start_tyre == 'M');
+            L.set(x.sH, r.start_tyre == 'H');
+            L.set(x.sI, r.start_tyre == 'I');
+            L.set(x.sW, r.start_tyre == 'W');
             L.set(x.tage, r.tyre_age);
             L.set(x.tag, !r.tyre_age.empty());
             L.set(x.pit, r.pit);

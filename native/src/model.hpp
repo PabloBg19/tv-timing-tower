@@ -283,6 +283,7 @@ struct Row {
     bool gain_on = false;      // places gained / lost view: an arrow (or a dash) before the number in `gap`
     int gain = 0;              // > 0 gained, < 0 lost, 0 none
     char tyre = 0;
+    char start_tyre = 0;       // STARTING TYRES: the compound's name in its colour in the data column
     std::string tyre_age;
     bool pit = false;          // white P box
     bool pen = false;
@@ -408,7 +409,8 @@ public:
             if (h.final_cls)
                 h.lead = true; // the final classification: gaps to the winner
         }
-        bool any_data = h.race ? !h.bare : false;
+        // the starting tyres view shows data (the compound's name): codes, as the broadcast
+        bool any_data = h.race ? (!h.bare || h.start_tyres) : false;
         if (!h.race && cfg.timed_times)
             for (const CarIn &c : snap.cars)
                 any_data = any_data || c.best_ms > 0;
@@ -675,7 +677,13 @@ private:
 
         if (race) {
             r.fl = cfg.race_fastest && snap.s.fastest_vid >= 0 && uint32_t(snap.s.fastest_vid) == c.vid;
-            if (h.bare) {
+            if (h.bare && h.start_tyres) {
+                // STARTING TYRES: "MEDIUM" in its colour where the gap goes, as the broadcast (not the letter)
+                if (cfg.tyres && !retired && c.tyre)
+                    r.start_tyre = c.tyre;
+                r.tyre = 0;
+                r.tyre_age.clear();
+            } else if (h.bare) {
                 // names only; under the safety car a car in the pits still shows it (stops are common then)
                 if (snap.s.sc == 1 && !snap.s.red && !h.start_tyres && !snap.s.formation && !retired && c.in_pit &&
                     c.status != 3) {
@@ -983,6 +991,7 @@ private:
     // does not count), for kBannerSeconds; a change while one shows follows it after a short gap. Races only.
     static constexpr double kBannerSeconds = 6.0;
     static constexpr double kBannerGap = 0.6;
+    static constexpr int kLeaderClearMs = 600; // NEW RACE LEADER once the new leader is this far clear of P2
 
     void banners(const Snapshot &snap, Kind kind, const Config &cfg, Header &h, double now)
     {
@@ -1001,10 +1010,15 @@ private:
             leader_vid_ = v; // first sight, the start, a red flag: no banner, just follow
             leader_cand_ = -1;
         } else if (v != leader_vid_) {
+            // a new leader is announced once it has pulled 0.6 s clear of P2 (not while the two are still fighting
+            // over it), and has been in front for at least 1 s (a re-sort or a torn read does not count); if the
+            // old leader takes it back first, nothing is said
+            const int gap2 = snap.cars.size() > 1 ? snap.cars[1].gap_ahead_ms : -1;
             if (leader_cand_ != v) {
                 leader_cand_ = v;
                 leader_cand_t_ = now;
-            } else if (now - leader_cand_t_ >= 1.0) {
+            }
+            if (now - leader_cand_t_ >= 1.0 && gap2 >= kLeaderClearMs) {
                 if (cfg.ban_leader)
                     push(Pending{banner_leader, v});
                 leader_vid_ = v;

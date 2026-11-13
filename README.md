@@ -26,13 +26,13 @@ tiempos de la retransmisión de F1 2026. **La dibuja el propio HUD del juego**: 
   Swofty los dé.
 - **Carrera y sprint:**
   - intervalos con un decimal, como en 2026; la diferencia con el líder en las vueltas 5, 15, 25…;
-  - `STARTING TYRES` en parrilla, `GAINED / LOST` al empezar la vuelta 2, `TYRES` (vueltas de cada juego) en las
+  - `STARTING TYRES` en parrilla (abreviaturas y el compuesto, `MEDIUM`, en su color), `GAINED / LOST` al empezar la vuelta 2, `TYRES` (vueltas de cada juego) en las
     vueltas 7, 17…, `PIT STOPS` en las 10, 20… y, al acabar, las diferencias en meta con la bandera a cuadros en cada coche;
   - `IN PIT` en verde menta, `+1 Lap`, `Out`/`DSQ`/`NC`;
   - sanciones con el cuadrado rojo «!», triángulos de posición y bandera a cuadros;
   - en los adelantamientos, las filas se desvanecen y vuelven con el orden nuevo;
-  - franja `NEW RACE LEADER` arriba en el centro, como en la emisión, cuando cambia el líder (la vuelta rápida la
-    anuncia el propio juego).
+  - franja `NEW RACE LEADER` arriba en el centro, como en la emisión, cuando el nuevo líder ya tiene 0,6 s de
+    ventaja (la vuelta rápida la anuncia el propio juego).
 - **Banderas como en la señal de FOM:** bloque de color con el logo FIA para `SAFETY CAR`, `VIRTUAL SAFETY CAR`,
   `SC ENDING`, `VSC ENDING`, `YELLOW FLAG` + sector, `RED FLAG` y `TRACK CLEAR`. Con Safety Car o
   bandera roja la torre muestra solo los nombres.

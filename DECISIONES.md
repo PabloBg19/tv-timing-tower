@@ -564,3 +564,17 @@ rápida en las filas sigue con el reloj propio y sus filtros (D75).
 del mismo reloj propio que la franja quitada en D76, y en carrera marcaron a ERI mientras el juego decía HAMILTON. El
 usuario prefirió quitarlos (y no añadir «FINAL LAP» ni «DNF», que la emisión no usa: «Out» se queda). Apagados con
 `Config::race_fastest` (falso, sin ajuste), con su test encendido, para volver cuando Swofty dé los tiempos del juego.
+
+## 0.16.0
+
+**D78 — Vuelta de formación como la emisión.**
+- **STARTING TYRES:** en la emisión salen las abreviaturas y el nombre del compuesto en su color (`MEDIUM` amarillo,
+  `SOFT` rojo, `HARD` blanco) a la derecha. Cinco textos fijos por fila (`sS`…`sW`), alineados como `IN PIT`, con sus
+  propias hojas (cambian con la fila visible); la letra del neumático se apaga en esa vista.
+- **NEW RACE LEADER:** salía al primer adelantamiento por el liderato, aunque siguieran peleando. Ahora el nuevo líder
+  tiene que llevar al menos 1 s delante y 0,6 s de ventaja sobre el segundo (su intervalo, que da el juego); si el
+  antiguo líder lo recupera antes, no se anuncia nada.
+- **Campeonato de pilotos en la vuelta de formación** (la emisión lo enseña con los puntos y lo funde en 0,3 s, visto
+  en el vídeo del usuario): no se puede. Swofty no da los puntos del campeonato a los addons; solo el evento
+  `career.standings.rebuild` con un puntero al objeto del juego, que habría que leer de memoria (D2). En Gran Premio
+  suelto tampoco hay campeonato. Pendiente de que Swofty lo exponga.

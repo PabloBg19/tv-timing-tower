@@ -163,6 +163,7 @@
       }
       if (r.gon) add(spr(r.gain > 0 ? 'gup' : r.gain < 0 ? 'gdn' : 'gz', 0, 0, 27));
       if (showTyres && r.tyre) add(txt(r.tyre, L.tyre_x, L.text_y, L.cap_tyre, 'centre', C.tyres[r.tyre], 700));
+      if (showTyres && r.st) add(txt({ S: 'SOFT', M: 'MEDIUM', H: 'HARD', I: 'INTER', W: 'WET' }[r.st], L.tyre_x + 3.2, L.text_y, L.cap_gap, 'right', C.tyres[r.st], 700));
       let sx = L.side_x;
       const ch = L.chip;
       const chip = (name, w, label, col) => { add(spr(name, sx, 0, 30)); if (label) add(txt(label, sx + w / 2, R / 2 + (name === 'pitbox' ? 2.85 : 2.2), name === 'pitbox' ? 5.7 : 4.4, 'centre', col, 700)); sx += w + 1.2; };

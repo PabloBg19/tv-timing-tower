@@ -581,6 +581,12 @@ def row(flavour, logos_found):
     k += [sprite("gu", "gup", 27, visible=vm(r + "gu")), sprite("gd", "gdn", 27, visible=vm(r + "gd")),
           sprite("g0", "gz", 27, visible=vm(r + "g0"))]
 
+    # STARTING TYRES: the compound's name in its colour, right-aligned across the data and tyre columns (as IN PIT)
+    names = {"S": "SOFT", "M": "MEDIUM", "H": "HARD", "I": "INTER", "W": "WET"}
+    for t, col in C["tyres"].items():
+        k.append(text(f"s{t}", "OSD_24_bold", "right", u(52), L["cap_gap"], [L["tyre_x"] + u(4), ty],
+                      literal=names[t], colour=col + "ff", visible=vm(r + f"s{t}"), wrap="clampwidth"))
+
     # tyre: the compound's letter in its colour
     for t, col in C["tyres"].items():
         k.append(text(f"t{t}", "OSD_24_bold", "centre", u(10), L["cap_tyre"], [L["tyre_x"], ty], literal=t,

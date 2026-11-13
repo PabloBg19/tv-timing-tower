@@ -249,8 +249,8 @@ static void test_banners()
 {
     Config cfg;
     {
-        // demo "banners": P2 takes the lead at 0.5 s: NEW RACE LEADER for 6 s, and nothing for the fastest lap
-        // (FASTEST LAP was dropped: the game's own toast stays)
+        // demo "banners": P2 takes the lead at 0.5 s but stays within 0.3 s until 3 s, then pulls 0.9 s clear:
+        // NEW RACE LEADER from then on for 6 s (not while they fight), and nothing for the fastest lap
         Tower t;
         int leader_at = -1, shown = 0;
         std::string lname;
@@ -267,9 +267,20 @@ static void test_banners()
             shown += v.h.banner != banner_none;
         }
         Snapshot s1 = demo::make(demo::banners, 1.0);
-        CHECK(leader_at >= 15 && leader_at <= 17);            // held 1 s after the change
+        CHECK(leader_at >= 30 && leader_at <= 31);            // once 0.6 s clear of P2, not at the pass (0.5 s)
         CHECK(lvid == int(s1.cars[0].vid) && !lname.empty());
         CHECK(shown >= 58 && shown <= 62);                    // one banner of 6 s
+    }
+    {
+        // a lead that changes hands but never gets 0.6 s clear: no banner
+        Tower t;
+        int any = 0;
+        for (int i = 0; i <= 140; i++) {
+            Snapshot s = demo::make(demo::banners, i * 0.1);
+            s.cars[1].gap_ahead_ms = 350;
+            any += t.update(s, cfg, i * 0.1).h.banner != banner_none;
+        }
+        CHECK(any == 0);
     }
     {
         // switched off: none
@@ -565,10 +576,13 @@ static void test_session_views()
         CHECK(scv.h.bare && scv.rows[4].gap == "IN PIT" && scv.rows[4].gap_inpit && scv.rows[4].tyre == 0);
         CHECK(scv.rows[5].gap.empty() && !scv.rows[5].gap_inpit);
     }
-    // starting tyres: on the grid every car stands, names and tyre letters, no gaps
+    // starting tyres: on the grid every car stands; codes and the compound's name ("MEDIUM") in its colour, as the
+    // broadcast, no letter and no gaps
     Tower tg;
-    const View &gv = tg.update(demo::make(demo::grid, 1.0), cfg, 1.0);
-    CHECK(gv.h.start_tyres && gv.h.bare && !gv.h.abbr && gv.rows[0].tyre != 0 && gv.rows[3].gap.empty());
+    const Snapshot gs = demo::make(demo::grid, 1.0);
+    const View &gv = tg.update(gs, cfg, 1.0);
+    CHECK(gv.h.start_tyres && gv.h.bare && gv.h.abbr && gv.rows[0].tyre == 0 && gv.rows[3].gap.empty());
+    CHECK(gv.rows[0].start_tyre == gs.cars[0].tyre && gv.rows[0].start_tyre != 0);
     // ... and not once the cars move
     Snapshot mv = demo::make(demo::grid, 1.0);
     for (CarIn &c : mv.cars)

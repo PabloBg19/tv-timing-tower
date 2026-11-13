@@ -1,5 +1,13 @@
 # Resumen — TV Timing Tower
 
+## 0.16.0 (13-11-2026)
+
+- STARTING TYRES como la emisión: abreviaturas y el nombre del compuesto (`MEDIUM`) en su color (D78).
+- NEW RACE LEADER solo cuando el nuevo líder ya saca 0,6 s al segundo, no mientras pelean (D78).
+- El campeonato de pilotos en la vuelta de formación no se puede hacer: Swofty no da los puntos (D78).
+
+---
+
 ## 0.15.1 (13-11-2026)
 
 - Fuera el icono morado de vuelta rápida y el destello del tiempo en morado en las filas: salían del reloj propio y no
