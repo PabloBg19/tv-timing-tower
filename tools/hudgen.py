@@ -93,6 +93,7 @@ LAYOUT = {
     "cap_lapword": u(REF["cap_lapword"]), "cap_lapnum": u(REF["cap_lapnum"]),
     "sprint_cap": u(REF["sprint_cap"]), "sprint_base": u(REF["sprint_base"]),
     "gainbar": u(REF["gain_h"]), "gain_base": u(REF["gain_base"]), "cap_gainword": u(REF["cap_gainword"]),
+    "champ_h": u(36.0), "champ_b1": u(15.5), "champ_b2": u(29.0),
     "block2": u(REF["block2"]), "block3": u(REF["block3"]),
     "fia_box": [u(REF["fia_x0"]), u(REF["fia_w"])],
     "block_text_x": u(REF["block_text_x"]), "cap_block": u(REF["cap_block"]),
@@ -202,6 +203,8 @@ def make_art(art: Path):
         add(f"row{i}", img, [0, 0, W, R])
         # the "GAINED / LOST" line extends the LAP band
         add(f"gainbg{i}", flat(W, L["gainbar"], (*C["band"], A)), [0, 0, W, L["gainbar"]])
+        # DRIVERS' / CHAMPIONSHIP on two lines (the formation lap)
+        add(f"champbg{i}", flat(W, L["champ_h"], (*C["band"], A)), [0, 0, W, L["champ_h"]])
 
     add("me", flat(W - L["pos_w"], R, (255, 255, 255, 26)), [L["pos_w"], 0, W, R])
     ci = L["cell_inset"]
@@ -511,6 +514,11 @@ def header(flavour, sprites):
                     literal="PIT STOPS")], visible=vm("pstops")),
         band("tyv", "TYRES", "tyrev"),
         band("sty", "STARTING TYRES", "stty"),
+        group("chp", [sprite(f"chp_bg{i}", f"champbg{i}", 21, visible=vm(f"bg{i}")) for i in range(3)] +
+              [text("chp_t1", "OSD_24_bold", "centre", W - u(10), L["cap_gainword"], [W / 2, L["champ_b1"]],
+                    literal="DRIVERS'", wrap="clampwidth"),
+               text("chp_t2", "OSD_24_bold", "centre", W - u(10), L["cap_gainword"], [W / 2, L["champ_b2"]],
+                    literal="CHAMPIONSHIP", wrap="clampwidth")], visible=vm("champ")),
 
         block("red", "red", ["RED", "FLAG"], "#FFFFFFff", fia="w"),
         block("sc", "sc", ["SAFETY", "CAR"]),
@@ -576,6 +584,9 @@ def row(flavour, logos_found):
                   colour=C["label"] + "ff", visible=vm(r + "glb"), case="none", wrap="clampwidth"))
     k.append(text("gi", "OSD_24_bold", "right", u(46), u(6.6), [L["tyre_x"] + u(4), ty], value=vm(r + "gap"),
                   colour=C["inpit"] + "ff", visible=vm(r + "gip"), wrap="clampwidth"))
+    # the championship's points: right-aligned where the tyre letter goes, so a long surname keeps its room
+    k.append(text("gc", "OSD_24_regular", "right", u(30), L["cap_gap"], [L["tyre_x"] + u(4), ty], value=vm(r + "gap"),
+                  colour=C["gap"] + "ff", visible=vm(r + "gch"), case="none", wrap="clampwidth"))
 
     # places gained / lost: the mark, then the white number (the gap text)
     k += [sprite("gu", "gup", 27, visible=vm(r + "gu")), sprite("gd", "gdn", 27, visible=vm(r + "gd")),

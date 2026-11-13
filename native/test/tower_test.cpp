@@ -19,6 +19,8 @@
 #include "../src/leaves.hpp"
 #include "../src/model.hpp"
 #include "../src/source_live.hpp"
+#include "../src/standings.hpp"
+#include <map>
 
 using namespace tvt;
 
@@ -819,6 +821,146 @@ static void test_leaves_and_record()
     }
 }
 
+// A fake game memory: blocks at fake addresses, read as the guarded reader would (false outside them)
+struct FakeMem {
+    std::map<uintptr_t, std::vector<uint8_t>> blocks;
+    uintptr_t next = 0x10000000;
+    uintptr_t alloc(size_t n)
+    {
+        uintptr_t at = next;
+        blocks[at].assign(n, 0);
+        next += (n + 0xfff) & ~uintptr_t(0xfff);
+        return at;
+    }
+    template <class T> void put(uintptr_t at, T v)
+    {
+        for (auto &[b, buf] : blocks)
+            if (at >= b && at + sizeof v <= b + buf.size()) {
+                std::memcpy(buf.data() + (at - b), &v, sizeof v);
+                return;
+            }
+        std::abort();
+    }
+    bool operator()(uintptr_t at, void *dst, size_t n) const
+    {
+        for (const auto &[b, buf] : blocks)
+            if (at >= b && at + n <= b + buf.size()) {
+                std::memcpy(dst, buf.data() + (at - b), n);
+                return true;
+            }
+        return false;
+    }
+};
+
+// A career with one season: `totals` as the table's last session (drivers 100.. in that order) and, in the entrant
+// rows, driver 100+i in car i
+static uintptr_t fake_career(FakeMem &m, const std::vector<int> &totals, int cars)
+{
+    namespace st = standings;
+    uintptr_t e = m.alloc(0x1100), champ = m.alloc(0x600), seasons = m.alloc(0x20), season = m.alloc(0x400);
+    uintptr_t rounds = m.alloc(2 * st::kRound), sessions = m.alloc(2 * st::kSession), entries = m.alloc(64 * 8);
+    uintptr_t rows = m.alloc((cars + 2) * st::kEntrant);
+    m.put<uintptr_t>(e + st::kChampionship, champ);
+    m.put<uintptr_t>(champ + st::kSeasonsBegin, seasons);
+    m.put<uintptr_t>(champ + st::kSeasonsEnd, seasons + 0x10);
+    m.put<uint32_t>(champ + st::kSeasonIndex, 0);
+    m.put<uintptr_t>(seasons + 8, season);
+    uintptr_t table = season + st::kStandings + st::kTable;
+    m.put<uintptr_t>(table, rounds);
+    m.put<uintptr_t>(table + 8, rounds + 2 * st::kRound); // round 2 not run yet: no sessions
+    m.put<uintptr_t>(rounds + 8, sessions);
+    m.put<uintptr_t>(rounds + 16, sessions + 2 * st::kSession); // a sprint, then the race: the race is the table
+    m.put<uintptr_t>(sessions + st::kSession + 8, entries);
+    m.put<uintptr_t>(sessions + st::kSession + 16, entries + totals.size() * 8);
+    for (size_t i = 0; i < totals.size(); i++) {
+        m.put<uint32_t>(entries + i * 8, uint32_t(100 + i) << 16);
+        m.put<int32_t>(entries + i * 8 + 4, totals[i]);
+    }
+    m.put<uintptr_t>(e + st::kEntrantsBegin, rows);
+    m.put<uintptr_t>(e + st::kEntrantsEnd, rows + (cars + 2) * st::kEntrant);
+    for (int i = 0; i < cars + 2; i++) {
+        uintptr_t r = rows + uintptr_t(i) * st::kEntrant;
+        m.put<uint32_t>(r + st::kEntrantDriver, uint32_t(100 + i) << 16);
+        m.put<uint8_t>(r + st::kEntrantVid, i < cars ? uint8_t(i) : uint8_t(0xff)); // two reserves without a car
+    }
+    return e;
+}
+
+static void test_championship()
+{
+    namespace st = standings;
+    std::vector<int> totals;
+    for (int i = 0; i < 20; i++)
+        totals.push_back(240 - i * 11);
+    {
+        FakeMem m;
+        uintptr_t e = fake_career(m, totals, 20);
+        std::vector<ChampEntry> t;
+        std::unordered_map<uint32_t, int> cars;
+        std::string why;
+        CHECK(st::read_table(m, e, t, why) && t.size() == 20 && t[0].stat == 100 && t[0].points == 240 && t[0].rank == 1);
+        CHECK(t[19].stat == 119 && t[19].points == 240 - 19 * 11);
+        CHECK(st::read_cars(m, e, cars, why) && cars.size() == 20 && cars[105] == 5 && !cars.count(120));
+    }
+    {
+        // not in the game's order (a wrong layout): refused
+        FakeMem m;
+        std::vector<int> bad = totals;
+        std::swap(bad[3], bad[9]);
+        uintptr_t e = fake_career(m, bad, 20);
+        std::vector<ChampEntry> t;
+        std::string why;
+        CHECK(!st::read_table(m, e, t, why) && t.empty() && !why.empty());
+    }
+    {
+        // the game rewriting the rows, no entity, pointers to nowhere: refused, never a fault
+        FakeMem m;
+        uintptr_t e = fake_career(m, totals, 20);
+        m.put<uint8_t>(e + st::kEntrantsBusy, 1);
+        std::unordered_map<uint32_t, int> cars;
+        std::vector<ChampEntry> t;
+        std::string why;
+        CHECK(!st::read_cars(m, e, cars, why));
+        CHECK(!st::read_table(m, 0, t, why));
+        m.put<uintptr_t>(e + st::kChampionship, 0xdead0000);
+        CHECK(!st::read_table(m, e, t, why) && t.empty());
+    }
+    {
+        // the formation lap: starting tyres first, then the championship in its order with the points, then the names
+        Config cfg;
+        Tower t;
+        Snapshot s = demo::make(demo::race, 1.0);
+        for (CarIn &c : s.cars) {
+            c.lap = 0;
+            c.speed_kmh = 80.f;
+        }
+        s.s.demo = false;
+        s.s.formation = true;
+        for (size_t i = 0; i < s.cars.size(); i++) // the championship: the classification backwards
+            s.champ.push_back({uint32_t(i), int(200 - i * 9), int(i) + 1, int(s.cars[s.cars.size() - 1 - i].vid)});
+        const View &a = t.update(s, cfg, 0.0);
+        CHECK(a.h.start_tyres && !a.h.champ);
+        const View &b = t.update(s, cfg, 21.0);
+        CHECK(b.h.champ && !b.h.start_tyres && !b.h.abbr);
+        CHECK(b.rows[0].vid == int(s.cars.back().vid) && b.rows[0].pos == "1" && b.rows[0].p1 && b.rows[0].gap == "200");
+        CHECK(b.rows[1].gap == "191" && b.rows[1].tyre == 0 && b.rows[1].start_tyre == 0);
+        const View &c = t.update(s, cfg, 55.0);
+        CHECK(!c.h.champ && !c.h.start_tyres && c.rows[0].vid == int(s.cars.front().vid));
+        // no table (a Grand Prix, or unreadable): the starting tyres stay for the whole formation lap
+        Snapshot g = s;
+        g.champ.clear();
+        Tower tg;
+        tg.update(g, cfg, 0.0);
+        CHECK(tg.update(g, cfg, 30.0).h.start_tyres);
+        // switched off
+        Config off = cfg;
+        off.champ_formation = false;
+        Tower to;
+        to.update(s, off, 0.0);
+        CHECK(!to.update(s, off, 25.0).h.champ);
+    }
+}
+
 int main()
 {
     test_format();
@@ -828,6 +970,7 @@ int main()
     test_field_persists_across_quali_segments();
     test_cards();
     test_banners();
+    test_championship();
     test_yellow_texts();
     test_lap_clock();
     test_session_views();

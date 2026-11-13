@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.16.0"
+VERSION = "0.17.0"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
@@ -113,6 +113,10 @@ OPTIONS = [
     ("ban_leader", "toggle", "Aviso de nuevo líder", "New race leader banner",
      "Carrera: franja arriba en el centro con NEW RACE LEADER cuando cambia el líder (desde la vuelta 2).",
      "Races: a banner top centre with NEW RACE LEADER when the lead changes hands (from lap 2).", {"default": True}),
+    ("champ_formation", "toggle", "Campeonato en la vuelta de formación", "Championship on the formation lap",
+     "Modo carrera: tras los neumáticos de salida, la clasificación de pilotos con sus puntos (los del juego, sprints incluidas).",
+     "Career: after the starting tyres, the drivers' standings with their points (the game's own, sprints included).",
+     {"default": True}),
     ("tyres", "toggle", "Neumáticos", "Tyres", "Muestra el compuesto actual de cada coche.",
      "Shows each car's current compound.", {"default": True}),
     ("tyre_age", "toggle", "Vueltas del neumático", "Tyre age",
@@ -165,7 +169,8 @@ OPTIONS = [
                  ("practice", "Libres", "Practice"), ("sprint_quali", "Clasificación sprint", "Sprint qualifying"),
                  ("gained", "Ganadas/perdidas", "Gained/lost"), ("grid", "Parrilla (neumáticos de salida)", "Grid (starting tyres)"),
                  ("tyres", "Vista de neumáticos", "Tyres view"),
-                 ("banners", "Aviso de nuevo líder", "New race leader banner")],
+                 ("banners", "Aviso de nuevo líder", "New race leader banner"),
+                 ("championship", "Campeonato (vuelta de formación)", "Championship (formation lap)")],
       "default": "cycle"}),
     ("debug_log", "toggle", "Log detallado", "Verbose log",
      "Escribe en swofty/loader.log el coste de cada actualización y los cambios de estado.",

@@ -18,7 +18,7 @@ inline constexpr const char *kPrefix = "view_model_data.hud_tvt_";
 struct RowLeaves {
     hud::BoolLeaf on, sep, me, p1, ko, kol, dim, up, dn;
     hud::TextLeaf pos, gap;
-    hud::BoolLeaf gpu, gpg, glb, gip, gsp;
+    hud::BoolLeaf gpu, gpg, glb, gip, gsp, gch;
     hud::BoolLeaf tS, tM, tH, tI, tW;
     hud::BoolLeaf sS, sM, sH, sI, sW; // STARTING TYRES: the compound's name
     hud::TextLeaf tage;
@@ -64,6 +64,7 @@ public:
         pstops = L.boolean("pstops");
         tyrev = L.boolean("tyrev");
         stty = L.boolean("stty");
+        champ = L.boolean("champ");
 
         form = L.boolean("form");
         wide = L.boolean("wide");
@@ -95,6 +96,7 @@ public:
             r.gpg = l.boolean("gpg");
             r.glb = l.boolean("glb");
             r.gip = l.boolean("gip");
+            r.gch = l.boolean("gch");
             r.gsp = l.boolean("gsp");
             r.tS = l.boolean("tS");
             r.tM = l.boolean("tM");
@@ -167,6 +169,7 @@ public:
         L.set(pstops, h.pitstops);
         L.set(tyrev, h.tyres);
         L.set(stty, h.start_tyres);
+        L.set(champ, h.on && h.champ);
 
         L.set(form, h.on && h.race && h.formation);
         L.set(wide, h.on && h.wide);
@@ -245,7 +248,8 @@ public:
             L.set(x.gpg, r.gap_green);
             L.set(x.glb, r.gap_label);
             L.set(x.gip, r.gap_inpit);
-            L.set(x.gsp, r.gap_purple || r.gap_green || r.gap_label || r.gap_inpit);
+            L.set(x.gch, r.gap_champ);
+            L.set(x.gsp, r.gap_purple || r.gap_green || r.gap_label || r.gap_inpit || r.gap_champ);
             L.set(x.tS, r.tyre == 'S');
             L.set(x.tM, r.tyre == 'M');
             L.set(x.tH, r.tyre == 'H');
@@ -286,7 +290,7 @@ public:
     hud::TextLeaf ysec;
     hud::TextLeaf clock;
     hud::OneHot ld;
-    hud::BoolLeaf gained, sprint, pstops, form, tyrev, stty, wide;
+    hud::BoolLeaf gained, sprint, pstops, form, tyrev, stty, wide, champ;
     hud::Leaves::Rows<RowLeaves> rows;
     struct BannerLeaves {
         hud::BoolLeaf on, bdg;

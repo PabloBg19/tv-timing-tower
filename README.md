@@ -26,7 +26,8 @@ tiempos de la retransmisión de F1 2026. **La dibuja el propio HUD del juego**: 
   Swofty los dé.
 - **Carrera y sprint:**
   - intervalos con un decimal, como en 2026; la diferencia con el líder en las vueltas 5, 15, 25…;
-  - `STARTING TYRES` en parrilla (abreviaturas y el compuesto, `MEDIUM`, en su color), `GAINED / LOST` al empezar la vuelta 2, `TYRES` (vueltas de cada juego) en las
+  - `STARTING TYRES` en parrilla (abreviaturas y el compuesto, `MEDIUM`, en su color), en modo carrera la clasificación
+    de pilotos con sus puntos en la vuelta de formación (`DRIVERS' CHAMPIONSHIP`, los puntos del juego, sprints incluidas), `GAINED / LOST` al empezar la vuelta 2, `TYRES` (vueltas de cada juego) en las
     vueltas 7, 17…, `PIT STOPS` en las 10, 20… y, al acabar, las diferencias en meta con la bandera a cuadros en cada coche;
   - `IN PIT` en verde menta, `+1 Lap`, `Out`/`DSQ`/`NC`;
   - sanciones con el cuadrado rojo «!», triángulos de posición y bandera a cuadros;
@@ -65,6 +66,7 @@ paquete solo en español.
 | Names | Auto | Auto (abreviatura con datos, apellido sin datos) / Apellido / Abreviatura |
 | Race gaps | Auto | Auto (como en TV) / Intervalo / Al líder / Ganadas-perdidas / Paradas / Neumáticos |
 | New race leader banner | Sí | Franja NEW RACE LEADER arriba en el centro en carrera |
+| Championship on the formation lap | Sí | Modo carrera: clasificación de pilotos tras los neumáticos de salida |
 | Race gap decimals | 2026 | 2026 (`+0.9`) / Clásico (`+0.934`, como en los F1 anteriores) |
 | Tyres · Tyre age | Sí · No | Compuesto; vueltas con el juego actual |
 | Background | Broadcast | Opacidad del fondo |
@@ -90,6 +92,8 @@ que cambian. Cada actualización cuesta unos 23 µs en un PC de pruebas; en el j
 - `SC ENDING` y `VSC ENDING` se deducen: el juego no avisa a los addons de «safety car en esta vuelta», así que
   `SC ENDING` sale cuando el coche de seguridad entra al pit lane y `VSC ENDING` justo al acabar el VSC.
 - Contrarreloj, repeticiones y modo espectador usan el tablero del juego.
+- La clasificación de pilotos de la vuelta de formación se lee de la memoria del juego (Swofty no la ofrece): solo en
+  modo carrera, y si algo no cuadra, simplemente no sale (el log dice por qué en `[tv-tower] championship:`).
 - La TV junta las filas cuando hay un bloque de bandera; aquí la torre crece. Con 24 coches (Mi Equipo) y bandera
   puede no caber en pantalla: escálala un poco en el editor de HUD (Ajustes → HUD → Personalizar).
 - No hay deslizamiento de filas como en la TV (el compositor de Swofty no lo permite sin saltos); se usa un fundido.
@@ -124,7 +128,7 @@ broadcast timing tower, **drawn by the game's own HUD**: no external app, no ove
 - **Practice:** the game's order with full surnames and the pit box.
 - **Qualifying:** the session clock and the knockout zone; cars knocked out earlier leave the tower. No lap times in
   practice or qualifying for now: Swofty gives none there and the addon can't time them reliably.
-- **Races:** STARTING TYRES on the grid; one-decimal intervals (or classic thousandths, a setting) and the gap to the leader on laps 5, 15, 25…;
+- **Races:** STARTING TYRES on the grid and, in a career, the drivers' championship on the formation lap; one-decimal intervals (or classic thousandths, a setting) and the gap to the leader on laps 5, 15, 25…;
   GAINED / LOST as lap 2 starts; TYRES (laps on the set) on laps 7, 17…; PIT STOPS on laps 10, 20…; the gaps at the
   line and a chequered flag per finisher at the end; penalties as the red "!" square; mint `IN PIT`; penalties, position triangles, chequered flag and row
   fades on overtakes; a NEW RACE LEADER banner top centre.

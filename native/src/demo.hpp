@@ -33,13 +33,13 @@ inline const Driver kGrid[22] = {
 
 enum Scenario : int {
     race = 0, quali_q1, quali_q2, safety_car, vsc, red_flag, finish, practice, sprint_quali, gained, grid, tyres,
-    banners, count
+    banners, championship, count
 };
 
 inline const char *scenario_name(int s)
 {
     static const char *n[] = {"race", "quali_q1", "quali_q2", "safety_car", "vsc", "red_flag", "finish",
-                              "practice", "sprint_quali", "gained", "grid", "tyres", "banners"};
+                              "practice", "sprint_quali", "gained", "grid", "tyres", "banners", "championship"};
     return s >= 0 && s < count ? n[s] : "";
 }
 
@@ -73,11 +73,11 @@ inline Snapshot make(int sc, double t)
     };
 
     const bool is_race = sc == race || sc == safety_car || sc == vsc || sc == red_flag || sc == finish || sc == gained ||
-                         sc == grid || sc == tyres || sc == banners;
+                         sc == grid || sc == tyres || sc == banners || sc == championship;
     if (is_race) {
         s.type = 15;
         s.laps_total = 57;
-        int lead_lap = sc == finish ? 57 : sc == gained ? 2 : sc == grid ? 1 : sc == tyres ? (t < 1.0 ? 27 : 28)
+        int lead_lap = sc == finish ? 57 : sc == gained ? 2 : sc == grid || sc == championship ? 1 : sc == tyres ? (t < 1.0 ? 27 : 28)
                                                                                          : 22 + int(t / 7.0);
         if (sc == gained) {
             // lap 2: a start with some moves; the grid is the demo's reference order shuffled
@@ -109,6 +109,11 @@ inline Snapshot make(int sc, double t)
             c.tyre = "MHHMSMHHHMMHMHMHHMMHSM"[vid];
             c.tyre_age = 3 + (vid * 7) % 19;
             c.speed_kmh = sc == grid ? 0.f : 250.f;
+            if (sc == championship) { // the formation lap: moving, no gaps
+                c.gap_ahead_ms = c.gap_leader_ms = -1;
+                c.speed_kmh = 90.f;
+                continue;
+            }
             if (sc == grid) { // on the grid: no gaps yet
                 c.gap_ahead_ms = c.gap_leader_ms = -1;
                 continue;
@@ -122,6 +127,13 @@ inline Snapshot make(int sc, double t)
                 c.lap -= 1;
                 c.total_m -= s.track_m;
             }
+        }
+        if (sc == championship) { // the formation lap with a career's table (2026 after a few rounds)
+            s.formation = true;
+            static const int order[22] = {6, 0, 4, 3, 2, 1, 5, 7, 12, 11, 17, 19, 15, 18, 14, 10, 9, 13, 8, 20, 21, 16};
+            static const int pts[22] = {242, 183, 183, 159, 155, 112, 106, 71, 51, 35, 25, 19, 18, 10, 6, 6, 5, 3, 3, 0, 0, 0};
+            for (int k = 0; k < 22; k++)
+                snap.champ.push_back({uint32_t(order[k]), pts[k], k + 1, order[k]});
         }
         // states
         CarIn *pitter = &snap.cars[13];

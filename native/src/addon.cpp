@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.16.0"
+#define TVT_VERSION "0.17.0"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -28,6 +28,7 @@ SWOFTY_SETTING(std::string_view, names, "auto");
 SWOFTY_SETTING(std::string_view, gap_mode, "auto");
 SWOFTY_SETTING(std::string_view, gap_decimals, "one");
 SWOFTY_SETTING(bool, ban_leader, true);
+SWOFTY_SETTING(bool, champ_formation, true);
 SWOFTY_SETTING(bool, tyres, true);
 SWOFTY_SETTING(bool, tyre_age, false);
 SWOFTY_SETTING(std::string_view, background, "broadcast");
@@ -65,6 +66,7 @@ tvt::Config read_config()
           : g == "tyres"    ? tvt::Config::Gap::tyres    : tvt::Config::Gap::autoswitch;
     c.gap_ms = std::string_view(gap_decimals) == "three";
     c.ban_leader = ban_leader;
+    c.champ_formation = champ_formation;
     c.tyres = tyres;
     c.tyre_age = tyre_age;
     std::string_view b = background;
@@ -197,6 +199,7 @@ struct State {
     bool demo_key = false;      // Ctrl + hotkey
     int demo_pick = -2;         // Shift + hotkey steps scenarios; -2 follows the setting
     int last_scenario = -99;
+    std::string last_champ_note;
     double demo_t0 = 0;
     int key_prev = 0;
     tvt::LiveSource::Why last_why = tvt::LiveSource::Why::no_session;
@@ -307,6 +310,12 @@ void frame(double dt, void *)
             g->last_why = why;
         }
         have = why == tvt::LiveSource::Why::ok;
+        // what came of the championship read, once a session (standings.hpp)
+        if (g->src.champ_note() != g->last_champ_note) {
+            g->last_champ_note = g->src.champ_note();
+            if (!g->last_champ_note.empty())
+                swofty::log("%s %s", kTag, g->last_champ_note.c_str());
+        }
     }
 
     bool show = g->set.enabled && !g->hidden && have;

@@ -1,5 +1,14 @@
 # Resumen — TV Timing Tower
 
+## 0.17.0 (13-11-2026)
+
+- Clasificación de pilotos en la vuelta de formación (modo carrera), como la emisión: 20 s de neumáticos de salida y
+  30 s de `DRIVERS' / CHAMPIONSHIP` con los pilotos por puntos. Los puntos son la tabla del propio juego (sprints y
+  puntos extra incluidos), leída de su memoria con lecturas protegidas; si algo no cuadra, no sale y la torre sigue
+  normal (D79). Ajuste para quitarla, escenario demo, tests con una memoria falsa.
+
+---
+
 ## 0.16.0 (13-11-2026)
 
 - STARTING TYRES como la emisión: abreviaturas y el nombre del compuesto (`MEDIUM`) en su color (D78).

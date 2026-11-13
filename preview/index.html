@@ -130,6 +130,11 @@
     if (h.pits) bandLine('PIT STOPS');
     if (h.tyv) bandLine('TYRES');
     if (h.sty) bandLine('STARTING TYRES');
+    if (h.chp) {
+      tower.append(spr('champbg' + bg, 0, y, 21), txt("DRIVERS'", W / 2, y + L.champ_b1, L.cap_gainword, 'centre', '#fff', 700),
+        txt('CHAMPIONSHIP', W / 2, y + L.champ_b2, L.cap_gainword, 'centre', '#fff', 700));
+      y += L.champ_h;
+    }
     if (h.card === 4) { tower.append(spr('blk_chq', 0, y, 21)); y += L.chq_h; }
 
     else if (h.card) {
@@ -159,7 +164,7 @@
       if (r.gap) {
         const col = r.purple ? C.purple : r.green ? C.green : r.inpit ? C.inpit : r.label ? C.label : C.gap;
         const cap = r.label || r.inpit ? L.cap_label : L.cap_gap;
-        add(txt(r.gap, r.gon ? L.gain_right : L.gap_right, L.text_y, cap, 'right', col, (r.purple || r.green || r.inpit) ? 700 : 400));
+        add(txt(r.gap, r.gch ? L.tyre_x + 3.2 : r.gon ? L.gain_right : L.gap_right, L.text_y, cap, 'right', col, (r.purple || r.green || r.inpit) ? 700 : 400));
       }
       if (r.gon) add(spr(r.gain > 0 ? 'gup' : r.gain < 0 ? 'gdn' : 'gz', 0, 0, 27));
       if (showTyres && r.tyre) add(txt(r.tyre, L.tyre_x, L.text_y, L.cap_tyre, 'centre', C.tyres[r.tyre], 700));

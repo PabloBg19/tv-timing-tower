@@ -7,10 +7,16 @@
 #include <string>
 #include <vector>
 
+#include <cstring>
+#include <unordered_map>
+
+#include <swofty/career.hpp>
 #include <swofty/live.hpp>
+#include <swofty/mem.hpp>
 
 #include "lap_clock.hpp"
 #include "model.hpp"
+#include "standings.hpp"
 
 namespace tvt {
 
@@ -27,7 +33,12 @@ public:
         badges_.fill(Badge{});
         last_type_ = -1;
         last_gen_ = ~0u;
+        champ_reset();
     }
+
+    // The drivers' championship of a career, for the formation lap (standings.hpp): read once a race session, retried
+    // every 2 s a few times; note() changes once with what came of it, for the log
+    const std::string &champ_note() const { return champ_note_; }
 
     // Fills `snap` from the live state. `dt` is the frame time; `now` the wall clock (badge refresh).
     Why read(Snapshot &snap, double dt, double now)
@@ -48,6 +59,7 @@ public:
             if (int(s.type) != last_type_) {
                 clock_.reset();
                 stints_.reset();
+                champ_reset();
             }
             badges_.fill(Badge{});
             last_type_ = int(s.type);
@@ -153,12 +165,83 @@ public:
                 }
             }
         }
+        if (race && !snap.cars.empty())
+            champ_step(snap, now);
         return snap.cars.empty() ? Why::no_order : Why::ok;
     }
 
     const LapClock &clock() const { return clock_; }
 
 private:
+    void champ_reset()
+    {
+        champ_.clear();
+        champ_state_ = 0;
+        champ_tries_ = 0;
+        champ_next_ = 0;
+    }
+
+    void champ_step(Snapshot &snap, double now)
+    {
+        if (champ_state_ == 1) {
+            snap.champ = champ_;
+            return;
+        }
+        if (champ_state_ == 2 || now < champ_next_)
+            return;
+        champ_next_ = now + 2.0;
+        uintptr_t e = reinterpret_cast<uintptr_t>(swofty::career::entity());
+        if (!e) { // not a career (a Grand Prix): no championship
+            champ_state_ = 2;
+            champ_note_ = "championship: not a career";
+            return;
+        }
+        // every read guarded: a wrong pointer gives false, never a fault
+        auto rd = [](uintptr_t at, void *dst, size_t n) {
+            if (!at || !n || !swofty::mem::readable(at, n))
+                return false;
+            std::memcpy(dst, reinterpret_cast<const void *>(at), n);
+            return true;
+        };
+        std::vector<ChampEntry> table;
+        std::unordered_map<uint32_t, int> cars;
+        std::string why;
+        bool ok = standings::read_table(rd, e, table, why) && standings::read_cars(rd, e, cars, why);
+        if (ok)
+            ok = champ_map(table, cars, snap, why);
+        if (ok) {
+            champ_ = std::move(table);
+            champ_state_ = 1;
+            snap.champ = champ_;
+            champ_note_ = "championship: " + std::to_string(champ_.size()) + " drivers, leader " +
+                          std::to_string(champ_.front().points) + " pts";
+        } else if (++champ_tries_ >= 10) {
+            champ_state_ = 2;
+            champ_note_ = "championship: not shown (" + why + ")";
+        }
+    }
+
+    // each driver's car; most of this session's cars must be found, or the mapping is not this grid
+    static bool champ_map(std::vector<ChampEntry> &table, const std::unordered_map<uint32_t, int> &cars,
+                          const Snapshot &snap, std::string &why)
+    {
+        std::array<bool, 32> here{};
+        for (const CarIn &c : snap.cars)
+            if (c.vid < here.size())
+                here[c.vid] = true;
+        size_t mapped = 0;
+        for (ChampEntry &t : table) {
+            auto it = cars.find(t.stat);
+            t.vid = it != cars.end() && it->second >= 0 && it->second < 32 && here[size_t(it->second)] ? it->second : -1;
+            mapped += t.vid >= 0;
+        }
+        if (mapped * 10 < snap.cars.size() * 8) {
+            why = "only " + std::to_string(mapped) + " of " + std::to_string(snap.cars.size()) + " cars found in it";
+            return false;
+        }
+        return true;
+    }
+
     struct Badge {
         std::string key;
         double next = 0;
@@ -183,6 +266,10 @@ private:
     std::array<Badge, live::max_cars> badges_{};
     int last_type_ = -1;
     uint32_t last_gen_ = ~0u;
+    std::vector<ChampEntry> champ_;
+    int champ_state_ = 0, champ_tries_ = 0; // 0 to read, 1 read, 2 not available this session
+    double champ_next_ = 0;
+    std::string champ_note_;
 };
 
 } // namespace tvt

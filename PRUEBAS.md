@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.16.0
+# Checklist de pruebas en el juego — TV Timing Tower 0.17.0
 
 Antes de empezar: instala `dist/tv-timing-tower.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.16.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.17.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -66,6 +66,15 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
 - [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
+
+## 4r. Novedades 0.17.0 (campeonato en la vuelta de formación)
+- [ ] Demo (*Escenario demo* = Campeonato): `STARTING TYRES` 2 s, luego `DRIVERS' / CHAMPIONSHIP` con los pilotos por puntos.
+- [ ] Modo carrera, carrera con vuelta de formación (tras al menos una carrera de la temporada): 20 s de neumáticos de
+      salida y luego 30 s de clasificación: el orden y los puntos iguales que la clasificación de pilotos del juego
+      (compara con el menú; si hubo sprint, que cuente). Luego vuelve a los nombres.
+- [ ] Log: `[tv-tower] championship: 22 drivers, leader … pts`. Si dice `not shown (…)`, mándame la línea.
+- [ ] Gran Premio suelto: sin campeonato (log `championship: not a career`), los neumáticos toda la vuelta de formación.
+- [ ] Ajuste *Championship on the formation lap* = No: no sale.
 
 ## 4q. Novedades 0.16.0
 - [ ] Parrilla y vuelta de formación: `STARTING TYRES` con abreviaturas (`RUS`) y el compuesto escrito en su color

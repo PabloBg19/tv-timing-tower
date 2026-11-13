@@ -227,9 +227,18 @@ struct SessionIn {
     bool demo = false;
 };
 
+// One driver of the career's drivers' championship (standings.hpp)
+struct ChampEntry {
+    uint32_t stat = 0;  // the driver's stat id
+    int points = 0;     // the game's total so far
+    int rank = 0;       // 1-based, the game's order
+    int vid = -1;       // his car in this session, -1 none
+};
+
 struct Snapshot {
     SessionIn s;
     std::vector<CarIn> cars;  // classification order, leader first
+    std::vector<ChampEntry> champ; // a career's drivers' championship, the game's order (empty: none or unreadable)
 };
 
 // --------------------------------------------------------------------------------------------- config
@@ -247,6 +256,7 @@ struct Config {
     // the race's fastest lap (the purple icon on a row and its time flashing purple): off, it came from the addon's
     // own lap clock and did not always match the game's own fastest lap; on again with the game's lap times
     bool race_fastest = false;
+    bool champ_formation = true; // the drivers' championship on the formation lap (careers, standings.hpp)
     bool gap_ms = false;       // race gaps in thousandths ("+0.934", earlier F1 games) instead of 2026's tenths
     bool tyres = true;
     bool tyre_age = false;
@@ -282,6 +292,7 @@ struct Row {
     bool gap_inpit = false;    // "IN PIT" in red (race)
     bool gain_on = false;      // places gained / lost view: an arrow (or a dash) before the number in `gap`
     int gain = 0;              // > 0 gained, < 0 lost, 0 none
+    bool gap_champ = false;    // the championship's points: right-aligned where the tyre goes (room for long names)
     char tyre = 0;
     char start_tyre = 0;       // STARTING TYRES: the compound's name in its colour in the data column
     std::string tyre_age;
@@ -319,6 +330,7 @@ struct Header {
     bool start_tyres = false;  // "STARTING TYRES": on the grid and the formation lap
     bool final_cls = false;    // the winner has taken the flag: gaps at the line (the tower stays as on TV)
     bool formation = false;    // "FORMATION LAP" in place of the lap line
+    bool champ = false;        // DRIVERS' CHAMPIONSHIP: the rows in the championship's order with their points
     bool wide = false;         // more than 22 rows shown (23-24: a My Team grid): slide the tower further up
     int banner = banner_none;  // the banner on screen, and its car
     int ban_vid = -1;
@@ -399,8 +411,16 @@ public:
             h.tyres = !h.gained && !h.pitstops && tyres_mode(cfg, snap, now);
             record_finish(snap, now);
             h.final_cls = s.chequered && lead.status == 3;
+            // the formation lap, as the broadcast: the starting tyres first, then the drivers' championship for a while
+            // (a career, its table read), then the names
+            if (s.formation && formation_t0_ < 0)
+                formation_t0_ = now;
+            const double into = formation_t0_ >= 0 ? now - formation_t0_ : -1;
+            const double after = s.demo ? 2.0 : kChampAfter, last = s.demo ? 10.0 : kChampSeconds; // the demo: shorter
+            h.champ = cfg.champ_formation && s.formation && snap.champ.size() >= 8 && into >= after && into < after + last;
             // before the start: the grid's tyres (as the broadcast shows them on the formation lap)
-            h.start_tyres = cfg.gap == Config::Gap::autoswitch && cfg.tyres && !h.final_cls && on_grid(snap);
+            h.start_tyres = cfg.gap == Config::Gap::autoswitch && cfg.tyres && !h.final_cls && !h.champ && on_grid(snap) &&
+                            !(s.formation && snap.champ.size() >= 8 && cfg.champ_formation && into >= after);
             // TV: the safety car, the red flag and the formation lap show the names alone
             h.bare = cfg.gap == Config::Gap::autoswitch && !h.gained && !s.chequered &&
                      (s.sc == 1 || s.red || s.formation || h.start_tyres);
@@ -414,7 +434,7 @@ public:
         if (!h.race && cfg.timed_times)
             for (const CarIn &c : snap.cars)
                 any_data = any_data || c.best_ms > 0;
-        h.abbr = cfg.names == Config::Names::code || (cfg.names == Config::Names::autoswitch && any_data);
+        h.abbr = cfg.names == Config::Names::code || (cfg.names == Config::Names::autoswitch && any_data && !h.champ);
 
         // field size for the knockout cut: the most racers seen in this session
         field_ = std::max(field_, std::max(s.racers, int(snap.cars.size())));
@@ -434,7 +454,7 @@ public:
         }
 
         remember(snap, now);
-        std::vector<int> pick = pick_rows(snap, cfg);
+        std::vector<int> pick = h.champ ? champ_rows(snap) : pick_rows(snap, cfg);
         int prev_idx = -1;
         int slot = 0;
         for (int idx : pick) {
@@ -443,6 +463,8 @@ public:
             Row &r = v.rows[size_t(slot)];
             fill_row(r, snap, idx, kind, cfg, h, now);
             r.sep = prev_idx >= 0 && idx != prev_idx + 1;
+            if (h.champ)
+                champ_row(r, snap, idx);
             prev_idx = idx;
             slot++;
         }
@@ -483,6 +505,7 @@ public:
         gained_shown_ = false;
         leader_vid_ = -1;
         leader_cand_ = -1;
+        formation_t0_ = -1;
         ban_ = Pending{};
         ban_until_ = -1;
         ban_next_ = 0;
@@ -991,6 +1014,8 @@ private:
     // does not count), for kBannerSeconds; a change while one shows follows it after a short gap. Races only.
     static constexpr double kBannerSeconds = 6.0;
     static constexpr double kBannerGap = 0.6;
+    static constexpr double kChampAfter = 20.0;   // the formation lap: starting tyres for this long, then...
+    static constexpr double kChampSeconds = 30.0; // ...the drivers' championship for this long
     static constexpr int kLeaderClearMs = 600; // NEW RACE LEADER once the new leader is this far clear of P2
 
     void banners(const Snapshot &snap, Kind kind, const Config &cfg, Header &h, double now)
@@ -1064,6 +1089,46 @@ private:
         queue_.push_back(p);
     }
 
+    // ---- the drivers' championship: the cars of this session in the table's order (a driver without a car here, a
+    // reserve or a replaced one, is left out; the rest keep their real place)
+    std::vector<int> champ_rows(const Snapshot &snap) const
+    {
+        std::vector<int> out;
+        for (const ChampEntry &e : snap.champ) {
+            if (e.vid < 0)
+                continue;
+            for (size_t i = 0; i < snap.cars.size(); i++)
+                if (int(snap.cars[i].vid) == e.vid) {
+                    out.push_back(int(i));
+                    break;
+                }
+        }
+        return out;
+    }
+
+    // a championship row: its place and points in the table, the full surname and the team, nothing else
+    static void champ_row(Row &r, const Snapshot &snap, int idx)
+    {
+        const CarIn &c = snap.cars[size_t(idx)];
+        for (const ChampEntry &e : snap.champ)
+            if (e.vid == int(c.vid)) {
+                r.pos = std::to_string(e.rank);
+                r.p1 = e.rank == 1;
+                r.gap = std::to_string(e.points);
+                r.gap_champ = true;
+                break;
+            }
+        r.sep = false;
+        r.up = r.dn = false;
+        r.ko = r.ko_line = r.elim = r.out = false;
+        r.gap_purple = r.gap_green = r.gap_label = r.gap_inpit = false;
+        r.tyre = 0;
+        r.start_tyre = 0;
+        r.tyre_age.clear();
+        r.pit = r.pen = r.fl = r.chq = false;
+        r.gain_on = false;
+    }
+
     void remember(const Snapshot &snap, double now)
     {
         for (const CarIn &c : snap.cars) {
@@ -1097,6 +1162,7 @@ private:
     int fastest_flash_vid_ = -1;
     double fastest_flash_until_ = 0;
     int leader_vid_ = -1, leader_cand_ = -1;
+    double formation_t0_ = -1;
     double leader_cand_t_ = 0;
     Pending ban_;
     double ban_until_ = -1, ban_next_ = 0;

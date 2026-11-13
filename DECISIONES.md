@@ -578,3 +578,31 @@ usuario prefirió quitarlos (y no añadir «FINAL LAP» ni «DNF», que la emisi
   en el vídeo del usuario): no se puede. Swofty no da los puntos del campeonato a los addons; solo el evento
   `career.standings.rebuild` con un puntero al objeto del juego, que habría que leer de memoria (D2). En Gran Premio
   suelto tampoco hay campeonato. Pendiente de que Swofty lo exponga.
+
+## 0.17.0
+
+**D79 — Clasificación de pilotos en la vuelta de formación (excepción a D2).** La emisión enseña el campeonato en la
+vuelta de formación. Swofty no da los puntos a los addons (solo `career.standings.rebuild` con un puntero), así que,
+con el permiso del usuario, se leen de la memoria del juego, como hace Silly Season, pero con estas reglas:
+- **Fuente:** la tabla acumulada que el propio juego ordena tras cada sesión (`F1SeasonStandings` +0x40, documentada en
+  el código de «dropped scores» de Swofty): la última sesión de la última ronda con alguna es la clasificación tal cual
+  la enseña el juego, con carreras, sprints y puntos extra. Silly Season recalcula los puntos con las posiciones de las
+  carreras y por eso no cuenta las sprints.
+- **Cadena:** `swofty::career::entity()` (oficial) → campeonato (+0x1058) → temporada actual (+0x548/+0x560) → +0x2a8
+  → tabla. Desplazamientos de las cabeceras del juego que publica Swofty (L2, experimental).
+- **Piloto → coche:** las filas de entradas de la carrera (+0x2e0, 0x88 cada una): el piloto en +0x50 (su id en los 16
+  bits altos, como la clave de la tabla) y su coche en +0x82, el byte por el que el estado en vivo de Swofty lee los
+  escudos. El contexto de los eventos de Swofty da los participantes, pero con el piloto vacío.
+- **No romperse:** todas las lecturas pasan por `swofty::mem::readable` (nunca fallan), y se rechaza todo lo que no
+  parezca lo que debe: tamaños, número de rondas/sesiones/entradas, totales negativos o fuera de rango, totales fuera
+  del orden del juego, pilotos repetidos, dos pilotos en un coche, la lista ocupada por el juego, o menos del 80 % de
+  los coches de la sesión encontrados. Se intenta una vez por sesión de carrera (10 veces, cada 2 s); si falla, la
+  vuelta de formación sigue con los neumáticos y el log dice por qué (`[tv-tower] championship: not shown (…)`). Fuera
+  de una carrera (Gran Premio), `entity()` es nulo y no se lee nada. Nunca se escribe.
+- **En la torre:** 20 s de STARTING TYRES y luego 30 s de DRIVERS' / CHAMPIONSHIP (en la demo, 2 y 10 s): las filas con
+  los coches de la sesión en el orden de la tabla, su puesto real (un piloto sin coche aquí se salta), apellidos
+  completos y los puntos alineados a la derecha en la columna del neumático, para que quepan los apellidos largos.
+  Luego vuelve la vista normal de la vuelta de formación. El cambio de orden es directo: el fundido de la emisión
+  necesitaría las animaciones de Swofty, que no son fiables (D74).
+- Tests con una memoria falsa: lectura correcta, orden roto, lista ocupada, puntero a ninguna parte, y la secuencia
+  de la vuelta de formación.
