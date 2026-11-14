@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.17.1"
+VERSION = "0.17.2"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
@@ -199,12 +199,9 @@ def manifest(flavour):
                 sys.exit(f"setting {oid}: {key} is {len(o[key].encode())} bytes (Swofty's limit is 255)")
         opts.append(o)
     files = ["native/tvt_logos.txt"]
-    desc_es = ("Torre de tiempos estilo retransmisión F1 TV/DAZN dibujada con el propio HUD del juego, en lugar del "
-               "tablero de posiciones. Solo offline: lee el estado en vivo desde la memoria del juego (sin UDP), "
-               "sin conexiones de red ni nada relacionado con el online o el antitrampas.")
-    desc_en = ("Broadcast-style F1 TV timing tower drawn with the game's own HUD in place of the standings board. "
-               "Offline only: reads the live state from the game's memory (no UDP), makes no network connections "
-               "and touches nothing online or anti-cheat related.")
+    # one line (Swofty's manifest: "a one-line summary"); the Addon Browser's long text is set on the portal
+    desc_es = "La torre de tiempos de la TV de F1 2026, dibujada con el propio HUD del juego. Solo offline."
+    desc_en = "The 2026 F1 broadcast timing tower, drawn by the game's own HUD. Offline only."
     return {
         "schema_version": 1,
         "id": ADDON_ID,
@@ -213,6 +210,7 @@ def manifest(flavour):
         "author": "Pablo Belascoain",
         "description": pick(desc_en, desc_es),
         "license": "MIT",
+        "repository": "https://github.com/PabloBg19/tv-timing-tower",  # needs launcher 1.8.19+ (compat: 1.9.0)
         "icon": "icon.png",
         "category": "utility",
         "kind": ["ui", "native"],
@@ -230,19 +228,52 @@ def manifest(flavour):
 
 # ---------------------------------------------------------------------------------------------------- steps
 def make_icon(path):
-    from PIL import Image, ImageDraw
-    n = 256
-    img = Image.new("RGBA", (n, n), (12, 14, 30, 255))
+    """The Addon Browser's icon (a square PNG, shown as it is): the tower itself, drawn at 4x and scaled down. Only
+    our own drawing and a system font: no F1, FIA or team marks."""
+    from PIL import Image, ImageDraw, ImageFont
+    n, k = 512, 4
+    N = n * k
+    img = Image.new("RGBA", (N, N))
     d = ImageDraw.Draw(img)
-    d.rectangle([40, 30, 120, 226], fill=(20, 24, 48, 255))
-    for i in range(8):
-        y = 48 + i * 22
-        d.rectangle([46, y, 62, y + 16], fill=(225, 6, 0, 255) if i == 0 else (40, 46, 80, 255))
-        d.rectangle([68, y + 5, 112 - (i % 3) * 8, y + 11], fill=(235, 235, 240, 255))
-    d.rectangle([130, 48, 214, 70], fill=(255, 209, 46, 255))
-    d.rectangle([130, 82, 214, 104], fill=(225, 6, 0, 255))
-    d.rectangle([130, 116, 214, 138], fill=(177, 56, 221, 255))
-    img.save(path)
+    for y in range(N):  # a dark track-side background
+        t = y / N
+        d.line([(0, y), (N, y)], fill=(int(28 + 18 * t), int(34 + 22 * t), int(30 + 10 * t), 255))
+    fonts = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts"
+
+    def font(px, bold=True):
+        for name in (("bahnschrift.ttf", "segoeuib.ttf", "arialbd.ttf") if bold else ("bahnschrift.ttf", "segoeui.ttf", "arial.ttf")):
+            if (fonts / name).exists():
+                f = ImageFont.truetype(str(fonts / name), px * k)
+                if name == "bahnschrift.ttf":
+                    try:
+                        f.set_variation_by_name("Bold" if bold else "Regular")
+                    except Exception:
+                        pass
+                return f
+        return ImageFont.load_default()
+
+    x0, x1, top = 64, 448, 40
+    S = lambda *v: [a * k for a in v]
+    # header: slate block, LAP 23 / 57
+    d.rounded_rectangle(S(x0, top, x1, top + 92), radius=14 * k, fill=(64, 63, 77, 250), corners=(True, True, False, False))
+    d.rectangle(S(x0, top + 92, x1, top + 96), fill=(80, 80, 94, 255))
+    d.text(S(n / 2, top + 48), "LAP 23 / 57", font=font(46), fill=(240, 240, 244, 255), anchor="mm")
+    rows = [("1", "RUS", "#00D7B6", "Interval"), ("2", "VER", "#4781D7", "+0.8"), ("3", "LEC", "#ED1131", "+1.4"),
+            ("4", "NOR", "#F47600", "+0.3"), ("5", "HAM", "#ED1131", "IN PIT"), ("6", "PIA", "#F47600", "+2.1")]
+    rh, y = 60, top + 96
+    for i, (pos, code, col, gap) in enumerate(rows):
+        last = i == len(rows) - 1
+        d.rounded_rectangle(S(x0, y, x1, y + rh), radius=14 * k, fill=(38, 37, 44, 245),
+                            corners=(False, False, last, last))
+        d.rectangle(S(x0, y + 3, x0 + 62, y + rh - 3), fill=(225, 6, 0, 255) if i == 0 else (22, 21, 30, 255))
+        d.text(S(x0 + 31, y + rh / 2), pos, font=font(36, False), fill=(255, 255, 255, 255), anchor="mm")
+        d.rounded_rectangle(S(x0 + 76, y + 18, x0 + 100, y + rh - 18), radius=4 * k, fill=col)
+        d.text(S(x0 + 116, y + rh / 2), code, font=font(38), fill=(255, 255, 255, 255), anchor="lm")
+        gc = (94, 214, 180, 255) if gap == "IN PIT" else (189, 186, 196, 255) if gap == "Interval" else (242, 242, 244, 255)
+        d.text(S(x1 - 18, y + rh / 2), gap, font=font(32 if gap[0].isalpha() else 36, gap == "IN PIT"), fill=gc,
+               anchor="rm")
+        y += rh
+    img.resize((n, n), Image.LANCZOS).save(path)
 
 
 def build_flavour(flavour, dll_path, logos):

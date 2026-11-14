@@ -1,5 +1,12 @@
 # Resumen — TV Timing Tower
 
+## 0.17.2 (14-11-2026): para el Addon Browser de Swofty
+
+- Ficha para el Addon Browser: descripción de una línea, enlace al código (`repository`) y un icono nuevo (la propia
+  torre, sin logos de F1, FIA ni equipos). Sin cambios en la torre.
+
+---
+
 ## 0.17.1 (14-11-2026)
 
 - Clasificación de la vuelta de formación: sale el piloto creado por el jugador (su fila es de otro tipo y se
