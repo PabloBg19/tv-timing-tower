@@ -73,7 +73,7 @@ paquete solo en español.
 | Position arrows | Sí | Triángulo verde o rojo 3 s al ganar o perder puestos (carrera) |
 | Team logos | TV | TV (iconos de la emisión de 2026; en otras temporadas, el escudo del juego) / Game (escudos del juego, en color; siguen a los mods) / Game white |
 | Animations | Sí | Fundido de las filas en los adelantamientos |
-| Team colour bar · Highlight my car | No · Sí | |
+| Highlight my car | Sí | Tu fila un poco más clara |
 | In practice / qualifying / sprint qualifying / races | Sí | Por tipo de sesión |
 | Show/hide key | F8 | F8 muestra u oculta (solo en sesión; cada sesión nueva la vuelve a mostrar) · **Ctrl+F8** demo · **Mayús+F8** siguiente escenario |
 | Demo mode · Demo scenario | No · Cycle | Datos simulados |

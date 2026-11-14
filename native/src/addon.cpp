@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.17.3"
+#define TVT_VERSION "0.17.4"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -33,7 +33,6 @@ SWOFTY_SETTING(bool, tyres, true);
 SWOFTY_SETTING(bool, tyre_age, false);
 SWOFTY_SETTING(std::string_view, background, "broadcast");
 SWOFTY_SETTING(bool, arrows, true);
-SWOFTY_SETTING(bool, team_bar, false);
 SWOFTY_SETTING(bool, animations, true);
 SWOFTY_SETTING(std::string_view, logos, "tv");
 SWOFTY_SETTING(bool, highlight, true);
@@ -72,7 +71,6 @@ tvt::Config read_config()
     std::string_view b = background;
     c.bg = b == "solid" ? 0 : b == "light" ? 2 : 1;
     c.arrows = arrows;
-    c.colbar = team_bar;
     std::string_view lg = logos;
     c.logos = lg == "game" ? tvt::Config::Logos::game : lg == "game_white" ? tvt::Config::Logos::game_white
                                                                            : tvt::Config::Logos::tv;

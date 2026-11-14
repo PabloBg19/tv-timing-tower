@@ -555,10 +555,11 @@ def row(flavour, logos_found):
     k.append({"kind": "unit", "id": "lg", "unit": "team_logo", "at": [L["unit_x"], R / 2], "size": L["unit_logo"],
               "visible": vm(r + "bdg"), "texture": vm(r + "badge")})
 
-    # driver name: the game's own per-car values, one slot per vehicle id (changed only while the row shows). Each
-    # element carries its own visible (no wrapper groups): 24 rows x 30 slots is most of the record, and the game's
-    # HUD customisation screen walks the record six times within 65,536 slots (Swofty's walk.rs; 0.17.2 used ~69,200
-    # there and closed the game). 12 slots a copy before, 8 now.
+    # driver name: the game's own per-car values, one slot per vehicle id (changed only while the row shows). The texts
+    # carry their own visible (no wrapper groups): 24 rows x 30 slots is most of the record, and the game's HUD
+    # customisation screen walks the record six times within 65,536 slots (Swofty's walk.rs; 0.17.2 used ~69,200 there
+    # and closed the game). A TINTED sprite ignores a visible of its own in game (seen on the 2021 tower: the colour
+    # nodes showed it anyway), so the team chip keeps its wrapper group; the optional team colour bar is gone (0.17.4).
     tint = {"session_car": "nub_colour", "slot_var": "V", "default": "#00000000"}
     k.append(group("v", [
         text("code", "OSD_24_bold", "left", L["name_box"], L["cap_name"], [L["name_x"], ty],
@@ -567,8 +568,7 @@ def row(flavour, logos_found):
         text("sur", "OSD_24_bold", "left", L["name_box"], L["cap_name"], [L["name_x"], ty],
              value={"session_car": "driver.second_name", "slot_var": "V"}, wrap="clampwidth", case="upper",
              visible=vm("abbr", True, True)),
-        sprite("bar", "bar", 28, tint=tint, visible=vm("colbar")),
-        sprite("chip", "teamchip", 27, tint=tint, visible=vm(r + "nob")),
+        group("nb", [sprite("chip", "teamchip", 27, tint=tint)], visible=vm(r + "nob")),
     ], visible=vm(r + "c{VV}"), repeat={"count": SLOTS, "var": "V"}))
     k.append(group("nd", [text("dn", "OSD_24_bold", "left", L["name_box"], L["cap_name"], [L["name_x"], ty],
                                value=vm(r + "nm"), wrap="clampwidth", case="upper")], visible=vm("demo")))

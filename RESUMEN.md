@@ -1,5 +1,14 @@
 # Resumen — TV Timing Tower
 
+## 0.17.4 (15-11-2026): sin colores sueltos en las filas
+
+- En el juego, un sprite teñido con el color del coche no respeta su propia visibilidad (visto en la torre 2021): en
+  la 0.17.3 la ficha de color de equipo y la barra de color opcional salían siempre. La ficha vuelve a su grupo; la
+  opción «Team colour bar» desaparece (para no pasar del límite del editor de HUD). Editor de HUD: ~47.100 de 65.536.
+- El build rechaza un sprite teñido con visibilidad propia (`tools/idcheck.py`).
+
+---
+
 ## 0.17.3 (14-11-2026): el editor de HUD ya no cierra el juego
 
 - Aviso de Swofty: abrir la personalización del HUD cerraba el juego a dos jugadores (0.7.2). Esa pantalla recorre la

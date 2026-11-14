@@ -261,7 +261,6 @@ struct Config {
     bool tyres = true;
     bool tyre_age = false;
     bool arrows = true;
-    bool colbar = false;       // team colour bar
     bool highlight = true;     // player's row highlighted
     // tv: the broadcast's team icons (private build; a team without one falls back to the game's badge);
     // game: the game's broadcast badges (colour, follow logo mods); game_white: the game's white HUD badges

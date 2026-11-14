@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.17.3"
+VERSION = "0.17.4"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
@@ -138,9 +138,6 @@ OPTIONS = [
     ("animations", "toggle", "Animaciones", "Animations",
      "Al cambiar el coche de una fila (adelantamientos), la fila se desvanece y vuelve con el nuevo coche.",
      "When a row's car changes (overtakes), the row fades out and back in with the new car.", {"default": True}),
-    ("team_bar", "toggle", "Barra de color de equipo", "Team colour bar",
-     "Una fina barra con el color del equipo junto al nombre.", "A thin team colour bar beside the name.",
-     {"default": False}),
     ("highlight", "toggle", "Resaltar mi coche", "Highlight my car", "Tu fila un poco más clara.",
      "Your row slightly brighter.", {"default": True}),
     ("in_practice", "toggle", "En libres", "In practice", "Torre en los entrenamientos libres.",

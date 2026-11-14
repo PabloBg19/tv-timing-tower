@@ -90,8 +90,26 @@ def clashes(rec):
     return bad
 
 
+def tinted_with_visible(rec):
+    """A tinted sprite ignores a visible of its own in game (its colour nodes show it anyway: seen on the 2021 tower
+    in 1.0.3); its visibility has to come from a wrapper group."""
+    out = []
+
+    def walk(e):
+        if e.get("kind") == "sprite" and e.get("tint") and e.get("visible"):
+            out.append(e["id"])
+        for c in e.get("children", []):
+            walk(c)
+    for e in rec["elements"]:
+        walk(e)
+    return out
+
+
 def main():
     rec = json.load(open(sys.argv[1], encoding="utf-8"))["hud.element"]["tower"]
+    tv = tinted_with_visible(rec)
+    if tv:
+        sys.exit(f"idcheck: tinted sprites with a visible of their own (always shown in game): {', '.join(tv[:8])}")
     bad = clashes(rec)
     for a, b in bad:
         print(f"idcheck: {a} and {b} hash to the same element id")

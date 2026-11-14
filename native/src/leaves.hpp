@@ -42,7 +42,6 @@ public:
         race = L.boolean("race");
         demo = L.boolean("demo");
         abbr = L.boolean("abbr");
-        colbar = L.boolean("colbar");
         bg = L.one_hot("bg", 3);
         sess = L.text("sess", 16);
         lap = L.text("lap", 8);
@@ -148,7 +147,6 @@ public:
         L.set(race, h.on && h.race);
         L.set(demo, h.demo);
         L.set(abbr, h.abbr);
-        L.set(colbar, cfg.colbar);
         L.set(bg, cfg.bg < 0 || cfg.bg > 2 ? 1 : cfg.bg);
         L.set(sess, h.sess);
         L.set(lap, h.lap);
@@ -283,7 +281,7 @@ public:
     }
 
     hud::Leaves L{kPrefix};
-    hud::BoolLeaf show, on, timed, race, demo, abbr, colbar;
+    hud::BoolLeaf show, on, timed, race, demo, abbr;
     hud::OneHot bg;
     hud::TextLeaf sess, lap, dlaps, dclk;
     hud::BoolLeaf c_chq, c_red, c_sc, c_vsc, c_vscend, c_scending, c_clear, c_yel;
