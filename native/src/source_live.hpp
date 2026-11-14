@@ -9,6 +9,7 @@
 
 #include <cstring>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <swofty/career.hpp>
 #include <swofty/live.hpp>
@@ -205,25 +206,38 @@ private:
         };
         std::vector<ChampEntry> table;
         std::unordered_map<uint32_t, int> cars;
+        std::unordered_set<uint32_t> known;
+        long human = -1;
         std::string why;
-        bool ok = standings::read_table(rd, e, table, why) && standings::read_cars(rd, e, cars, why);
+        bool ok = standings::read_table(rd, e, table, why) && standings::read_cars(rd, e, cars, why, &known, &human);
         if (ok)
-            ok = champ_map(table, cars, snap, why);
+            ok = champ_map(table, cars, known, snap, why);
         if (ok) {
             champ_ = std::move(table);
             champ_state_ = 1;
             snap.champ = champ_;
+            size_t on = 0;
+            std::string off;
+            for (const ChampEntry &t : champ_) {
+                on += t.vid >= 0;
+                if (t.vid < 0 && off.size() < 120)
+                    off += (off.empty() ? "" : ", ") + std::to_string(t.stat);
+            }
             champ_note_ = "championship: " + std::to_string(champ_.size()) + " drivers, leader " +
-                          std::to_string(champ_.front().points) + " pts";
+                          std::to_string(champ_.front().points) + " pts, " + std::to_string(on) + " on track" +
+                          (off.empty() ? "" : " (not here: stat " + off + ")") +
+                          (human >= 0 ? ", player stat " + std::to_string(human) : "");
         } else if (++champ_tries_ >= 10) {
             champ_state_ = 2;
             champ_note_ = "championship: not shown (" + why + ")";
         }
     }
 
-    // each driver's car; most of this session's cars must be found, or the mapping is not this grid
+    // each driver's car; most of this session's cars must be found, or the mapping is not this grid. The player's
+    // car left without a driver takes the one table entry that no entrant row knows (a driver the player created
+    // whose row the table names another way)
     static bool champ_map(std::vector<ChampEntry> &table, const std::unordered_map<uint32_t, int> &cars,
-                          const Snapshot &snap, std::string &why)
+                          const std::unordered_set<uint32_t> &known, const Snapshot &snap, std::string &why)
     {
         std::array<bool, 32> here{};
         for (const CarIn &c : snap.cars)
@@ -234,6 +248,26 @@ private:
             auto it = cars.find(t.stat);
             t.vid = it != cars.end() && it->second >= 0 && it->second < 32 && here[size_t(it->second)] ? it->second : -1;
             mapped += t.vid >= 0;
+        }
+        int me = -1;
+        for (const CarIn &c : snap.cars)
+            if (c.me)
+                me = int(c.vid);
+        bool me_mapped = false;
+        for (const ChampEntry &t : table)
+            me_mapped = me_mapped || (me >= 0 && t.vid == me);
+        if (me >= 0 && !me_mapped) {
+            ChampEntry *only = nullptr;
+            int unknown = 0;
+            for (ChampEntry &t : table)
+                if (t.vid < 0 && !known.count(t.stat)) {
+                    only = &t;
+                    unknown++;
+                }
+            if (unknown == 1) {
+                only->vid = me;
+                mapped++;
+            }
         }
         if (mapped * 10 < snap.cars.size() * 8) {
             why = "only " + std::to_string(mapped) + " of " + std::to_string(snap.cars.size()) + " cars found in it";

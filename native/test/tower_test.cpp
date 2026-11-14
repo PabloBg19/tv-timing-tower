@@ -886,6 +886,18 @@ static uintptr_t fake_career(FakeMem &m, const std::vector<int> &totals, int car
     return e;
 }
 
+// the player's own driver (a created one): his row is another kind (low byte set) with the human bit, in car `car`
+static void fake_player_row(FakeMem &m, uintptr_t e, int row, int car, uint32_t key)
+{
+    namespace st = standings;
+    uintptr_t rows = 0;
+    std::memcpy(&rows, m.blocks.at(e).data() + st::kEntrantsBegin, 8);
+    uintptr_t r = rows + uintptr_t(row) * st::kEntrant;
+    m.put<uint32_t>(r + st::kEntrantDriver, key);
+    m.put<uint32_t>(r + st::kEntrantOrdinal, st::kHumanBit);
+    m.put<uint8_t>(r + st::kEntrantVid, uint8_t(car));
+}
+
 static void test_championship()
 {
     namespace st = standings;
@@ -901,6 +913,17 @@ static void test_championship()
         CHECK(st::read_table(m, e, t, why) && t.size() == 20 && t[0].stat == 100 && t[0].points == 240 && t[0].rank == 1);
         CHECK(t[19].stat == 119 && t[19].points == 240 - 19 * 11);
         CHECK(st::read_cars(m, e, cars, why) && cars.size() == 20 && cars[105] == 5 && !cars.count(120));
+    }
+    {
+        // a driver the player created (0.17.0 left him out: his row is not a stock driver's): found, as the player
+        FakeMem m;
+        uintptr_t e = fake_career(m, totals, 20);
+        fake_player_row(m, e, 8, 8, (uint32_t(108) << 16) | 0x5);
+        std::unordered_map<uint32_t, int> cars;
+        std::unordered_set<uint32_t> known;
+        long human = -1;
+        std::string why;
+        CHECK(st::read_cars(m, e, cars, why, &known, &human) && cars[108] == 8 && human == 108 && cars.size() == 20);
     }
     {
         // not in the game's order (a wrong layout): refused

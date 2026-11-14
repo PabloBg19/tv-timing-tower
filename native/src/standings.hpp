@@ -35,7 +35,8 @@ constexpr size_t kSeasonEntry = 0x10, kSeasonPtr = 0x8;
 constexpr uintptr_t kStandings = 0x2a8, kTable = 0x40;
 constexpr size_t kRound = 0x20, kSession = 0x28, kEntry = 8;
 constexpr uintptr_t kEntrantsBegin = 0x2e0, kEntrantsEnd = 0x2e8, kEntrantsBusy = 0x2f8;
-constexpr size_t kEntrant = 0x88, kEntrantDriver = 0x50, kEntrantVid = 0x82;
+constexpr size_t kEntrant = 0x88, kEntrantOrdinal = 0x48, kEntrantDriver = 0x50, kEntrantVid = 0x82;
+constexpr uint32_t kHumanBit = 0x10000000u; // the player's row (as Silly Season reads it)
 constexpr size_t kMaxSeasons = 64, kMaxRounds = 64, kMaxSessions = 64, kMaxEntries = 64, kMaxEntrants = 512;
 
 // Read(at, dst, n) copies n bytes at `at` into dst and says whether it could (a guarded read: never faults)
@@ -117,12 +118,18 @@ template <class Read> bool read_table(Read &rd, uintptr_t entity, std::vector<Ch
     return why = "no session run yet this season", false;
 }
 
-// Each driver's car in this session (stat id -> vehicle id); false while the game is rewriting the rows or when
-// they don't look like a grid
+// Each driver's car in this session (stat id -> vehicle id), every row with a car (a driver the player created has a
+// row of its own kind, and 0.17.0 left it out); `known` gets every driver of the rows, with a car or not, and `human`
+// the player's stat id (-1 none). False while the game is rewriting the rows or when they don't look like a grid.
 template <class Read>
-bool read_cars(Read &rd, uintptr_t entity, std::unordered_map<uint32_t, int> &out, std::string &why)
+bool read_cars(Read &rd, uintptr_t entity, std::unordered_map<uint32_t, int> &out, std::string &why,
+               std::unordered_set<uint32_t> *known = nullptr, long *human = nullptr)
 {
     out.clear();
+    if (known)
+        known->clear();
+    if (human)
+        *human = -1;
     uint8_t busy = 0;
     uintptr_t b = 0;
     if (!entity || !val(rd, entity + kEntrantsBusy, busy))
@@ -135,16 +142,34 @@ bool read_cars(Read &rd, uintptr_t entity, std::unordered_map<uint32_t, int> &ou
     std::vector<uint8_t> buf(size_t(n) * kEntrant);
     if (!rd(b, buf.data(), buf.size()))
         return why = "the entrant rows are unreadable", false;
-    std::unordered_set<int> cars;
+    std::unordered_map<int, int> owner; // car -> its row's rank: 2 the player, 1 a stock driver, 0 another kind
     for (long i = 0; i < n; i++) {
-        uint32_t key = 0;
+        uint32_t key = 0, ordinal = 0;
         std::memcpy(&key, buf.data() + i * kEntrant + kEntrantDriver, 4);
+        std::memcpy(&ordinal, buf.data() + i * kEntrant + kEntrantOrdinal, 4);
         uint8_t vid = buf[size_t(i) * kEntrant + kEntrantVid];
-        if (vid >= 32 || (key & 0xffu) != 0)
-            continue; // no car, or not a driver's row
-        if (!cars.insert(vid).second)
-            return why = "two drivers in one car", out.clear(), false;
+        if (known)
+            known->insert(key >> 16);
+        if (vid >= 32)
+            continue; // no car this session
+        const bool is_human = (ordinal & kHumanBit) != 0;
+        const int rank = is_human ? 2 : (key & 0xffu) == 0 ? 1 : 0;
+        auto it = owner.find(vid);
+        if (it != owner.end()) {
+            if (rank == 1 && it->second == 1)
+                return why = "two drivers in one car", out.clear(), false;
+            if (rank <= it->second)
+                continue; // the car already has its driver
+            for (auto o = out.begin(); o != out.end(); ++o)
+                if (o->second == vid) {
+                    out.erase(o);
+                    break;
+                }
+        }
+        owner[vid] = rank;
         out[key >> 16] = vid;
+        if (human && is_human)
+            *human = long(key >> 16);
     }
     if (out.size() < 8 || out.size() > 30)
         return why = std::to_string(out.size()) + " drivers with a car", out.clear(), false;

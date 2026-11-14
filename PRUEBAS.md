@@ -1,4 +1,4 @@
-# Checklist de pruebas en el juego — TV Timing Tower 0.17.0
+# Checklist de pruebas en el juego — TV Timing Tower 0.17.1
 
 Antes de empezar: instala `dist/tv-timing-tower.swoftyaddon`, actívalo, en ADDON SETTINGS pon
 **Log detallado = Sí**, y juega. Tras cada sesión mira `%LOCALAPPDATA%\Swofty\sessions\<última>\game-logs\loader.log`
@@ -6,7 +6,7 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 
 ## 0. Arranque y seguridad
 - [ ] El juego arranca y llega al menú sin cuelgues.
-- [ ] Log: `[tv-tower] TV Timing Tower 0.17.0 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
+- [ ] Log: `[tv-tower] TV Timing Tower 0.17.1 loaded: … 12 broadcast team icons, logos 'tv'`. … leaves, colour (broadcast) team logos, hotkey F8`.
 - [ ] Log: `[live] on (Steam build): groups … classification, timing, pit, penalties, tyres, flags … badges`.
 - [ ] Log sin `[hud] … refused` ni `invalid` con `hud_tvt_`.
 - [ ] ADDON SETTINGS muestra la ficha **TV Timing Tower** con todos los ajustes en español.
@@ -66,6 +66,11 @@ y busca `[tv-tower]`. Anota en cada casilla OK / FALLO + qué se vio.
 - [ ] Vuelta rápida: tiempo en morado 5 s en la fila y luego el icono morado de cronómetro fijo.
 - [ ] Abandono: `Out` y fila atenuada. Descalificación: `DSQ`.
 - [ ] Bandera a cuadros: cabecera a cuadros e icono a cuadros en cada coche que termina.
+
+## 4s. Novedades 0.17.1
+- [ ] Trayectoria con un piloto creado: sale en la clasificación de la vuelta de formación en su puesto (antes se
+      saltaba). Log: `championship: … on track, player stat …`; si pone `not here: stat …`, mándame la línea.
+- [ ] Los puntos, más a la derecha y algo más pequeños, sin tocar apellidos largos (VERSTAPPEN, HULKENBERG).
 
 ## 4r. Novedades 0.17.0 (campeonato en la vuelta de formación)
 - [ ] Demo (*Escenario demo* = Campeonato): `STARTING TYRES` 2 s, luego `DRIVERS' / CHAMPIONSHIP` con los pilotos por puntos.

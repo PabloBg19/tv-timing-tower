@@ -606,3 +606,14 @@ con el permiso del usuario, se leen de la memoria del juego, como hace Silly Sea
   necesitaría las animaciones de Swofty, que no son fiables (D74).
 - Tests con una memoria falsa: lectura correcta, orden roto, lista ocupada, puntero a ninguna parte, y la secuencia
   de la vuelta de formación.
+
+## 0.17.1
+
+**D80 — El piloto del jugador en la clasificación y puntos que no pisan.** En una trayectoria con un piloto creado,
+la tabla se leyó bien (`22 drivers, leader 135 pts`) pero el jugador no salía (del 8 al 10 con él noveno). Las filas de
+entradas se filtraban a las de piloto normal (byte bajo de la clave a 0) y la de un piloto creado es de otro tipo. Ahora
+cuenta toda fila con coche; si dos comparten coche se queda la del jugador (bit 0x10000000 de +0x48, como lo lee Silly
+Season) o la de piloto normal, y solo dos pilotos normales en un coche anulan la lectura. Si aun así el coche del
+jugador queda sin piloto, se le da la única entrada de la tabla que ninguna fila conoce. El log dice cuántos están en
+pista, los que no (por su id) y el id del jugador. Los puntos van al borde derecho de la fila con un cuerpo algo menor
+(los apellidos llegan como mucho a la unidad 94; tres cifras empiezan hacia la 96): en el juego tocaban VERSTAPPEN.

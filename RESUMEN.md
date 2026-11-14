@@ -1,5 +1,14 @@
 # Resumen — TV Timing Tower
 
+## 0.17.1 (14-11-2026)
+
+- Clasificación de la vuelta de formación: sale el piloto creado por el jugador (su fila es de otro tipo y se
+  saltaba; se reconoce por la marca de jugador y, si hace falta, como el único de la tabla que no está en la lista);
+  los puntos van al borde de la fila y algo más pequeños, sin pisar los apellidos largos (D80). En el juego, la 0.17.0
+  ya leyó la tabla bien (`22 drivers, leader 135 pts`).
+
+---
+
 ## 0.17.0 (13-11-2026)
 
 - Clasificación de pilotos en la vuelta de formación (modo carrera), como la emisión: 20 s de neumáticos de salida y

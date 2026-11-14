@@ -164,7 +164,7 @@
       if (r.gap) {
         const col = r.purple ? C.purple : r.green ? C.green : r.inpit ? C.inpit : r.label ? C.label : C.gap;
         const cap = r.label || r.inpit ? L.cap_label : L.cap_gap;
-        add(txt(r.gap, r.gch ? L.tyre_x + 3.2 : r.gon ? L.gain_right : L.gap_right, L.text_y, cap, 'right', col, (r.purple || r.green || r.inpit) ? 700 : 400));
+        add(txt(r.gap, r.gch ? W - 0.8 : r.gon ? L.gain_right : L.gap_right, L.text_y, r.gch ? cap * 0.79 : cap, 'right', col, (r.purple || r.green || r.inpit) ? 700 : 400));
       }
       if (r.gon) add(spr(r.gain > 0 ? 'gup' : r.gain < 0 ? 'gdn' : 'gz', 0, 0, 27));
       if (showTyres && r.tyre) add(txt(r.tyre, L.tyre_x, L.text_y, L.cap_tyre, 'centre', C.tyres[r.tyre], 700));

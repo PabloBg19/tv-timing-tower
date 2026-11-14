@@ -584,9 +584,10 @@ def row(flavour, logos_found):
                   colour=C["label"] + "ff", visible=vm(r + "glb"), case="none", wrap="clampwidth"))
     k.append(text("gi", "OSD_24_bold", "right", u(46), u(6.6), [L["tyre_x"] + u(4), ty], value=vm(r + "gap"),
                   colour=C["inpit"] + "ff", visible=vm(r + "gip"), wrap="clampwidth"))
-    # the championship's points: right-aligned where the tyre letter goes, so a long surname keeps its room
-    k.append(text("gc", "OSD_24_regular", "right", u(30), L["cap_gap"], [L["tyre_x"] + u(4), ty], value=vm(r + "gap"),
-                  colour=C["gap"] + "ff", visible=vm(r + "gch"), case="none", wrap="clampwidth"))
+    # the championship's points: right-aligned at the row's right edge and a little smaller than a gap, so a long
+    # surname keeps its room (0.17.0 put them at the tyre column and they ran into VERSTAPPEN in game)
+    k.append(text("gc", "OSD_24_regular", "right", u(18), u(6.0), [L["width"] - u(1.0), ty],
+                  value=vm(r + "gap"), colour=C["gap"] + "ff", visible=vm(r + "gch"), case="none", wrap="clampwidth"))
 
     # places gained / lost: the mark, then the white number (the gap text)
     k += [sprite("gu", "gup", 27, visible=vm(r + "gu")), sprite("gd", "gdn", 27, visible=vm(r + "gd")),
