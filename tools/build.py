@@ -134,9 +134,7 @@ OPTIONS = [
      "TV: iconos de la emisión 2026. Juego: escudos del juego en color (siguen a los mods). Juego blanco: los del HUD.",
      "TV: the 2026 broadcast icons. Game: the game's colour badges (follow logo mods). Game white: HUD badges.",
      {"values": [("tv", "TV", "TV"), ("game", "Juego", "Game"), ("game_white", "Juego blanco", "Game white")],
-      "default": "tv", "public_values": ["game", "game_white"], "public_default": "game",
-      "public_desc": ("Juego: escudos del juego en color (siguen a los mods). Juego blanco: los del HUD.",
-                      "Game: the game's colour badges (follow logo mods). Game white: the HUD badges.")}),
+      "default": "tv", "public_values": ["game", "game_white"], "public_default": "game"}),
     ("animations", "toggle", "Animaciones", "Animations",
      "Al cambiar el coche de una fila (adelantamientos), la fila se desvanece y vuelve con el nuevo coche.",
      "When a row's car changes (overtakes), the row fades out and back in with the new car.", {"default": True}),
@@ -195,12 +193,7 @@ def manifest(flavour):
         o = {"id": oid, "type": typ, "label": pick(len_, les), "description": pick(den, des),
              "default": extra["default"], "binds": "native"}
         if typ == "choice":
-            values = extra["values"]
-            if flavour != "private" and "public_values" in extra:  # the public build has no broadcast icons
-                values = [v for v in values if v[0] in extra["public_values"]]
-                o["default"] = extra["public_default"]
-                o["description"] = pick(extra["public_desc"][1], extra["public_desc"][0])
-            o["values"] = [{"value": v, "label": pick(b, a)} for v, a, b in values]
+            o["values"] = [{"value": v, "label": pick(b, a)} for v, a, b in extra["values"]]
         for key in ("label", "description"):
             if len(o[key].encode()) > 255:  # Swofty refuses longer strings
                 sys.exit(f"setting {oid}: {key} is {len(o[key].encode())} bytes (Swofty's limit is 255)")
@@ -284,9 +277,7 @@ def make_icon(path):
 
 
 def build_flavour(flavour, dll_path, logos):
-    # private: with the F1 and FIA logos and the broadcast team icons (OverTake); public: none of them, only the game's
-    # own logos and badges (Swofty's Addon Browser: no third-party marks)
-    name = "tv-timing-tower" if flavour == "private" else "tv-timing-tower-browser"
+    name = "tv-timing-tower"
     stage = BUILD / flavour / "addon"
     if stage.exists():
         shutil.rmtree(stage)
@@ -442,18 +433,16 @@ def main():
     dll = BUILD / DLL
     cxx(dll, ROOT / "native" / "src" / "addon.cpp", shared=True)
     run([sys.executable, str(ROOT / "tools" / "pe_imports.py"), str(dll)])
-    staged = [build_flavour("private", dll, logos), build_flavour("public", dll, logos)]
+    staged = [build_flavour("private", dll, logos)]
     for old in DIST.glob("tv-timing-tower-*"):  # the PRIVATE / PUBLIC packages before 0.6
         shutil.rmtree(old) if old.is_dir() else old.unlink()
     tests()
-    for (name, stage, layout), flavour in zip(staged, ("private", "public")):
+    for name, stage, layout in staged:
         if not a.no_compose:
-            compose_check(stage, flavour)
+            compose_check(stage, "private")
         package(name, stage)
         if not a.no_compose:
-            profile_check(DIST / f"{name}.swoftyaddon", flavour)
-    # the Addon Browser's portal takes a .zip (the same bytes)
-    shutil.copy2(DIST / "tv-timing-tower-browser.swoftyaddon", DIST / f"tv-timing-tower-browser-{VERSION}.zip")
+            profile_check(DIST / f"{name}.swoftyaddon", "private")
     preview_assets(staged[0][1], staged[0][2])
     print("done")
 
