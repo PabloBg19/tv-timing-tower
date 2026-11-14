@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.17.2"
+VERSION = "0.17.3"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
@@ -284,6 +284,8 @@ def build_flavour(flavour, dll_path, logos):
     stage.mkdir(parents=True)
     # record and sprites
     run([sys.executable, str(ROOT / "tools" / "hudgen.py"), str(stage), "--flavour", flavour, "--logos", str(logos)])
+    # the game's UI walk budget (the HUD customisation screen holds the record six times): stop here if it would close
+    run([sys.executable, str(ROOT / "tools" / "walkcost.py"), str(stage / "registry" / "tower.json")])
     layout = json.loads((stage / "layout.json").read_text())
     (stage / "native").mkdir(exist_ok=True)
     shutil.copy2(dll_path, stage / "native" / DLL)

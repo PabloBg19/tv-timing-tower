@@ -1,5 +1,15 @@
 # Resumen — TV Timing Tower
 
+## 0.17.3 (14-11-2026): el editor de HUD ya no cierra el juego
+
+- Aviso de Swofty: abrir la personalización del HUD cerraba el juego a dos jugadores (0.7.2). Esa pantalla recorre la
+  torre seis veces en un árbol de 65.536 huecos; la 0.17.2 usaba unos 69.200. Las 30 ranuras de coche de cada fila
+  pierden sus grupos envoltorio (cada texto y sprite lleva su propia visibilidad): ahora unos 51.500, con margen. La
+  torre se ve y funciona igual (D81).
+- El build mide el coste con la misma regla que Swofty (`tools/walkcost.py`) y se para por encima de 60.000.
+
+---
+
 ## 0.17.2 (14-11-2026): para el Addon Browser de Swofty
 
 - Ficha para el Addon Browser: descripción de una línea, enlace al código (`repository`) y un icono nuevo (la propia

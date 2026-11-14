@@ -617,3 +617,11 @@ Season) o la de piloto normal, y solo dos pilotos normales en un coche anulan la
 jugador queda sin piloto, se le da la única entrada de la tabla que ninguna fila conoce. El log dice cuántos están en
 pista, los que no (por su id) y el id del jugador. Los puntos van al borde derecho de la fila con un cuerpo algo menor
 (los apellidos llegan como mucho a la unidad 94; tres cifras empiezan hacia la 96): en el juego tocaban VERSTAPPEN.
+
+**D81 — El límite del recorrido de la interfaz.** El juego aplana cada pantalla en huecos con índice de 16 bits (uno
+por nodo, más `(n + 4) / 8` por un nodo con cuatro hijos o más), con un máximo de 65.536; la pantalla de
+personalización del HUD contiene la escena de la torre seis veces. Pasado el límite, el juego se cierra al abrirla
+(regla y cifras de Swofty, `packages/core/src/hud/walk.rs`; la 0.7.2 llegaba a 66.306 y la 0.17.2 a ~69.200). Las ranuras
+por coche (24 filas × 30) eran la mayor parte: sin grupos envoltorio, 8 huecos por ranura en lugar de 12. El build
+reproduce la medida (`tools/walkcost.py`, comprobada con las cifras de Swofty de la 0.7.2) y se para por encima de
+60.000. Para revertir: volver a envolver; no hace falta.
