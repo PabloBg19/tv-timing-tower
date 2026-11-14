@@ -286,6 +286,8 @@ def build_flavour(flavour, dll_path, logos):
     run([sys.executable, str(ROOT / "tools" / "hudgen.py"), str(stage), "--flavour", flavour, "--logos", str(logos)])
     # the game's UI walk budget (the HUD customisation screen holds the record six times): stop here if it would close
     run([sys.executable, str(ROOT / "tools" / "walkcost.py"), str(stage / "registry" / "tower.json")])
+    # element ids are djb2 hashes of their paths: two that clash make the composer refuse the scene
+    run([sys.executable, str(ROOT / "tools" / "idcheck.py"), str(stage / "registry" / "tower.json")])
     layout = json.loads((stage / "layout.json").read_text())
     (stage / "native").mkdir(exist_ok=True)
     shutil.copy2(dll_path, stage / "native" / DLL)
