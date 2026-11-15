@@ -1,5 +1,12 @@
 # Resumen — TV Timing Tower
 
+## 0.23.1 (15-11-2026, en prueba): sin `No Time` y logos del juego por defecto
+
+- Un coche sin tiempo en clasificación ya no pone `No Time`: con nuestra fuente, más ancha que la de la tele, tapaba
+  todos los apellidos largos (Q2 antes de la primera vuelta, en el juego). Queda `-` de posición y sin neumático.
+- `Logos de equipo` pasa a `Juego` por defecto: los escudos del propio juego, que siguen a los mods de logos (el
+  usuario cambió los de Williams y Alpine y seguían los iconos de la tele). `TV` sigue en los ajustes.
+
 ## 0.23.0 (15-11-2026, en prueba): Out Lap, No Time y campeonato de constructores
 
 - Como la torre de clasificación de la tele (vídeo del usuario): `Out Lap` en lugar de la diferencia para un coche en

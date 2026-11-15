@@ -601,7 +601,7 @@ static void test_session_views()
             const CarIn &c = o.cars[size_t(i)];
             if (c.best_ms <= 0) {
                 none++;
-                CHECK(r.gap == "No Time" && r.pos == "-" && !r.tyre && !r.p1);
+                CHECK(r.gap.empty() && r.pos == "-" && !r.tyre && !r.p1);
             } else if (c.out_lap && i > 0) {
                 out++;
                 CHECK(r.gap == "Out Lap" && r.pos != "-");
@@ -847,12 +847,18 @@ static void test_leaves_and_record()
         c.lap = 1;
     const View &lg = tl2.update(gs, cfg, 0.3);
     CHECK(lg.h.gained && lg.rows[0].gain == 1 && lg.rows[1].gain == -1);
-    // private build: the broadcast icon (one-hot) replaces the game's badge for the teams it has
+    // private build, logos "tv": the broadcast icon (one-hot) replaces the game's badge for the teams it has
     Publisher pp({0});
     Tower ti;
-    pp.publish(ti.update(demo::make(demo::race, 1.0), cfg, 1.0), cfg);
+    Config ctv = cfg;
+    ctv.logos = Config::Logos::tv;
+    pp.publish(ti.update(demo::make(demo::race, 1.0), ctv, 1.0), ctv);
     CHECK(core.number("view_model_data.hud_tvt_r00_tm00") == 1 && core.number("view_model_data.hud_tvt_r00_bdg") == 0);
     CHECK(core.number("view_model_data.hud_tvt_r01_tm00") == 0 && core.number("view_model_data.hud_tvt_r01_bdg") == 1);
+    // the default, "game": the game's badge for every car (it follows logo mods)
+    CHECK(Config{}.logos == Config::Logos::game);
+    pp.publish(ti.update(demo::make(demo::race, 1.0), cfg, 1.1), cfg);
+    CHECK(core.number("view_model_data.hud_tvt_r00_tm00") == 0 && core.number("view_model_data.hud_tvt_r00_bdg") == 1);
     // the clock leaf exists (written "" once); the game's formatter owns it afterwards
     CHECK(core.text("view_model_data.hud_tvt_clock").empty());
     // row change fade: the old car stays while the row fades out, then the new one comes in

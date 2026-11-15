@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.23.0"
+#define TVT_VERSION "0.23.1"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -35,7 +35,7 @@ SWOFTY_SETTING(bool, tyre_age, false);
 SWOFTY_SETTING(std::string_view, background, "broadcast");
 SWOFTY_SETTING(bool, arrows, true);
 SWOFTY_SETTING(bool, animations, true);
-SWOFTY_SETTING(std::string_view, logos, "tv");
+SWOFTY_SETTING(std::string_view, logos, "game");
 SWOFTY_SETTING(bool, highlight, true);
 SWOFTY_SETTING(bool, quali_card, true);
 SWOFTY_SETTING(bool, in_practice, true);

@@ -305,7 +305,7 @@ struct Config {
     bool qcard = true;         // qualifying: the player's lap card (time, splits, target)
     // tv: the broadcast's team icons (private build; a team without one falls back to the game's badge);
     // game: the game's broadcast badges (colour, follow logo mods); game_white: the game's white HUD badges
-    enum class Logos { tv, game, game_white } logos = Logos::tv;
+    enum class Logos { tv, game, game_white } logos = Logos::game;
     int bg = 1;                // background: 0 solid, 1 broadcast (slightly translucent), 2 light
     bool en_practice = true, en_quali = true, en_sprint_quali = true, en_race = true;
     int compact_around = 1;    // compact: P1-P3 plus this many rows either side of the player
@@ -924,10 +924,11 @@ private:
                     r.gap = fmt_gap_ms(best - lead_best);
             }
             // as the broadcast's qualifying tower (the user's capture): "Out Lap" for a car on its out lap (P1 keeps
-            // its time), and "No Time" with "-" for its place and no tyre for a car without a time
+            // its time), and "-" for its place and no tyre for a car without a time. The broadcast writes "No Time"
+            // there, but in our wider font it ran over every long surname (0.23.0 in game, Q2 before any lap): blank
             if (cfg.timed_times || snap.s.game_times) {
                 if (best <= 0) {
-                    r.gap = "No Time";
+                    r.gap.clear();
                     r.pos = "-";
                     r.p1 = false;
                     r.tyre = 0;
