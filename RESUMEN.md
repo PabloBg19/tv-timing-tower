@@ -1,5 +1,11 @@
 # Resumen — TV Timing Tower
 
+## 0.23.2 (15-11-2026, en prueba): escudos del juego al tamaño de la tele
+
+- Con `Logos de equipo: Juego` los escudos salían enormes (tamaño 19, en el juego): ahora caben en el mismo hueco de
+  15 x 11 que los iconos de la tele (tamaño 12, centrados en el mismo sitio). Los avisos (x2) y la tarjeta de
+  clasificación (el logo de 46 x 30 px de la tele) también.
+
 ## 0.23.1 (15-11-2026, en prueba): sin `No Time` y logos del juego por defecto
 
 - Un coche sin tiempo en clasificación ya no pone `No Time`: con nuestra fuente, más ancha que la de la tele, tapaba

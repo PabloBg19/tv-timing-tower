@@ -40,7 +40,7 @@ REF = {
     "logo_x": 29.0, "logo_w": 15.0, "logo_h": 11.0,
     # the game's own badge: a square texture, so a wide logo (Force India, Lotus, Manor) fills only a band of it;
     # the square uses the whole gap between the position box (19) and the name (42)
-    "unit_logo": 19.0, "unit_x": 30.5,
+    "unit_logo": 12.0, "unit_x": 29.0,  # the game's badge in the TV icon's 15 x 11 box (19 was huge, 0.23.1)
     "name_x": 42.0,
     "gap_right": 117.5,
     "gap_right_q": 121.0, "cap_gap_q": 6.2,   # practice / qualifying data column
@@ -826,7 +826,7 @@ def banners(logos_found):
     lg = [group(f"{k}tm{i:02d}g", [sprite(f"{k}tm{i:02d}", f"tmb_{TEAMS[i]}", 27)], at=[logo_cx, bh / 2],
                 visible=vm(f"{k}_tm{i:02d}")) for i in logos_found]
     lg.append({"kind": "unit", "id": f"{k}lg", "unit": "team_logo", "at": [logo_cx, bh / 2],
-               "size": L["unit_logo"] * 1.7, "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
+               "size": L["unit_logo"] * 2.0, "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
     g = group(f"{k}g", [group(f"{k}art", art, visible=vm(k)), cars] + lg, at=[-L["ban_lw"] / 2, 0])
 
     # FASTEST LAP (back in 0.20 with the game's own lap times): "ANTONELLI (logo) 1:37.477" flush against the time,
@@ -850,7 +850,7 @@ def banners(logos_found):
     lg = [group(f"{k}tm{i:02d}g", [sprite(f"{k}tm{i:02d}", f"tmb_{TEAMS[i]}", 27)], at=[logo_cx, bh / 2],
                 visible=vm(f"{k}_tm{i:02d}")) for i in logos_found]
     lg.append({"kind": "unit", "id": f"{k}lg", "unit": "team_logo", "at": [logo_cx, bh / 2],
-               "size": L["unit_logo"] * 1.7, "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
+               "size": L["unit_logo"] * 2.0, "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
     f = group(f"{k}g", [group(f"{k}art", art, visible=vm(k)), cars] + lg, at=[-L["ban_fw"] / 2, 0])
     return group("ban", [g, f], at=[L["ban_cx"], L["offset_y"] + L["ban_y"]])
 
@@ -916,7 +916,7 @@ def qcard(logos_found):
     lx, ly = Q["logo_x"], hd / 2
     lg = [group(f"qtm{i:02d}g", [sprite(f"qtm{i:02d}", f"qtm_{TEAMS[i]}", 27)], at=[lx, ly],
                 visible=vm(f"qc_tm{i:02d}")) for i in logos_found]
-    lg.append({"kind": "unit", "id": "qlgu", "unit": "team_logo", "at": [lx, ly], "size": LAYOUT["unit_logo"] * 1.2,
+    lg.append({"kind": "unit", "id": "qlgu", "unit": "team_logo", "at": [lx, ly], "size": q(33),
                "visible": vm("qc_bdg"), "texture": vm("qc_badge")})
     g = group("qg", [group("qart", art, visible=vm("qc")), me, tgt] + lg)
     return group("qcard", [g], at=[LAYOUT["width"] + Q["x"], LAYOUT["offset_y"] + Q["y"]])
