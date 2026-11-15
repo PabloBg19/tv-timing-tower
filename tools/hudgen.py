@@ -41,6 +41,7 @@ REF = {
     "unit_logo": 19.0, "unit_x": 30.5,
     "name_x": 42.0,
     "gap_right": 117.5,
+    "gap_right_q": 121.0, "cap_gap_q": 6.2,   # practice / qualifying data column
     "tyre_x": 127.0,
     "base": 15.8,            # text baseline in a row (caps sit a little below the row's middle)
     "cell_inset": 1.75,      # the position cells (and the P1 box) leave a thin line between rows
@@ -78,7 +79,7 @@ LAYOUT = {
     "logo_x": u(REF["logo_x"]), "logo_w": u(REF["logo_w"]), "logo_h": u(REF["logo_h"]), "unit_logo": u(REF["unit_logo"]), "unit_x": u(REF["unit_x"]),
     "name_x": u(REF["name_x"]),
     "name_box": u(REF["gap_right"] - REF["name_x"] - 2),
-    "gap_right": u(REF["gap_right"]), "gap_box": u(70),
+    "gap_right": u(REF["gap_right"]), "gap_box": u(70), "gap_right_q": u(REF["gap_right_q"]), "cap_gap_q": u(REF["cap_gap_q"]),
     "tyre_x": u(REF["tyre_x"]),
     "text_y": u(REF["base"]),
     "cap_name": u(REF["cap_name"]), "cap_pos": u(REF["cap_pos"]), "cap_gap": u(REF["cap_gap"]),
@@ -574,14 +575,21 @@ def row(flavour, logos_found):
                                value=vm(r + "nm"), wrap="clampwidth", case="upper")], visible=vm("demo")))
 
     # data column: white (gap / time), purple, green, grey label (Interval / Leader), red (IN PIT)
+    # race: the gap at the race captures' size. Practice / qualifying: the leader's lap time (1:05.173) ran into the
+    # name at that size (0.18.0 in game), so as on the broadcast's qualifying tower (measured on a 2026 Q1 capture:
+    # time ending 5.74 rows from the left, the tyre letter at 6.13) the column ends further right and its figures are
+    # smaller (our font is wider than the broadcast's narrow one)
+    def data(gx, cap):
+        return [group("gw", [text("g", "OSD_24_regular", "right", u(52), cap, [gx, ty],
+                                  value=vm(r + "gap"), colour=C["gap"] + "ff", case="none", wrap="clampwidth")],
+                      visible=vm(r + "gsp", True, True)),
+                text("gp", "OSD_24_bold", "right", L["gap_box"], cap, [gx, ty], value=vm(r + "gap"),
+                     colour=C["purple"] + "ff", visible=vm(r + "gpu")),
+                text("gg", "OSD_24_bold", "right", L["gap_box"], cap, [gx, ty], value=vm(r + "gap"),
+                     colour=C["green"] + "ff", visible=vm(r + "gpg"))]
     gx = L["gap_right"]
-    k.append(group("gw", [text("g", "OSD_24_regular", "right", u(52), L["cap_gap"], [gx, ty],
-                               value=vm(r + "gap"), colour=C["gap"] + "ff", case="none", wrap="clampwidth")],
-                   visible=vm(r + "gsp", True, True)))
-    k.append(text("gp", "OSD_24_bold", "right", L["gap_box"], L["cap_gap"], [gx, ty], value=vm(r + "gap"),
-                  colour=C["purple"] + "ff", visible=vm(r + "gpu")))
-    k.append(text("gg", "OSD_24_bold", "right", L["gap_box"], L["cap_gap"], [gx, ty], value=vm(r + "gap"),
-                  colour=C["green"] + "ff", visible=vm(r + "gpg")))
+    k.append(group("dr", data(gx, L["cap_gap"]), visible=vm("timed", True, True)))
+    k.append(group("dq", data(L["gap_right_q"], L["cap_gap_q"]), visible=vm("timed")))
     k.append(text("gl", "OSD_24_regular", "right", u(40), L["cap_label"], [gx, ty], value=vm(r + "gap"),
                   colour=C["label"] + "ff", visible=vm(r + "glb"), case="none", wrap="clampwidth"))
     k.append(text("gi", "OSD_24_bold", "right", u(46), u(6.6), [L["tyre_x"] + u(4), ty], value=vm(r + "gap"),

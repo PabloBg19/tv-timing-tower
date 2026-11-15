@@ -1,5 +1,11 @@
 # Resumen — TV Timing Tower
 
+## 0.18.1 (15-11-2026, en prueba): la columna de tiempos de libres y clasificación
+
+- Probada la 0.18.0 en Q1: los tiempos salen. El tiempo del líder (1:05.173) se metía en el nombre. En libres y
+  clasificación la columna acaba más a la derecha y sus cifras son algo más pequeñas, como la torre de clasificación
+  de la tele (medida en una captura de Q1 de 2026). En carrera no cambia nada.
+
 ## 0.18.0 (15-11-2026, en prueba): tiempos de libres y clasificación, del propio juego
 
 - Los tiempos de vuelta se leen del sistema de tiempos del juego (`VehicleLapTimesSystem`), los mismos que el juego
