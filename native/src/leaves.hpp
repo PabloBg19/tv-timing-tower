@@ -67,15 +67,17 @@ public:
 
         form = L.boolean("form");
         wide = L.boolean("wide");
-        {
-            BannerLeaves &x = ban;
-            std::string k = "bnl";
+        for (int b = 0; b < 2; b++) {
+            BannerLeaves &x = ban[b];
+            std::string k = b == 0 ? "bnl" : "bnf";
             x.on = L.boolean(k);
             x.car = L.one_hot(k + "_c", kSlots, 2);
             x.tm = L.one_hot(k + "_tm", kTeams, 2);
             x.badge = L.text(k + "_badge", 96);
             x.bdg = L.boolean(k + "_bdg");
             x.nm = L.text(k + "_nm", 24); // demo: the simulated driver's name
+            if (b == 1)
+                x.time = L.text(k + "_t", 12);
         }
         {
             CardLeaves &x = qc;
@@ -195,9 +197,9 @@ public:
         L.set(wide, h.on && h.wide);
         // the banner: its name / logo slots sit straight under an always-shown group, so they change while
         // visible (see the rows below); hidden, every slot is off
-        {
-            BannerLeaves &x = ban;
-            const bool mine = h.on && h.banner == banner_leader;
+        for (int b = 0; b < 2; b++) {
+            BannerLeaves &x = ban[b];
+            const bool mine = h.on && h.banner == (b == 0 ? banner_leader : banner_fastest);
             hud::Leaves::Atomic group(L);
             L.set(x.on, mine);
             const bool icon = mine && cfg.logos == Config::Logos::tv && h.ban_team >= 0 && has_team(h.ban_team);
@@ -206,6 +208,8 @@ public:
             L.set(x.badge, mine && !icon ? h.ban_badge : std::string());
             L.set(x.bdg, mine && !icon && !h.ban_badge.empty());
             L.set(x.nm, mine && h.demo ? h.ban_name : std::string());
+            if (b == 1)
+                L.set(x.time, mine ? h.ban_time : std::string());
         }
 
         // the qualifying card: as the banner, its slots sit straight under an always-shown group and change while
@@ -350,9 +354,9 @@ public:
     struct BannerLeaves {
         hud::BoolLeaf on, bdg;
         hud::OneHot car, tm;
-        hud::TextLeaf badge, nm;
+        hud::TextLeaf badge, nm, time;
     };
-    BannerLeaves ban; // NEW RACE LEADER
+    BannerLeaves ban[2]; // 0 NEW RACE LEADER, 1 FASTEST LAP
     struct CardLeaves {
         hud::BoolLeaf on, bdg, cut, ncut;
         hud::OneHot car, tm, ty, dc, tcar;

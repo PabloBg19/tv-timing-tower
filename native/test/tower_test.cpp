@@ -88,8 +88,16 @@ static void test_race_rows()
     CHECK(v2.rows[5].up && v2.rows[6].dn);
     t.update(demo::make(demo::race, 11.5), cfg, 11.5);
     CHECK(!t.view().rows[5].up);
-    // the race's fastest lap: off by default (no icon); on, it flashes purple then stays as the icon
-    CHECK(!t.view().rows[1].fl);
+    // the race's fastest lap: the demo shows it (as the game's own times do); the addon's clock alone does not
+    CHECK(t.view().rows[1].fl);
+    {
+        Tower tn;
+        Snapshot a = demo::make(demo::race, 7.0), b = demo::make(demo::race, 11.5);
+        a.s.demo = b.s.demo = false;
+        tn.update(a, cfg, 7.0);
+        tn.update(b, cfg, 11.5);
+        CHECK(!tn.view().rows[1].fl);
+    }
     {
         Config fc = cfg;
         fc.race_fastest = true;
@@ -254,9 +262,11 @@ static void test_banners()
     Config cfg;
     {
         // demo "banners": P2 takes the lead at 0.5 s but stays within 0.3 s until 3 s, then pulls 0.9 s clear:
-        // NEW RACE LEADER from then on for 6 s (not while they fight), and nothing for the fastest lap
+        // NEW RACE LEADER from then on for 6 s (not while they fight); a first fastest lap at 3.5 s waits for it and
+        // is replaced by the one beating it at 7.5 s, which shows after the leader's banner with its time
         Tower t;
-        int leader_at = -1, shown = 0;
+        int leader_at = -1, shown = 0, fastest_at = -1;
+        std::string ftime;
         std::string lname;
         int lvid = -1;
         for (int i = 0; i <= 140; i++) {
@@ -267,13 +277,60 @@ static void test_banners()
                 lvid = v.h.ban_vid;
                 lname = v.h.ban_name;
             }
-            CHECK(v.h.banner == banner_none || v.h.banner == banner_leader);
-            shown += v.h.banner != banner_none;
+            if (v.h.banner == banner_fastest && fastest_at < 0) {
+                fastest_at = i;
+                ftime = v.h.ban_time;
+            }
+            shown += v.h.banner == banner_leader;
         }
         Snapshot s1 = demo::make(demo::banners, 1.0);
         CHECK(leader_at >= 30 && leader_at <= 31);            // once 0.6 s clear of P2, not at the pass (0.5 s)
         CHECK(lvid == int(s1.cars[0].vid) && !lname.empty());
         CHECK(shown >= 58 && shown <= 62);                    // one banner of 6 s
+        Snapshot s8 = demo::make(demo::banners, 8.0);
+        CHECK(fastest_at >= 95 && fastest_at <= 97 && ftime == fmt_lap(s8.s.fastest_ms));
+    }
+    {
+        // the fastest lap from the addon's own clock (no game times): no banner, no row icon
+        Tower t;
+        int any = 0, icon = 0;
+        for (int i = 0; i <= 140; i++) {
+            Snapshot s = demo::make(demo::banners, i * 0.1);
+            s.s.demo = false;
+            const View &v = t.update(s, cfg, i * 0.1);
+            any += v.h.banner == banner_fastest;
+            for (const Row &r : v.rows)
+                icon += r.fl;
+        }
+        CHECK(any == 0 && icon == 0);
+        // the game's times: both, the first fastest lap too when the race is young
+        Tower g;
+        any = icon = 0;
+        for (int i = 0; i <= 140; i++) {
+            Snapshot s = demo::make(demo::banners, i * 0.1);
+            s.s.demo = false;
+            s.s.game_times = true;
+            for (CarIn &c : s.cars)
+                c.lap = 2;
+            const View &v = g.update(s, cfg, i * 0.1);
+            any += v.h.banner == banner_fastest;
+            for (const Row &r : v.rows)
+                icon += r.fl;
+        }
+        CHECK(any > 0 && icon > 0);
+        // a race joined late: the fastest lap already set is taken in silently, a later one is announced
+        Tower late;
+        any = 0;
+        for (int i = 0; i <= 70; i++) {
+            Snapshot s = demo::make(demo::banners, i * 0.1);
+            s.s.demo = false;
+            s.s.game_times = true;
+            for (CarIn &c : s.cars)
+                c.lap = 20;
+            s.cars[1].gap_ahead_ms = 350; // no leader banner either
+            any += late.update(s, cfg, i * 0.1).h.banner == banner_fastest;
+        }
+        CHECK(any == 0);
     }
     {
         // a lead that changes hands but never gets 0.6 s clear: no banner
@@ -282,7 +339,7 @@ static void test_banners()
         for (int i = 0; i <= 140; i++) {
             Snapshot s = demo::make(demo::banners, i * 0.1);
             s.cars[1].gap_ahead_ms = 350;
-            any += t.update(s, cfg, i * 0.1).h.banner != banner_none;
+            any += t.update(s, cfg, i * 0.1).h.banner == banner_leader;
         }
         CHECK(any == 0);
     }
@@ -290,6 +347,7 @@ static void test_banners()
         // switched off: none
         Config off = cfg;
         off.ban_leader = false;
+        off.ban_fastest = false;
         Tower t;
         int any = 0;
         for (int i = 0; i <= 140; i++)

@@ -182,8 +182,21 @@
       if (r.out || r.elim) add(spr('dim', 0, 0, 45));
       tower.append(g);
     });
+    // FASTEST LAP top centre
+    if (h.ban === 2) {
+      const bh = L.ban_h, cap = L.ban_fcap, ty = bh / 2 + cap / 2;
+      const b = document.createElement('div'); b.className = 'el';
+      Object.assign(b.style, { left: (L.ban_cx - L.ban_fw / 2) + 'px', top: L.ban_y + 'px', width: L.ban_fw + 'px', height: bh + 'px' });
+      const add = e => e && b.append(e);
+      add(spr('ban_f_bg', 0, 0, 40));
+      add(txt('FASTEST LAP', 10, ty, cap, 'left', C.ban_flabel, 700));
+      add(txt(h.bt, L.ban_ftime, ty, cap, 'left', C.ban_time, 700));
+      add(txt(h.bnm, L.ban_fname_r, ty, cap, 'right', '#fff', 700, 60));
+      if (logos && h.btm >= 0) add(spr('tmb_' + L.teams[h.btm], L.ban_flogo, bh / 2, 43));
+      tower.append(b);
+    }
     // NEW RACE LEADER top centre, as in game
-    if (h.ban) {
+    if (h.ban === 1) {
       const bx = L.ban_cx - L.ban_lw / 2, bh = L.ban_h, cap = L.ban_cap, ty = bh / 2 + cap / 2;
       const b = document.createElement('div'); b.className = 'el';
       Object.assign(b.style, { left: bx + 'px', top: L.ban_y + 'px', width: L.ban_lw + 'px', height: bh + 'px' });

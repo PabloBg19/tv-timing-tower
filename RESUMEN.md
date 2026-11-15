@@ -1,5 +1,14 @@
 # Resumen — TV Timing Tower
 
+## 0.20.0 (15-11-2026, en prueba): vuelta rápida en carrera, la del juego
+
+- En carrera también se leen los tiempos del juego, y la vuelta rápida es la suya: la vuelta válida más rápida de
+  la carrera, la misma que anuncia el aviso «Mejor vuelta» del juego. Vuelven la franja FASTEST LAP (piloto, logo
+  y tiempo; quitada en 0.15, D76), el destello morado del tiempo y el icono morado en la fila del que la tiene
+  (quitados en 0.15.1, D77). Mientras sale nuestra franja, el aviso central del juego se oculta.
+- Solo con los tiempos del juego: si no se pueden leer, ni franja ni icono (el reloj propio no coincidía).
+- Una vuelta rápida que ya existía al entrar en una carrera empezada no se anuncia. Ajuste `Aviso de vuelta rápida`.
+
 ## 0.19.0 (15-11-2026, en prueba): tarjeta de clasificación
 
 - En clasificación (Q1/Q2/Q3, SQ1/SQ2/SQ3), a la derecha de la parte baja de la torre, la tarjeta de tu vuelta como

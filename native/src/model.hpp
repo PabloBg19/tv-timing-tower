@@ -266,6 +266,7 @@ struct Config {
     // auto: codes beside data (gaps, times), full surnames when the data column is empty (as on TV)
     enum class Names { autoswitch, surname, code } names = Names::autoswitch;
     bool ban_leader = true;    // NEW RACE LEADER banner
+    bool ban_fastest = true;   // FASTEST LAP banner (only with the game's own lap times)
     // practice and qualifying times (off: the core gives no lap times there and the game's counter does not move,
     // so the addon cannot time them reliably; on again once Swofty exposes the game's own best laps)
     bool timed_times = false;
@@ -290,7 +291,7 @@ struct Config {
 // ---------------------------------------------------------------------------------------------- outputs
 // The banner top centre (races): NEW RACE LEADER, as on the broadcast. (FASTEST LAP was dropped in 0.15: the
 // game gives addons no lap times, so ours never matched the game's own fastest-lap toast.)
-enum Banner : int { banner_none = 0, banner_leader = 1 };
+enum Banner : int { banner_none = 0, banner_leader = 1, banner_fastest = 2 };
 
 enum Card : int { card_none = 0, card_sc = 1, card_vsc = 2, card_red = 3, card_chq = 4, card_yellow = 5,
                   card_sc_end = 6 /* unused since 0.8.0: SC ENDING */, card_vsc_end = 7, card_clear = 8, card_sc_ending = 9 };
@@ -352,6 +353,7 @@ struct Header {
     int ban_vid = -1;
     int ban_team = -1;         // the car's team index (TV icons), -1 none
     std::string ban_badge;     // the game's badge texture path, "" none
+    std::string ban_time;      // FASTEST LAP: the lap time
     std::string ban_name;      // the demo's driver name (in game the record reads the game's own name)
     std::string sub;           // the line under the logo: "SPRINT" or ""
     bool lead = false;         // gaps are to the leader
@@ -572,6 +574,7 @@ public:
         formation_t0_ = -1;
         ban_ = Pending{};
         ban_until_ = -1;
+        new_fastest_ = false;
         card_lap_ = ~0u;
         card_cool_ = false;
         card_tg_vid_ = -1;
@@ -767,7 +770,7 @@ private:
         }
 
         if (race) {
-            r.fl = cfg.race_fastest && snap.s.fastest_vid >= 0 && uint32_t(snap.s.fastest_vid) == c.vid;
+            r.fl = (cfg.race_fastest || snap.s.game_times || snap.s.demo) && snap.s.fastest_vid >= 0 && uint32_t(snap.s.fastest_vid) == c.vid;
             if (h.bare && h.start_tyres) {
                 // STARTING TYRES: "MEDIUM" in its colour where the gap goes, as the broadcast (not the letter)
                 if (cfg.tyres && !retired && c.tyre)
@@ -833,7 +836,7 @@ private:
                     r.gap = "";
             }
             // a new fastest lap flashes the lap time in purple
-            if (cfg.race_fastest && !h.bare && !h.gained && !h.pitstops && !h.tyres && fastest_flash_vid_ == int(c.vid) && now < fastest_flash_until_ &&
+            if ((cfg.race_fastest || snap.s.game_times || snap.s.demo) && !h.bare && !h.gained && !h.pitstops && !h.tyres && fastest_flash_vid_ == int(c.vid) && now < fastest_flash_until_ &&
                 fastest_ms_ > 0) {
                 r.gap = fmt_lap(fastest_ms_);
                 r.gap_purple = true;
@@ -1070,9 +1073,13 @@ private:
         if (kind != Kind::race)
             return;
         if (snap.s.fastest_ms > 0 && (fastest_ms_ < 0 || snap.s.fastest_ms < fastest_ms_)) {
-            if (fastest_ms_ > 0 || snap.s.demo) {
+            // every new fastest lap of the race, the first too (as the game's own toast); a first one met in a race
+            // already well under way (the tower joining late) is only taken in
+            const int lead_lap = snap.cars.empty() ? 0 : snap.cars.front().lap;
+            if (fastest_ms_ > 0 || snap.s.demo || lead_lap <= 2) {
                 fastest_flash_vid_ = snap.s.fastest_vid;
                 fastest_flash_until_ = now + 5.0;
+                new_fastest_ = snap.s.game_times || snap.s.demo; // the banner: only with the game's own times
             }
             fastest_ms_ = snap.s.fastest_ms;
         }
@@ -1120,6 +1127,11 @@ private:
         } else {
             leader_cand_ = -1;
         }
+        if (new_fastest_) {
+            new_fastest_ = false;
+            if (cfg.ban_fastest && !s.chequered && s.fastest_vid >= 0)
+                push(Pending{banner_fastest, s.fastest_vid, s.fastest_ms});
+        }
         if (ban_until_ >= 0 && now >= ban_until_) {
             ban_until_ = -1;
             ban_next_ = now + kBannerGap;
@@ -1129,10 +1141,13 @@ private:
             queue_.erase(queue_.begin());
             ban_until_ = now + kBannerSeconds;
         }
-        if (ban_until_ < 0 || !cfg.ban_leader)
+        if (ban_until_ < 0 || (ban_.kind == banner_leader && !cfg.ban_leader) ||
+            (ban_.kind == banner_fastest && !cfg.ban_fastest))
             return;
         h.banner = ban_.kind;
         h.ban_vid = ban_.vid;
+        if (ban_.kind == banner_fastest)
+            h.ban_time = fmt_lap(ban_.ms);
         for (const CarIn &c : snap.cars)
             if (int(c.vid) == ban_.vid) {
                 h.ban_team = team_index(c.badge);
@@ -1278,6 +1293,7 @@ private:
     struct Pending {
         int kind = banner_none;
         int vid = -1;
+        int ms = 0;
     };
 
     // a newer banner of the same kind replaces the one waiting (the latest leader, the latest fastest lap)
@@ -1367,6 +1383,7 @@ private:
     double formation_t0_ = -1;
     double leader_cand_t_ = 0;
     Pending ban_;
+    bool new_fastest_ = false;
     double ban_until_ = -1, ban_next_ = 0;
     std::vector<Pending> queue_;
     std::array<int, 32> grid_{};

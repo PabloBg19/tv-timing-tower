@@ -175,9 +175,19 @@ public:
         }
         if (race && !snap.cars.empty())
             champ_step(snap, now);
-        // practice and qualifying: the game's own lap times (simulated laps included) in place of the addon's clock
-        if (!race && !snap.cars.empty())
+        // every session: the game's own lap times (simulated laps included) in place of the addon's clock
+        if (!snap.cars.empty())
             game_times(snap, now, me);
+        // races: the fastest lap is the game's (its fastest valid lap, as its own best lap toast), not the clock's
+        if (race && snap.s.game_times) {
+            si.fastest_vid = -1;
+            si.fastest_ms = -1;
+            for (const CarIn &c : snap.cars)
+                if (c.best_ms > 0 && (si.fastest_ms < 0 || c.best_ms < si.fastest_ms)) {
+                    si.fastest_ms = c.best_ms;
+                    si.fastest_vid = int(c.vid);
+                }
+        }
         // qualifying: the player's lap for the card
         if (!race && me >= 0 && me < int(live::max_cars) && cars[size_t(me)] &&
             live::has(*cars[size_t(me)], SWOFTY_LIVE_HAVE_PROGRESS)) {

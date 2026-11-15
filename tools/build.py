@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.19.0"
+VERSION = "0.20.0"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
@@ -113,6 +113,10 @@ OPTIONS = [
     ("ban_leader", "toggle", "Aviso de nuevo líder", "New race leader banner",
      "Carrera: franja arriba en el centro con NEW RACE LEADER cuando cambia el líder (desde la vuelta 2).",
      "Races: a banner top centre with NEW RACE LEADER when the lead changes hands (from lap 2).", {"default": True}),
+    ("ban_fastest", "toggle", "Aviso de vuelta rápida", "Fastest lap banner",
+     "Carrera: franja arriba en el centro con FASTEST LAP, el piloto y su tiempo (los del juego), y el icono morado en su fila.",
+     "Races: a banner top centre with FASTEST LAP, the driver and the time (the game's own), and the purple icon on the row.",
+     {"default": True}),
     ("champ_formation", "toggle", "Campeonato en la vuelta de formación", "Championship on the formation lap",
      "Modo carrera: tras los neumáticos de salida, la clasificación de pilotos con sus puntos (los del juego, sprints incluidas).",
      "Career: after the starting tyres, the drivers' standings with their points (the game's own, sprints included).",
@@ -169,7 +173,7 @@ OPTIONS = [
                  ("practice", "Libres", "Practice"), ("sprint_quali", "Clasificación sprint", "Sprint qualifying"),
                  ("gained", "Ganadas/perdidas", "Gained/lost"), ("grid", "Parrilla (neumáticos de salida)", "Grid (starting tyres)"),
                  ("tyres", "Vista de neumáticos", "Tyres view"),
-                 ("banners", "Aviso de nuevo líder", "New race leader banner"),
+                 ("banners", "Avisos (líder y vuelta rápida)", "Banners (leader, fastest lap)"),
                  ("championship", "Campeonato (vuelta de formación)", "Championship (formation lap)")],
       "default": "cycle"}),
     ("debug_log", "toggle", "Log detallado", "Verbose log",
