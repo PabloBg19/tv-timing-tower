@@ -27,7 +27,7 @@ struct RowLeaves {
     hud::BoolLeaf tag, pit, pen;
     hud::TextLeaf pent;
     hud::BoolLeaf fl, chq, gu, gd, g0, fx, nob;
-    hud::TextLeaf nm, badge;
+    hud::TextLeaf nm, badge, tn;
     hud::BoolLeaf bdg;
     hud::OneHot tm, car;
     hud::BoolLeaf sd[5], su[5]; // the row's slides (hudgen SLIDE_BITS): 1, 2, 4, 8, 16 rows down / up
@@ -67,6 +67,7 @@ public:
         tyrev = L.boolean("tyrev");
         stty = L.boolean("stty");
         champ = L.boolean("champ");
+        cons = L.boolean("cons");
 
         form = L.boolean("form");
         wide = L.boolean("wide");
@@ -141,6 +142,7 @@ public:
             r.fl = l.boolean("fl");
             r.chq = l.boolean("chq");
             r.nm = l.text("nm", 24);
+            r.tn = l.text("tn", 20); // the constructors' table: the team's name
             r.badge = l.text("badge", 96);
             r.bdg = l.boolean("bdg");
             r.gu = l.boolean("gu");
@@ -197,7 +199,8 @@ public:
         L.set(pstops, h.pitstops);
         L.set(tyrev, h.tyres);
         L.set(stty, h.start_tyres);
-        L.set(champ, h.on && h.champ);
+        L.set(champ, h.on && (h.champ || h.cons));
+        L.set(cons, h.on && h.cons);
 
         L.set(form, h.on && h.race && h.formation);
         L.set(wide, h.on && h.wide);
@@ -355,6 +358,7 @@ public:
             L.set(x.gd, r.gain_on && r.gain < 0);
             L.set(x.g0, r.gain_on && r.gain == 0);
             L.set(x.nm, r.name);
+            L.set(x.tn, r.team_label);
             bool icon = cfg.logos == Config::Logos::tv && r.team >= 0 && has_team(r.team);
             L.set(x.tm, icon ? r.team : -1);
             L.set(x.badge, icon ? std::string() : r.badge);
@@ -374,7 +378,7 @@ public:
     hud::TextLeaf ysec;
     hud::TextLeaf clock;
     hud::OneHot ld;
-    hud::BoolLeaf gained, sprint, pstops, form, tyrev, stty, wide, champ;
+    hud::BoolLeaf gained, sprint, pstops, form, tyrev, stty, wide, champ, cons;
     hud::Leaves::Rows<RowLeaves> rows;
     struct BannerLeaves {
         hud::BoolLeaf on, bdg;

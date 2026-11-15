@@ -145,8 +145,10 @@ public:
                 if (!jumped && !back[s.vid])
                     stats_.skips++;
             }
-            if (s.in_pit)
+            if (s.in_pit) {
                 c.dirty = true;
+                c.via_pit = true;
+            }
             if (s.warnings != c.warn0 && s.lap == c.lap)
                 c.dirty = true;
             c.lap = s.lap;
@@ -162,6 +164,8 @@ public:
     double sim_time() const { return sim_; }
     // sim time of the car's last line crossing, -1 unknown (none seen yet, or its lap was thrown out)
     double cross_t(uint32_t vid) const { return vid < kCars ? cars_[vid].cross_t : -1; }
+    // the car has been in the pit lane or the garage since its last line crossing (out of it now: an out lap)
+    bool via_pit(uint32_t vid) const { return vid < kCars && cars_[vid].seen && cars_[vid].via_pit; }
 
     // The fastest of the car's valid laps that is not faster than `floor_ms`, -1 for none. The tower uses it so a
     // lap the game threw out (and we could not tell) never puts a car's time ahead of a car the game ranks higher.
@@ -209,6 +213,7 @@ private:
         double det_t = -1;     // sim time the last crossing was seen (the counter and the wrap both report it)
         bool dirty = true;
         int warn0 = 0;
+        bool via_pit = false;  // in the pit lane / garage since the last crossing
         int last_ms = -1, best_ms = -1;
         int n = 0;
         std::array<int, kMaxLaps> laps{};
@@ -262,6 +267,7 @@ inline void LapClock::cross_at(Car &c, const LapSample &s, double cross)
     }
     c.cross_t = cross;
     c.dirty = s.in_pit;
+    c.via_pit = s.in_pit;
     c.warn0 = s.warnings;
 }
 

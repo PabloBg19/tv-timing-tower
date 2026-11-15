@@ -114,6 +114,8 @@ LAYOUT = {
     "logo_x": u(REF["logo_x"]), "logo_w": u(REF["logo_w"]), "logo_h": u(REF["logo_h"]), "unit_logo": u(REF["unit_logo"]), "unit_x": u(REF["unit_x"]),
     "name_x": u(REF["name_x"]),
     "name_box": u(REF["gap_right"] - REF["name_x"] - 2),
+    # the constructors' table: a team's name runs up to the points (ASTON MARTIN, RACING BULLS), a little smaller
+    "team_box": u(REF["width"] - REF["name_x"] - 17), "cap_team": u(REF["cap_name"] * 0.9),
     "gap_right": u(REF["gap_right"]), "gap_box": u(70), "gap_right_q": u(REF["gap_right_q"]), "cap_gap_q": u(REF["cap_gap_q"]),
     "tyre_x": u(REF["tyre_x"]),
     "text_y": u(REF["base"]),
@@ -613,8 +615,10 @@ def header(flavour, sprites):
         band("tyv", "TYRES", "tyrev"),
         band("sty", "STARTING TYRES", "stty"),
         group("chp", [sprite(f"chp_bg{i}", f"champbg{i}", 21, visible=vm(f"bg{i}")) for i in range(3)] +
-              [text("chp_t1", "OSD_24_bold", "centre", W - u(10), L["cap_gainword"], [W / 2, L["champ_b1"]],
-                    literal="DRIVERS'", wrap="clampwidth"),
+              [group("chp_c", [text("chp_t1c", "OSD_24_bold", "centre", W - u(10), L["cap_gainword"], [W / 2, L["champ_b1"]],
+                                    literal="CONSTRUCTORS'", wrap="clampwidth")], visible=vm("cons")),
+               text("chp_t1", "OSD_24_bold", "centre", W - u(10), L["cap_gainword"], [W / 2, L["champ_b1"]],
+                    literal="DRIVERS'", wrap="clampwidth", visible=vm("cons", True, True)),
                text("chp_t2", "OSD_24_bold", "centre", W - u(10), L["cap_gainword"], [W / 2, L["champ_b2"]],
                     literal="CHAMPIONSHIP", wrap="clampwidth")], visible=vm("champ")),
 
@@ -668,6 +672,9 @@ def row(flavour, logos_found):
              visible=vm("abbr", True, True)),
         group("nb", [sprite("chip", "teamchip", 27, tint=tint)], visible=vm(r + "nob")),
     ], visible=vm(r + "c{VV}"), repeat={"count": SLOTS, "var": "V"}))
+    # the constructors' table: the team's name where the driver's goes
+    k.append(group("tng", [text("tn", "OSD_24_bold", "left", L["team_box"], L["cap_team"], [L["name_x"], ty],
+                                value=vm(r + "tn"), wrap="clampwidth", case="upper")], visible=vm("cons")))
     k.append(group("nd", [text("dn", "OSD_24_bold", "left", L["name_box"], L["cap_name"], [L["name_x"], ty],
                                value=vm(r + "nm"), wrap="clampwidth", case="upper")], visible=vm("demo")))
 

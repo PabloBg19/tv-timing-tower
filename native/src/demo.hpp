@@ -229,12 +229,14 @@ inline Snapshot make(int sc, double t)
         c.in_pit = (vid % 5 == 1) && sc != quali_q2;
         if (sc == practice && (vid == 7 || vid == 2))
             c.in_pit = true;
+        c.out_lap = !c.in_pit && (vid == 8 || vid == 12); // two cars on their out lap ("Out Lap")
     }
     if (sc == quali_q2 || sc == sprint_quali) {
         // the six knocked out in Q1 stay classified at the bottom with their Q1 times
         for (int r = 16; r < 22; r++)
             snap.cars[size_t(r)].in_pit = true;
     }
+    s.game_times = true; // the game's own times (laptimes.hpp), as in game since 0.18
     // every lap's sectors (30 % / 40 % / the rest), each car's best sectors a little under its best lap's
     for (CarIn &c : snap.cars)
         if (c.best_ms > 0) {

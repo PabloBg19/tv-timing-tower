@@ -26,12 +26,12 @@ static void row_json(FILE *f, const Row &r, const CarIn *car)
                  "{\"vid\":%d,\"pos\":\"%s\",\"p1\":%d,\"up\":%d,\"dn\":%d,\"gap\":\"%s\",\"purple\":%d,\"green\":%d,"
                  "\"label\":%d,\"inpit\":%d,\"tyre\":\"%s\",\"age\":\"%s\",\"pit\":%d,\"pen\":\"%s\",\"fl\":%d,\"chq\":%d,"
                  "\"out\":%d,\"ko\":%d,\"kol\":%d,\"elim\":%d,\"sep\":%d,\"me\":%d,\"gain\":%d,\"gon\":%d,\"team\":%d,\"name\":\"%s\","
-                 "\"code\":\"%s\",\"st\":\"%s\",\"gch\":%d}",
+                 "\"code\":\"%s\",\"st\":\"%s\",\"gch\":%d,\"tl\":\"%s\"}",
                  r.vid, r.pos.c_str(), r.p1, r.up, r.dn, esc(r.gap).c_str(), r.gap_purple, r.gap_green, r.gap_label, r.gap_inpit,
                  r.tyre ? std::string(1, r.tyre).c_str() : "", r.tyre_age.c_str(), r.pit,
                  r.pen ? esc(r.pen_text).c_str() : "", r.fl, r.chq, r.out, r.ko, r.ko_line, r.elim, r.sep, r.me,
                  r.gain, r.gain_on, r.team, car ? car->name.c_str() : "", car ? car->code.c_str() : "",
-                 r.start_tyre ? std::string(1, r.start_tyre).c_str() : "", int(r.gap_champ));
+                 r.start_tyre ? std::string(1, r.start_tyre).c_str() : "", int(r.gap_champ), r.team_label.c_str());
 }
 
 int main(int argc, char **argv)
@@ -68,10 +68,10 @@ int main(int argc, char **argv)
                 std::fprintf(f,
                              "%s{\"t\":%.1f,\"h\":{\"race\":%d,\"sess\":\"%s\",\"lap\":\"%s\",\"laps\":\"%s\","
                              "\"clock\":\"%s\",\"card\":%d,\"abbr\":%d,\"gained\":%d,\"pits\":%d,\"form\":%d,\"tyv\":%d,\"sty\":%d,\"fcl\":%d,\"sprint\":%d,\"ysec\":\"%s\",\"lead\":%d,"
-                             "\"ban\":%d,\"bnm\":\"%s\",\"btm\":%d,\"bt\":\"%s\",\"chp\":%d},\"rows\":[",
+                             "\"ban\":%d,\"bnm\":\"%s\",\"btm\":%d,\"bt\":\"%s\",\"chp\":%d,\"cons\":%d},\"rows\":[",
                              k ? "," : "", time, h.race, h.sess.c_str(), h.lap.c_str(), h.laps_total.c_str(),
                              h.clock.c_str(), h.card, h.abbr, h.gained, h.pitstops, h.formation, h.tyres, h.start_tyres, h.final_cls, int(!h.sub.empty()), h.ysec.c_str(), h.lead,
-                             h.banner, h.ban_name.c_str(), h.ban_team, h.ban_time.c_str(), int(h.champ));
+                             h.banner, h.ban_name.c_str(), h.ban_team, h.ban_time.c_str(), int(h.champ || h.cons), int(h.cons));
                 for (int i = 0; i < v.shown; i++) {
                     const Row &r = v.rows[size_t(i)];
                     const CarIn *car = nullptr;

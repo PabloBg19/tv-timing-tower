@@ -153,6 +153,7 @@ public:
             ci.gap_ahead_ms = live::gap_ahead_ms(c).value_or(-1);
             ci.gap_leader_ms = live::gap_leader_ms(c).value_or(-1);
             ci.me = int(vid) == me;
+            ci.out_lap = !ci.in_pit && clock_.via_pit(vid);
             ci.badge = badge(vid, now);
             ci.last_ms = clock_.last_ms(vid);
             if (race) {

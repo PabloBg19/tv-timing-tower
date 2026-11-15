@@ -142,13 +142,17 @@ static void test_quali()
     {
         Tower t0;
         Config off;
-        const View &v0 = t0.update(demo::make(demo::quali_q1, 0.5), off, 0.5);
+        Snapshot q0 = demo::make(demo::quali_q1, 0.5);
+        q0.s.game_times = false; // the addon's own clock only
+        const View &v0 = t0.update(q0, off, 0.5);
         bool any = false;
         for (int i = 0; i < v0.shown; i++)
             any = any || !v0.rows[i].gap.empty();
         CHECK(!any && !v0.h.abbr && v0.rows[16].ko);
         Tower tp0;
-        const View &p0 = tp0.update(demo::make(demo::practice, 0.5), off, 0.5);
+        Snapshot pr0 = demo::make(demo::practice, 0.5);
+        pr0.s.game_times = false;
+        const View &p0 = tp0.update(pr0, off, 0.5);
         any = false;
         for (int i = 0; i < p0.shown; i++)
             any = any || !p0.rows[i].gap.empty();
@@ -586,6 +590,25 @@ static void test_session_views()
     int cut_best = qs.cars[15].best_ms, lead_best = qs.cars[0].best_ms;
     CHECK(q.rows[16].ko && q.rows[16].gap == fmt_gap_ms(qs.cars[16].best_ms - cut_best));
     CHECK(!q.rows[14].ko && q.rows[14].gap == fmt_gap_ms(qs.cars[14].best_ms - lead_best));
+    // as the broadcast's qualifying tower: "Out Lap" on an out lap, "No Time" with "-" and no tyre without a time
+    {
+        Tower to;
+        Snapshot o = demo::make(demo::quali_q1, 0.5);
+        const View &ov = to.update(o, cfg, 0.5);
+        int out = 0, none = 0;
+        for (int i = 0; i < ov.shown; i++) {
+            const Row &r = ov.rows[size_t(i)];
+            const CarIn &c = o.cars[size_t(i)];
+            if (c.best_ms <= 0) {
+                none++;
+                CHECK(r.gap == "No Time" && r.pos == "-" && !r.tyre && !r.p1);
+            } else if (c.out_lap && i > 0) {
+                out++;
+                CHECK(r.gap == "Out Lap" && r.pos != "-");
+            }
+        }
+        CHECK(out == 2 && none == 1);
+    }
     // practice: everyone to P1
     Tower tp;
     const View &pv = tp.update(demo::make(demo::practice, 0.5), cfg, 0.5);
@@ -1041,6 +1064,7 @@ static void test_game_lap_times()
         Config cfg;
         Snapshot q = demo::make(demo::quali_q1, 0.5);
         q.s.demo = false;
+        q.s.game_times = false;
         CHECK(t.update(q, cfg, 0.5).rows[0].gap.empty());
         q.s.game_times = true;
         const View &v = t.update(q, cfg, 0.6);
@@ -1356,8 +1380,33 @@ static void test_championship()
         CHECK(b.h.champ && !b.h.start_tyres && !b.h.abbr);
         CHECK(b.rows[0].vid == int(s.cars.back().vid) && b.rows[0].pos == "1" && b.rows[0].p1 && b.rows[0].gap == "200");
         CHECK(b.rows[1].gap == "191" && b.rows[1].tyre == 0 && b.rows[1].start_tyre == 0);
-        const View &c = t.update(s, cfg, 55.0);
-        CHECK(!c.h.champ && !c.h.start_tyres && c.rows[0].vid == int(s.cars.front().vid));
+        // then the constructors': each team's drivers' points added up, the best first, the team's name and badge
+        const View &cs = t.update(s, cfg, 55.0);
+        CHECK(cs.h.cons && !cs.h.champ && !cs.h.start_tyres);
+        {
+            std::map<int, int> sum;
+            for (const ChampEntry &e : s.champ)
+                for (const CarIn &c : s.cars)
+                    if (int(c.vid) == e.vid)
+                        sum[team_index(c.badge)] += e.points;
+            int top = 0, teams = int(sum.size());
+            for (auto &kv : sum)
+                top = std::max(top, kv.second);
+            CHECK(cs.shown == teams && cs.rows[0].pos == "1" && cs.rows[0].gap == std::to_string(top));
+            CHECK(!cs.rows[0].team_label.empty() && cs.rows[0].vid == -1 && !cs.rows[0].badge.empty());
+            for (int i = 1; i < cs.shown; i++)
+                CHECK(std::stoi(cs.rows[size_t(i)].gap) <= std::stoi(cs.rows[size_t(i - 1)].gap));
+        }
+        // a driver with points but no car here (a reserve, a replaced driver): no constructors' table
+        {
+            Snapshot r = s;
+            r.champ.push_back({99u, 4, int(r.champ.size()) + 1, -1});
+            Tower tr;
+            tr.update(r, cfg, 0.0);
+            CHECK(!tr.update(r, cfg, 55.0).h.cons);
+        }
+        const View &c = t.update(s, cfg, 75.0);
+        CHECK(!c.h.champ && !c.h.cons && !c.h.start_tyres && c.rows[0].vid == int(s.cars.front().vid));
         // no table (a Grand Prix, or unreadable): the starting tyres stay for the whole formation lap
         Snapshot g = s;
         g.champ.clear();

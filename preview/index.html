@@ -131,7 +131,7 @@
     if (h.tyv) bandLine('TYRES');
     if (h.sty) bandLine('STARTING TYRES');
     if (h.chp) {
-      tower.append(spr('champbg' + bg, 0, y, 21), txt("DRIVERS'", W / 2, y + L.champ_b1, L.cap_gainword, 'centre', '#fff', 700),
+      tower.append(spr('champbg' + bg, 0, y, 21), txt(h.cons ? "CONSTRUCTORS'" : "DRIVERS'", W / 2, y + L.champ_b1, L.cap_gainword, 'centre', '#fff', 700),
         txt('CHAMPIONSHIP', W / 2, y + L.champ_b2, L.cap_gainword, 'centre', '#fff', 700));
       y += L.champ_h;
     }
@@ -160,7 +160,8 @@
       if (r.up) add(spr('arr_up', 0, 0, 26)); else if (r.dn) add(spr('arr_dn', 0, 0, 26));
       else add(txt(r.pos, L.pos_x, L.text_y, L.cap_pos, 'centre', '#fff', 400));
       if (logos && r.team >= 0) add(spr('tm_' + L.teams[r.team], 0, 0, 27));
-      add(txt(h.abbr ? r.code : r.name, L.name_x, L.text_y, L.cap_name, 'left', '#fff', 700, L.name_box));
+      if (r.tl) add(txt(r.tl, L.name_x, L.text_y, L.cap_team, 'left', '#fff', 700, L.team_box));
+      else add(txt(h.abbr ? r.code : r.name, L.name_x, L.text_y, L.cap_name, 'left', '#fff', 700, L.name_box));
       if (r.gap) {
         const col = r.purple ? C.purple : r.green ? C.green : r.inpit ? C.inpit : r.label ? C.label : C.gap;
         // practice / qualifying: the data column ends further right, its figures smaller (as hudgen's `dq`)

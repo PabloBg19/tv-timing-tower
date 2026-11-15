@@ -154,6 +154,14 @@ inline const char *team_name(int i)
     return i >= 0 && i < kTeams ? n[i] : "";
 }
 
+// a team's name as the broadcast's constructors' table writes it
+inline const char *team_label(int i)
+{
+    static const char *n[kTeams] = {"MERCEDES", "FERRARI", "RED BULL", "MCLAREN", "ASTON MARTIN", "ALPINE",
+                                    "WILLIAMS", "RACING BULLS", "HAAS", "SAUBER", "AUDI", "CADILLAC"};
+    return i >= 0 && i < kTeams ? n[i] : "";
+}
+
 inline int team_index(const std::string &badge)
 {
     std::string k;
@@ -217,6 +225,7 @@ struct CarIn {
     float speed_kmh = -1;     // -1 unknown (starting tyres: the grid stands still before the start)
     int best_ms = -1;         // best valid lap
     int last_ms = -1;         // last completed lap
+    bool out_lap = false;     // on track after the pit lane, the line not crossed since (timed sessions: "Out Lap")
     bool me = false;
     int best_sec[3] = {-1, -1, -1}; // the game's: the best lap's sectors (ms)
     int pb_sec[3] = {-1, -1, -1};   // the game's: the car's best of each sector
@@ -311,6 +320,7 @@ enum Card : int { card_none = 0, card_sc = 1, card_vsc = 2, card_red = 3, card_c
                   card_sc_end = 6 /* unused since 0.8.0: SC ENDING */, card_vsc_end = 7, card_clear = 8, card_sc_ending = 9 };
 
 struct Row {
+    std::string team_label;    // the constructors' table: the team's name in place of a driver's
     bool on = false;
     int vid = -1;
     std::string pos;
@@ -362,6 +372,7 @@ struct Header {
     bool final_cls = false;    // the winner has taken the flag: gaps at the line (the tower stays as on TV)
     bool formation = false;    // "FORMATION LAP" in place of the lap line
     bool champ = false;        // DRIVERS' CHAMPIONSHIP: the rows in the championship's order with their points
+    bool cons = false;         // CONSTRUCTORS' CHAMPIONSHIP: one row a team (after the drivers', formation lap)
     bool wide = false;         // more than 22 rows shown (23-24: a My Team grid): slide the tower further up
     int banner = banner_none;  // the banner on screen, and its car
     int ban_vid = -1;
@@ -498,6 +509,10 @@ public:
             const double into = formation_t0_ >= 0 ? now - formation_t0_ : -1;
             const double after = s.demo ? 2.0 : kChampAfter, last = s.demo ? 10.0 : kChampSeconds; // the demo: shorter
             h.champ = cfg.champ_formation && s.formation && snap.champ.size() >= 8 && into >= after && into < after + last;
+            // then the constructors' (the teams' sums of the game's driver points, when every scorer has a car here)
+            const double cons_last = s.demo ? 6.0 : kConsSeconds;
+            h.cons = cfg.champ_formation && s.formation && snap.champ.size() >= 8 && into >= after + last &&
+                     into < after + last + cons_last && cons_table(snap, cons_);
             // before the start: the grid's tyres (as the broadcast shows them on the formation lap)
             h.start_tyres = cfg.gap == Config::Gap::autoswitch && cfg.tyres && !h.final_cls && !h.champ && on_grid(snap) &&
                             !(s.formation && snap.champ.size() >= 8 && cfg.champ_formation && into >= after);
@@ -534,6 +549,28 @@ public:
         }
 
         remember(snap, now);
+        if (h.cons) {
+            int slot = 0;
+            for (const ConsEntry &e : cons_) {
+                if (slot >= kRows)
+                    break;
+                Row &r = v.rows[size_t(slot++)];
+                r = Row{};
+                r.on = true;
+                r.vid = -1;
+                r.pos = std::to_string(e.rank);
+                r.p1 = e.rank == 1;
+                r.team = e.team;
+                r.badge = e.badge.empty() ? "" : "#overrides.osd.timing_tower.team_badges_broadcast." + e.badge;
+                r.team_label = team_label(e.team);
+                r.gap = std::to_string(e.points);
+                r.gap_champ = true;
+            }
+            v.shown = slot;
+            banners(snap, kind, cfg, h, now);
+            card(v.card, snap, kind, cfg);
+            return v;
+        }
         std::vector<int> pick = h.champ ? champ_rows(snap) : pick_rows(snap, cfg);
         int prev_idx = -1;
         int slot = 0;
@@ -886,6 +923,18 @@ private:
                 else
                     r.gap = fmt_gap_ms(best - lead_best);
             }
+            // as the broadcast's qualifying tower (the user's capture): "Out Lap" for a car on its out lap (P1 keeps
+            // its time), and "No Time" with "-" for its place and no tyre for a car without a time
+            if (cfg.timed_times || snap.s.game_times) {
+                if (best <= 0) {
+                    r.gap = "No Time";
+                    r.pos = "-";
+                    r.p1 = false;
+                    r.tyre = 0;
+                } else if (c.out_lap && idx != 0) {
+                    r.gap = "Out Lap";
+                }
+            }
             if ((cfg.timed_times || snap.s.game_times) && c.vid < flash_.size() && now < flash_[c.vid].until && flash_[c.vid].ms > 0) {
                 r.gap = fmt_lap(flash_[c.vid].ms);
                 r.gap_purple = flash_[c.vid].purple;
@@ -1106,6 +1155,7 @@ private:
     static constexpr double kBannerGap = 0.6;
     static constexpr double kChampAfter = 20.0;   // the formation lap: starting tyres for this long, then...
     static constexpr double kChampSeconds = 30.0; // ...the drivers' championship for this long
+    static constexpr double kConsSeconds = 20.0;  // ...then the constructors' for this long
     static constexpr int kLeaderClearMs = 600; // NEW RACE LEADER once the new leader is this far clear of P2
 
     void banners(const Snapshot &snap, Kind kind, const Config &cfg, Header &h, double now)
@@ -1332,6 +1382,60 @@ private:
                 return;
             }
         queue_.push_back(p);
+    }
+
+    // ---- the constructors' championship: each team's points, the sum of its drivers' in the game's own drivers'
+    // table, by the team of each driver's car in this session. Only when every driver with points has a car here and
+    // every car's team is known (a reserve who scored, or a driver moved, would put points in the wrong place): else
+    // false and the formation lap goes on without it. Ties: the team with the better-placed driver first.
+    struct ConsEntry {
+        int team = -1;
+        int points = 0;
+        int best = 0;   // its best driver's place in the drivers' table
+        int rank = 0;
+        std::string badge;
+    };
+    std::vector<ConsEntry> cons_;
+
+    static bool cons_table(const Snapshot &snap, std::vector<ConsEntry> &out)
+    {
+        out.clear();
+        std::array<int, kTeams> at;
+        at.fill(-1);
+        for (const ChampEntry &e : snap.champ) {
+            const CarIn *car = nullptr;
+            for (const CarIn &c : snap.cars)
+                if (e.vid >= 0 && int(c.vid) == e.vid)
+                    car = &c;
+            if (!car)
+                if (e.points > 0)
+                    return false; // points scored by a driver not here
+                else
+                    continue;
+            const int t = team_index(car->badge);
+            if (t < 0)
+                return false;     // a team we cannot name (My Team, a retro team)
+            if (at[size_t(t)] < 0) {
+                at[size_t(t)] = int(out.size());
+                ConsEntry ce;
+                ce.team = t;
+                ce.best = e.rank;
+                ce.badge = car->badge;
+                out.push_back(ce);
+            }
+            ConsEntry &ce = out[size_t(at[size_t(t)])];
+            ce.points += e.points;
+            if (e.rank < ce.best)
+                ce.best = e.rank;
+        }
+        if (out.size() < 5)
+            return false;
+        std::stable_sort(out.begin(), out.end(), [](const ConsEntry &a, const ConsEntry &b) {
+            return a.points != b.points ? a.points > b.points : a.best < b.best;
+        });
+        for (size_t i = 0; i < out.size(); i++)
+            out[i].rank = int(i) + 1;
+        return true;
     }
 
     // ---- the drivers' championship: the cars of this session in the table's order (a driver without a car here, a

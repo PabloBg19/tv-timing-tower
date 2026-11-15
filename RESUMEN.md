@@ -1,5 +1,16 @@
 # Resumen — TV Timing Tower
 
+## 0.23.0 (15-11-2026, en prueba): Out Lap, No Time y campeonato de constructores
+
+- Como la torre de clasificación de la tele (vídeo del usuario): `Out Lap` en lugar de la diferencia para un coche en
+  su vuelta de salida (P1 conserva su tiempo), y `No Time` con `-` de posición y sin neumático para un coche sin
+  tiempo. La vuelta de salida: el reloj de vueltas recuerda si el coche pasó por el pit lane desde que cruzó la meta.
+- Vuelta de formación: tras los neumáticos (20 s) y el campeonato de pilotos (30 s), 20 s de `CONSTRUCTORS'
+  CHAMPIONSHIP`: una fila por equipo con su logo, su nombre y sus puntos, la suma de los puntos de sus pilotos en la
+  tabla del propio juego según el equipo de su coche en esta carrera. Solo si cada piloto con puntos tiene coche aquí
+  y se conoce cada equipo (un reserva que puntuó o un equipo retro / Mi Equipo: no sale). Empates: el equipo del
+  piloto mejor clasificado primero.
+
 ## 0.22.0 (15-11-2026, en prueba): adelantamientos deslizando, como en la tele
 
 - En el vídeo de la tele, la fila que sube se desliza desde su sitio antiguo hasta el nuevo (~0,5 s) y las que
