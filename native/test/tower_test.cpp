@@ -16,6 +16,7 @@
 
 #include "../src/demo.hpp"
 #include "../src/lap_clock.hpp"
+#include "../src/laptimes.hpp"
 #include "../src/leaves.hpp"
 #include "../src/model.hpp"
 #include "../src/source_live.hpp"
@@ -832,6 +833,8 @@ struct FakeMem {
         next += (n + 0xfff) & ~uintptr_t(0xfff);
         return at;
     }
+    // a block at a fixed address (an image's globals)
+    void place(uintptr_t at, size_t n) { blocks[at].assign(n, 0); }
     template <class T> void put(uintptr_t at, T v)
     {
         for (auto &[b, buf] : blocks)
@@ -896,6 +899,118 @@ static void fake_player_row(FakeMem &m, uintptr_t e, int row, int car, uint32_t 
     m.put<uint32_t>(r + st::kEntrantDriver, key);
     m.put<uint32_t>(r + st::kEntrantOrdinal, st::kHumanBit);
     m.put<uint8_t>(r + st::kEntrantVid, uint8_t(car));
+}
+
+// The game's lap times (laptimes.hpp) over a fake image: the manager global, the system registry, the lap times system
+// and its per-car records with XOR'ed times, as the game lays them out
+struct FakeLapTimes {
+    FakeMem m;
+    uintptr_t base = 0x200000000, system = 0, cars = 0;
+    std::vector<uintptr_t> recs;
+    static constexpr uint64_t kKey = 0x5a5a5a5a12345678ull;
+
+    explicit FakeLapTimes(int ncars)
+    {
+        namespace lt = laptimes;
+        const uintptr_t gm_at = lt::kGameManager - lt::kImageBase + base, key = lt::kSystemKey - lt::kImageBase + base;
+        m.place(gm_at, 8);
+        m.place(key, 16);
+        uintptr_t mgr = m.alloc(0x100), reg = m.alloc(0x100), slots = m.alloc(16 * 8), info = m.alloc(8), name = m.alloc(64);
+        system = m.alloc(0x100);
+        cars = m.alloc(8 * ncars);
+        m.put<uintptr_t>(gm_at, mgr);
+        m.put<uintptr_t>(mgr + lt::kRegistry, reg);
+        m.put<uintptr_t>(reg + lt::kSlots, slots);
+        m.put<uintptr_t>(reg + lt::kSlots + 8, slots + 16 * 8); // the used bytes sit right after the 8 slots
+        m.blocks[slots].resize(16 * 8 + 8, 0);
+        for (int i = 0; i < 8; i++) { // other systems, then ours in slot 5
+            m.put<uintptr_t>(slots + i * 16, i == 5 ? key : 0x1000 + i * 8);
+            m.put<uintptr_t>(slots + i * 16 + 8, i == 5 ? system : 0x2000 + i * 8);
+            m.put<uint8_t>(slots + 16 * 8 + i, 1);
+        }
+        (void)info;
+        const char *nm = lt::kSystemName;
+        for (size_t i = 0; nm[i]; i++)
+            m.put<char>(name + i, nm[i]);
+        m.put<uintptr_t>(key + 8, name);
+        m.put<uintptr_t>(system + lt::kCars, cars);
+        m.put<uintptr_t>(system + lt::kCarsEnd, cars + 8 * ncars);
+        for (int c = 0; c < ncars; c++) {
+            uintptr_t r = m.alloc(lt::kCarData + lt::kLapCount + 8);
+            recs.push_back(r);
+            m.put<uintptr_t>(cars + 8 * c, r);
+        }
+    }
+    void put_time(uintptr_t at, float s)
+    {
+        uint32_t v;
+        std::memcpy(&v, &s, 4);
+        const uint32_t k = uint32_t(kKey >> (at & 31));
+        m.put<uint32_t>(at, v ^ k);
+        m.put<uint32_t>(at + 8, k);
+    }
+    // lap `i` of car `c`: its sectors (seconds) and whether it is valid
+    void lap(int c, int i, float s1, float s2, float s3, bool valid)
+    {
+        namespace lt = laptimes;
+        const uintptr_t lap = recs[size_t(c)] + lt::kCarData + lt::kLap0 + uintptr_t(i) * lt::kLapSize;
+        put_time(lap + lt::kS1, s1);
+        put_time(lap + lt::kS2, s2);
+        put_time(lap + lt::kS3, s3);
+        put_time(lap + lt::kTime, s1 + s2 + s3);
+        const uint64_t q = 0xabcdef0012345670ull | (i & 1); // the flag's key bit varies by lap
+        m.put<uint64_t>(lap + lt::kValid + 8, q);
+        m.put<uint8_t>(lap + lt::kValid, uint8_t(valid ? (q & 1) : !(q & 1)));
+        uint8_t n = 0;
+        m(recs[size_t(c)] + lt::kCarData + lt::kLapCount, &n, 1);
+        if (i + 1 > n)
+            m.put<uint8_t>(recs[size_t(c)] + lt::kCarData + lt::kLapCount, uint8_t(i + 1));
+    }
+};
+
+static void test_game_lap_times()
+{
+    // the model: qualifying shows the game's times (off by default) as soon as the source says they are the game's
+    {
+        Tower t;
+        Config cfg;
+        Snapshot q = demo::make(demo::quali_q1, 0.5);
+        q.s.demo = false;
+        CHECK(t.update(q, cfg, 0.5).rows[0].gap.empty());
+        q.s.game_times = true;
+        const View &v = t.update(q, cfg, 0.6);
+        CHECK(v.rows[0].gap.find(':') != std::string::npos && v.rows[1].gap.rfind("+", 0) == 0 && v.h.abbr);
+    }
+    namespace lt = laptimes;
+    FakeLapTimes f(4);
+    // car 0: an out lap, a valid 1:30.250, an invalid (track limits) 1:29.800, a valid 1:30.100
+    f.lap(0, 0, 40.0f, 35.0f, 32.0f, true);
+    f.lap(0, 1, 30.0f, 31.25f, 29.0f, true);
+    f.lap(0, 2, 29.8f, 31.0f, 29.0f, false);
+    f.lap(0, 3, 30.0f, 31.1f, 29.0f, true);
+    // car 2: one lap; car 3: none yet; car 1: no record at all
+    f.lap(2, 0, 30.5f, 31.5f, 29.5f, true);
+    f.m.put<uintptr_t>(f.cars + 8, 0);
+    std::string why;
+    const uintptr_t sys = lt::find_system(f.m, f.base, why);
+    CHECK(sys == f.system);
+    CHECK(lt::key_name(f.m, f.base) == lt::kSystemName);
+    lt::Car c;
+    CHECK(lt::read_car(f.m, sys, 0, c, why) && c.laps == 4);
+    CHECK(c.best_ms == 90100);                  // the fastest VALID lap, not the 89.8 deleted one
+    CHECK(c.last_ms == 90100 && c.last_valid);
+    CHECK(lt::lap_count(f.m, sys, 0) == 4);
+    CHECK(lt::read_car(f.m, sys, 2, c, why) && c.best_ms == 91500 && c.laps == 1);
+    CHECK(lt::read_car(f.m, sys, 3, c, why) && c.laps == 0 && c.best_ms < 0);
+    CHECK(lt::read_car(f.m, sys, 1, c, why) && c.laps == 0 && c.best_ms < 0); // no record
+    CHECK(lt::read_car(f.m, sys, 9, c, why) && c.best_ms < 0);                 // past the list
+    // a lap whose sectors don't add up: not the game's layout, give up
+    f.put_time(f.recs[2] + lt::kCarData + lt::kLap0 + lt::kTime, 95.0f);
+    CHECK(!lt::read_car(f.m, sys, 2, c, why) && !why.empty());
+    // no system under the key, or a broken registry: nothing, with a reason
+    FakeLapTimes g(2);
+    g.m.put<uintptr_t>(g.base + (lt::kGameManager - lt::kImageBase), 0);
+    CHECK(lt::find_system(g.m, g.base, why) == 0 && why == "no game manager");
 }
 
 static void test_championship()
@@ -993,6 +1108,7 @@ int main()
     test_field_persists_across_quali_segments();
     test_cards();
     test_banners();
+    test_game_lap_times();
     test_championship();
     test_yellow_texts();
     test_lap_clock();

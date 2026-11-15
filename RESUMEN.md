@@ -1,5 +1,17 @@
 # Resumen — TV Timing Tower
 
+## 0.18.0 (15-11-2026, en prueba): tiempos de libres y clasificación, del propio juego
+
+- Los tiempos de vuelta se leen del sistema de tiempos del juego (`VehicleLapTimesSystem`), los mismos que el juego
+  muestra y envía por UDP («Session History»), vueltas simuladas incluidas (`native/src/laptimes.hpp`). Camino y
+  estructura sacados del ejecutable (Steam, `d873a1c8`): el registro de sistemas como el núcleo de Swofty, la clave
+  0x146096ae8, por coche +0x58 → +0x38, 200 vueltas de 0xc8 con los tiempos cifrados con XOR.
+- Solo en esa versión del juego (sello del ejecutable), con lecturas protegidas, y solo si los datos cuadran (cada
+  vuelta = suma de sus sectores). Si no: sin tiempos, como antes. El log dice `[tv-tower] lap times: ...`.
+- La mejor vuelta es la del juego: la más rápida válida (no cuentan las vueltas anuladas por límites de pista).
+
+---
+
 ## 0.17.4 (15-11-2026): sin colores sueltos en las filas
 
 - En el juego, un sprite teñido con el color del coche no respeta su propia visibilidad (visto en la torre 2021): en

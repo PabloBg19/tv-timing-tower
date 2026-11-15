@@ -225,6 +225,7 @@ struct SessionIn {
     int fastest_vid = -1;     // race fastest lap holder
     int fastest_ms = -1;
     bool demo = false;
+    bool game_times = false;  // best_ms / last_ms are the game's own (laptimes.hpp): show them in timed sessions
 };
 
 // One driver of the career's drivers' championship (standings.hpp)
@@ -430,7 +431,7 @@ public:
         }
         // the starting tyres view shows data (the compound's name): codes, as the broadcast
         bool any_data = h.race ? (!h.bare || h.start_tyres) : false;
-        if (!h.race && cfg.timed_times)
+        if (!h.race && (cfg.timed_times || snap.s.game_times))
             for (const CarIn &c : snap.cars)
                 any_data = any_data || c.best_ms > 0;
         h.abbr = cfg.names == Config::Names::code || (cfg.names == Config::Names::autoswitch && any_data && !h.champ);
@@ -438,7 +439,7 @@ public:
         // field size for the knockout cut: the most racers seen in this session
         field_ = std::max(field_, std::max(s.racers, int(snap.cars.size())));
 
-        if (cfg.timed_times)
+        if ((cfg.timed_times || snap.s.game_times))
             best_flash(snap, kind, now);
         fastest_flash(snap, kind, now);
 
@@ -791,7 +792,7 @@ private:
                     r.elim = true;
             }
             // P1 its lap time; the rest the gap to P1; the knockout zone the gap to the last car through
-            if (best > 0 && cfg.timed_times) {
+            if (best > 0 && (cfg.timed_times || snap.s.game_times)) {
                 if (idx == 0 || lead_best <= 0)
                     r.gap = fmt_lap(best);
                 else if (r.ko && cut_best_ > 0 && best >= cut_best_)
@@ -799,7 +800,7 @@ private:
                 else
                     r.gap = fmt_gap_ms(best - lead_best);
             }
-            if (cfg.timed_times && c.vid < flash_.size() && now < flash_[c.vid].until && flash_[c.vid].ms > 0) {
+            if ((cfg.timed_times || snap.s.game_times) && c.vid < flash_.size() && now < flash_[c.vid].until && flash_[c.vid].ms > 0) {
                 r.gap = fmt_lap(flash_[c.vid].ms);
                 r.gap_purple = flash_[c.vid].purple;
                 r.gap_green = !flash_[c.vid].purple;

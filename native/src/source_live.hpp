@@ -16,6 +16,7 @@
 #include <swofty/mem.hpp>
 
 #include "lap_clock.hpp"
+#include "laptimes.hpp"
 #include "model.hpp"
 #include "standings.hpp"
 
@@ -40,6 +41,8 @@ public:
     // The drivers' championship of a career, for the formation lap (standings.hpp): read once a race session, retried
     // every 2 s a few times; note() changes once with what came of it, for the log
     const std::string &champ_note() const { return champ_note_; }
+    // what came of reading the game's own lap times (laptimes.hpp), for the log
+    const std::string &times_note() const { return lt_note_; }
 
     // Fills `snap` from the live state. `dt` is the frame time; `now` the wall clock (badge refresh).
     Why read(Snapshot &snap, double dt, double now)
@@ -61,6 +64,7 @@ public:
                 clock_.reset();
                 stints_.reset();
                 champ_reset();
+                lt_cars_.fill(LtCar{});
             }
             badges_.fill(Badge{});
             last_type_ = int(s.type);
@@ -168,12 +172,110 @@ public:
         }
         if (race && !snap.cars.empty())
             champ_step(snap, now);
+        // practice and qualifying: the game's own lap times (simulated laps included) in place of the addon's clock
+        if (!race && !snap.cars.empty())
+            game_times(snap, now);
         return snap.cars.empty() ? Why::no_order : Why::ok;
     }
 
     const LapClock &clock() const { return clock_; }
 
 private:
+    // ---- the game's lap times (laptimes.hpp): the system is looked up once a second until found; each tick reads
+    // every car's lap count (one byte) and its laps again when that changes or every 2 s
+    struct LtCar {
+        int laps = -2;
+        double next = 0;
+        laptimes::Car car;
+    };
+
+    static bool rd(uintptr_t at, void *dst, size_t n)
+    {
+        if (!at || !n || !swofty::mem::readable(at, n))
+            return false;
+        std::memcpy(dst, reinterpret_cast<const void *>(at), n);
+        return true;
+    }
+
+    void game_times(Snapshot &snap, double now)
+    {
+        if (lt_state_ == 2)
+            return;
+        const uintptr_t base = reinterpret_cast<uintptr_t>(GetModuleHandleA(nullptr));
+        if (lt_state_ == 0) {
+            // only the game build these addresses come from
+            uint32_t stamp = 0;
+            uintptr_t nt = 0;
+            int32_t lfanew = 0;
+            if (!base || !rd(base + 0x3c, &lfanew, 4) || !rd(base + uintptr_t(lfanew) + 8, &stamp, 4) ||
+                stamp != laptimes::kPeStamp) {
+                lt_state_ = 2;
+                lt_note_ = "lap times: not this game build (stamp " + std::to_string(stamp) + "): no times";
+                return;
+            }
+            (void)nt;
+            lt_state_ = 1;
+        }
+        if (!lt_system_ || now >= lt_check_) {
+            if (now < lt_search_ && !lt_system_)
+                return;
+            lt_search_ = now + 1.0;
+            lt_check_ = now + 5.0;
+            std::string why;
+            uintptr_t sys = laptimes::find_system(rd, base, why);
+            if (sys && lt_name_.empty()) {
+                // the key's class name, when the game has one there: another name is another system (the key is
+                // wrong for this game), no name leaves it to the data's own checks (sectors adding up to the lap)
+                lt_name_ = laptimes::key_name(rd, base);
+                if (lt_name_.empty())
+                    lt_name_ = "?";
+                else if (lt_name_ != laptimes::kSystemName) {
+                    lt_state_ = 2;
+                    lt_note_ = "lap times: the registry key is '" + lt_name_ + "', not " + laptimes::kSystemName + ": no times";
+                    return;
+                }
+            }
+            if (sys != lt_system_)
+                lt_cars_.fill(LtCar{});
+            lt_system_ = sys;
+            if (!sys) {
+                lt_note_ = "lap times: " + why;
+                return;
+            }
+        }
+        int with = 0;
+        for (CarIn &c : snap.cars) {
+            if (c.vid >= lt_cars_.size())
+                continue;
+            LtCar &lc = lt_cars_[c.vid];
+            const int n = laptimes::lap_count(rd, lt_system_, c.vid);
+            if (n != lc.laps || now >= lc.next) {
+                std::string why;
+                laptimes::Car car;
+                if (!laptimes::read_car(rd, lt_system_, c.vid, car, why)) {
+                    // a record that doesn't look right: no game times this session (the addon's own clock stays)
+                    lt_note_ = "lap times: " + why + " (car " + std::to_string(c.vid) + "): no times";
+                    lt_state_ = 2;
+                    return;
+                }
+                lc.car = car;
+                lc.laps = n;
+                lc.next = now + 2.0;
+            }
+            c.best_ms = lc.car.best_ms;
+            c.last_ms = lc.car.last_ms;
+            with += lc.car.best_ms > 0;
+        }
+        snap.s.game_times = true;
+        lt_note_ = "lap times: the game's, " + std::to_string(with) + " cars with a time";
+    }
+
+    int lt_state_ = 0; // 0 to check, 1 this build, 2 off (another build, or something didn't look right)
+    uintptr_t lt_system_ = 0;
+    double lt_search_ = 0, lt_check_ = 0;
+    std::string lt_name_, lt_note_;
+    std::array<LtCar, 32> lt_cars_{};
+
     void champ_reset()
     {
         champ_.clear();

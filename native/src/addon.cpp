@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.17.4"
+#define TVT_VERSION "0.18.0"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -198,6 +198,7 @@ struct State {
     int demo_pick = -2;         // Shift + hotkey steps scenarios; -2 follows the setting
     int last_scenario = -99;
     std::string last_champ_note;
+    std::string last_times_note; // the game's lap times (laptimes.hpp): what came of reading them
     double demo_t0 = 0;
     int key_prev = 0;
     tvt::LiveSource::Why last_why = tvt::LiveSource::Why::no_session;
@@ -309,6 +310,16 @@ void frame(double dt, void *)
         }
         have = why == tvt::LiveSource::Why::ok;
         // what came of the championship read, once a session (standings.hpp)
+        // the game's lap times: logged when the outcome changes (not every count of cars with a time)
+        {
+            const std::string &tn = g->src.times_note();
+            const std::string key = tn.substr(0, tn.find(','));
+            if (key != g->last_times_note) {
+                g->last_times_note = key;
+                if (!tn.empty())
+                    swofty::log("%s %s", kTag, tn.c_str());
+            }
+        }
         if (g->src.champ_note() != g->last_champ_note) {
             g->last_champ_note = g->src.champ_note();
             if (!g->last_champ_note.empty())
