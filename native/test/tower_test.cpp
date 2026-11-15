@@ -845,8 +845,14 @@ static void test_leaves_and_record()
     a1.s.demo = false;
     pf.publish(ta.update(a1, cfg, 1.05), cfg, 1.05, true);
     CHECK(core.number("view_model_data.hud_tvt_r05_fx") == 0 && core.number(k) == 1); // fading out, old car
-    pf.publish(ta.update(a1, cfg, 1.4), cfg, 1.4, true);
+    // the slides: P6's new car was P7 (one row below): row 5 slides down one row unseen, row 6 up one row
+    CHECK(core.number("view_model_data.hud_tvt_r05_sd0") == 1 && core.number("view_model_data.hud_tvt_r05_su0") == 0);
+    CHECK(core.number("view_model_data.hud_tvt_r06_su0") == 1 && core.number("view_model_data.hud_tvt_r06_sd1") == 0);
+    pf.publish(ta.update(a1, cfg, 1.3), cfg, 1.3, true);
+    CHECK(core.number("view_model_data.hud_tvt_r05_fx") == 0 && core.number(k) == 1); // still sliding
+    pf.publish(ta.update(a1, cfg, 1.45), cfg, 1.45, true);
     CHECK(core.number("view_model_data.hud_tvt_r05_fx") == 1 && core.number(k) == 0); // swapped, fading in
+    CHECK(core.number("view_model_data.hud_tvt_r05_sd0") == 0 && core.number("view_model_data.hud_tvt_r06_su0") == 0);
     // race lap 1: intervals show (names only under the safety car / red flag)
     CHECK(core.number("view_model_data.hud_tvt_ld2") == 1 || core.number("view_model_data.hud_tvt_ld1") == 1);
 

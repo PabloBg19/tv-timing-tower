@@ -1,5 +1,15 @@
 # Resumen — TV Timing Tower
 
+## 0.22.0 (15-11-2026, en prueba): adelantamientos deslizando, como en la tele
+
+- En el vídeo de la tele, la fila que sube se desliza desde su sitio antiguo hasta el nuevo (~0,5 s) y las que
+  adelanta bajan un puesto. Ahora igual: el contenido de cada fila (logo, nombre, datos) va dentro de diez
+  deslizamientos anidados (1, 2, 4, 8 y 16 filas hacia abajo y hacia arriba). Cuando llega un coche desde k filas,
+  el DLL enciende los que suman k mientras el contenido viejo se funde, cambia el coche y los apaga: el nuevo se
+  desliza desde donde estaba hasta su sitio mientras aparece. El fondo y el número de posición se quedan quietos.
+- Hasta 12 filas cambiando a la vez (antes 4); más (una salida, un reinicio): cambio directo. Ajuste `Animaciones`
+  para quitarlo. Editor del HUD: ~54.400 de 65.536 (techo nuestro 60.000).
+
 ## 0.21.0 (15-11-2026, en prueba): la tarjeta de clasificación como la de 2026
 
 - Rehecha con los vídeos de la tele de 2026 del usuario (medida en píxeles): el tiempo corre en gris hasta el primer

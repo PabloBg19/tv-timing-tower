@@ -18,6 +18,8 @@ from PIL import Image, ImageDraw
 
 P = "view_model_data.hud_tvt_"   # leaf prefix (must match native/src/leaves.hpp)
 ROWS = 24          # a career with 12 teams runs 24 cars
+SLIDE_BITS = 5     # row slides of 1, 2, 4, 8, 16 rows each way: any move up to 31 rows
+SLIDE_S = 0.35     # one slide's length (s); the DLL's kSlideHold matches it
 SLOTS = 30         # vehicle ids up to 29 (a My Team grid)
 TEAMS = ["mercedes", "ferrari", "redbull", "mclaren", "astonmartin", "alpine",
          "williams", "racingbulls", "haas", "sauber", "audi", "cadillac"]
@@ -734,7 +736,18 @@ def row(flavour, logos_found):
     rc = group("rc", content)
     rc["motion"] = {"id": "fx", "keys": [[0, 0.0], [0.16, 1.0]], "curve": "generic_fade_on",
                     "play_on": vm(r + "fx")}
-    return group("r", bg + [rc], visible=vm(r + "on"), repeat={"count": ROWS, "var": "N", "pitch": [0, R]})
+    # the broadcast's slide (the user's capture of a 2026 qualifying: the row that moves glides from its old place to
+    # its new one in about half a second, the rows it passes move one place the other way): the content sits in ten
+    # nested slides of 1, 2, 4, 8 and 16 rows down (sd*) and up (su*), all at rest at 0. When a car arrives from k
+    # rows away the DLL turns on the slides that add up to k while the old content fades (it moves there unseen),
+    # swaps the car, and turns them off: the new content glides back to its place as it fades in
+    inner = rc
+    for b in range(SLIDE_BITS):
+        for d, sign in (("d", 1), ("u", -1)):
+            inner = group(f"s{d}{b}", [inner])
+            inner["motion"] = {"id": f"m{d}{b}", "keys": [[0, [0, 0]], [SLIDE_S, [0, round(sign * (1 << b) * R, 3)]]],
+                               "curve": "generic_fade_on", "play_on": vm(r + f"s{d}{b}")}
+    return group("r", bg + [inner], visible=vm(r + "on"), repeat={"count": ROWS, "var": "N", "pitch": [0, R]})
 
 
 def preview_leaves():

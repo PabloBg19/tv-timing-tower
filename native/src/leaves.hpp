@@ -2,6 +2,7 @@
 // TV Timing Tower - the HUD leaves (view_model_data.hud_tvt_*) and the View -> leaves mapping.
 // The record in tools/hudgen.py binds exactly these names; native/test checks the two stay in step.
 #pragma once
+#include <array>
 #include <string>
 #include <vector>
 
@@ -14,6 +15,7 @@ namespace tvt {
 namespace hud = swofty::hud;
 
 inline constexpr const char *kPrefix = "view_model_data.hud_tvt_";
+inline constexpr int kSlideBits = 5;
 
 struct RowLeaves {
     hud::BoolLeaf on, sep, me, p1, ko, kol, dim, up, dn;
@@ -28,6 +30,7 @@ struct RowLeaves {
     hud::TextLeaf nm, badge;
     hud::BoolLeaf bdg;
     hud::OneHot tm, car;
+    hud::BoolLeaf sd[5], su[5]; // the row's slides (hudgen SLIDE_BITS): 1, 2, 4, 8, 16 rows down / up
 };
 
 class Publisher {
@@ -145,6 +148,10 @@ public:
             r.g0 = l.boolean("g0");
             r.fx = l.boolean("fx");
             r.nob = l.boolean("nob");
+            for (int b = 0; b < kSlideBits; b++) {
+                r.sd[b] = l.boolean("sd" + std::to_string(b));
+                r.su[b] = l.boolean("su" + std::to_string(b));
+            }
             r.tm = l.one_hot("tm", kTeams, 2);
             r.car = l.one_hot("c", kSlots, 2);
             return r;
@@ -254,6 +261,12 @@ public:
                     changing++;
             }
         const bool fade_now = anim && changing > 0 && changing <= kMaxFades;
+        // where each car was shown before this change (its slide starts there)
+        std::array<int, 64> was_at;
+        was_at.fill(-1);
+        for (int i = 0; i < kRows; i++)
+            if (was_on_[i] && shown_vid_[i] >= 0 && shown_vid_[i] < int(was_at.size()))
+                was_at[size_t(shown_vid_[i])] = i;
 
         for (int i = 0; i < kRows; i++) {
             const Row &r = v.rows[size_t(i)];
@@ -262,10 +275,19 @@ public:
             L.set(x.on, r.on);
             if (r.on && was_on_[i] && shown_vid_[i] != r.vid && (hold_until_[i] > 0 ||
                                                                  (fade_now && now >= next_fade_[i]))) {
-                // a new car on this row: fade the old content out, keep it for kFadeHold, then swap and fade in
+                // a new car on this row: fade the old content out while the slides move it to where the new car was
+                // shown (unseen), keep it for the slide's length, then swap the car and turn the slides off: the new
+                // content glides from there to its place as it fades in. A car from off the tower only fades.
                 if (hold_until_[i] <= 0) {
                     L.set(x.fx, false);
-                    hold_until_[i] = now + kFadeHold;
+                    const int from = r.vid >= 0 && r.vid < int(was_at.size()) ? was_at[size_t(r.vid)] : -1;
+                    const int d = from >= 0 ? from - i : 0; // > 0: the car comes up from below
+                    const int n = d < 0 ? -d : d;
+                    for (int b = 0; b < kSlideBits; b++) {
+                        L.set(x.sd[b], d > 0 && (n >> b & 1));
+                        L.set(x.su[b], d < 0 && (n >> b & 1));
+                    }
+                    hold_until_[i] = now + (n ? kSlideHold : kFadeHold);
                     continue;
                 }
                 if (now < hold_until_[i])
@@ -277,6 +299,10 @@ public:
             if (r.on) {
                 shown_vid_[i] = r.vid;
                 L.set(x.fx, true); // always back on, also when Animations was switched off during a fade
+                for (int b = 0; b < kSlideBits; b++) { // the slides back to rest: the content glides home
+                    L.set(x.sd[b], false);
+                    L.set(x.su[b], false);
+                }
             }
             if (!r.on) {
                 // The per-car name slots keep their value while the row is hidden: the game does not apply a
@@ -366,7 +392,8 @@ public:
     CardLeaves qc; // the qualifying card
 
     static constexpr double kFadeHold = 0.16; // the row's fade out (generic_fade_on) before the swap
-    static constexpr int kMaxFades = 4;       // more rows changing at once: no fade (a start, a restart)
+    static constexpr int kMaxFades = 12;      // more rows changing at once: no animation (a start, a restart)
+    static constexpr double kSlideHold = 0.36; // a slide's length (hudgen SLIDE_S) and a little
 
 private:
     std::array<int, kRows> shown_vid_ = filled(-1);
