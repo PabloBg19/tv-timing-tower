@@ -1127,7 +1127,7 @@ static void test_qcard()
         m.sim = 40.2;
         m.lap_m = 1510.f; // 1500 halfway: split at 40.1 -> 30.100
         l = tr.step(m);
-        CHECK(l.split[0] == 30100 && l.split[1] < 0);
+        CHECK(l.split[0] == 30100 && l.split[1] < 0 && l.split_age[0] > 0.09 && l.split_age[0] < 0.11);
         // the game's sector 1 a few ms off ours: the game's
         m.game_sec[0] = 30087;
         m.sim = 40.3;
@@ -1161,22 +1161,22 @@ static void test_qcard()
         m.sim = 101.0;
         CHECK(!tr.step(m).flying);
     }
-    // the card: qualifying only, the target (P1, or the cut from the knockout zone), the colours
+    // the card (the 2026 broadcast's): qualifying only; the time running grey until the first split; at a split
+    // its gap to the target (P1 or the cut) big for 4.5 s with SECTOR n; the target's time to the current sector end
     {
         Tower t;
         Config cfg;
         Snapshot q = demo::make(demo::quali_q1, 0.5);
         const View *v = &t.update(q, cfg, 0.5);
         const QCard &k = v->card;
-        CHECK(k.on && k.vid == demo::kPlayer && !k.time.empty() && k.time.find(':') == std::string::npos);
-        CHECK(k.sec[0] == sec_now && k.sec[1] == sec_none && k.delta.empty());
+        CHECK(k.on && k.vid == demo::kPlayer && !k.big.empty() && k.big.find(':') == std::string::npos);
+        CHECK(k.big_col == big_grey && k.sec[0] == sec_now && k.sec[1] == sec_none && !k.sec_long[0]);
         cfg.qcard = false;
         CHECK(!t.update(q, cfg, 0.6).card.on);
         cfg.qcard = true;
         Snapshot r = demo::make(demo::race, 0.5);
         CHECK(!t.update(r, cfg, 0.7).card.on);
 
-        // a split under the target's: purple gap to P1 (the player through the cut)
         Tower t2;
         Snapshot s = demo::make(demo::quali_q1, 0.5);
         CarIn *me = nullptr, *p1 = nullptr;
@@ -1187,20 +1187,39 @@ static void test_qcard()
                 p1 = &c;
         }
         CHECK(me && p1 && me->pos <= 16);
+        // sector 1 under way: the target's split 1 on the right ("23.67x", not a lap time)
+        v = &t2.update(s, cfg, 0.9);
+        CHECK(v->card.target == fmt_lap_short(p1->best_sec[0]) && v->card.target_vid == int(p1->vid));
+        // split 1 crossed 0.100 under P1's: "-0.100" purple in place of the time, SECTOR 1, the bar purple
         s.my.split[0] = p1->best_sec[0] - 100;
-        s.my.t_ms = s.my.split[0] + 2000;
+        s.my.split_age[0] = 1.0;
+        s.my.t_ms = s.my.split[0] + 1000;
         v = &t2.update(s, cfg, 1.0);
-        CHECK(v->card.delta == "-0.100" && v->card.dcol == dcol_purple && v->card.cut.empty());
-        CHECK(v->card.target == fmt_lap(p1->best_ms) && v->card.target_vid == int(p1->vid));
-        CHECK(v->card.sec[0] == sec_purple && v->card.sec[1] == sec_now);
+        CHECK(v->card.big == "-0.100" && v->card.big_col == big_purple && v->card.sec_long[0]);
+        CHECK(v->card.target == fmt_lap_short(p1->best_sec[0]) && v->card.sec[0] == sec_purple && v->card.sec[1] == sec_now);
+        // the hold over: the time again (white now), the target to the end of sector 2
+        s.my.split_age[0] = 5.0;
+        s.my.t_ms = s.my.split[0] + 5000;
+        v = &t2.update(s, cfg, 1.1);
+        CHECK(v->card.big == fmt_run(s.my.t_ms) && v->card.big_col == big_white && !v->card.sec_long[0]);
+        CHECK(v->card.target == fmt_lap_short(p1->best_sec[0] + p1->best_sec[1]));
         // slower: yellow; a sector under the player's own best only: green
         s.my.split[0] = me->pb_sec[0] - 1;
-        v = &t2.update(s, cfg, 1.1);
-        CHECK(v->card.dcol == dcol_yellow && v->card.delta[0] == '+' && v->card.sec[0] == sec_green);
+        s.my.split_age[0] = 0.5;
+        v = &t2.update(s, cfg, 1.2);
+        CHECK(v->card.big_col == big_yellow && v->card.big[0] == '+' && v->card.sec[0] == sec_green);
         s.my.split[0] = me->pb_sec[0] + 400;
-        CHECK(t2.update(s, cfg, 1.2).card.sec[0] == sec_yellow);
+        CHECK(t2.update(s, cfg, 1.3).card.sec[0] == sec_yellow);
+        // sector 3: the target's lap
+        s.my.split[0] = me->pb_sec[0];
+        s.my.split[1] = s.my.split[0] + me->pb_sec[1];
+        s.my.split_age[0] = 30;
+        s.my.split_age[1] = 6;
+        s.my.t_ms = s.my.split[1] + 6000;
+        v = &t2.update(s, cfg, 1.4);
+        CHECK(v->card.target == fmt_lap(p1->best_ms) && v->card.sec[2] == sec_now);
 
-        // the knockout zone: the target is the car on the cut, CUT P16 (22 cars), green when under it
+        // the knockout zone: the target is the car on the cut (P16 of 22), green when under it
         Tower t3;
         Snapshot z = demo::make(demo::quali_q1, 0.5);
         for (CarIn &c : z.cars)
@@ -1214,12 +1233,13 @@ static void test_qcard()
                 cutc = &c;
         CHECK(cutc != nullptr);
         z.my.split[0] = cutc->best_sec[0] - 50;
-        z.my.t_ms = z.my.split[0] + 1000;
+        z.my.split_age[0] = 0.2;
+        z.my.t_ms = z.my.split[0] + 200;
         v = &t3.update(z, cfg, 1.0);
-        CHECK(v->card.cut == "CUT P16" && v->card.target_vid == int(cutc->vid) && v->card.dcol == dcol_green);
+        CHECK(v->card.target_vid == int(cutc->vid) && v->card.big == "-0.050" && v->card.big_col == big_green);
         CHECK(v->card.pos == "19");
 
-        // a lap done: its time in thousandths and all three sectors for the hold, then nothing (in-lap)
+        // a lap done: its gap with SECTOR 3 for 4.5 s, then its time, and nothing after 8 s
         Tower t4;
         Snapshot d = demo::make(demo::quali_q1, 0.5);
         d.my.flying = false;
@@ -1230,8 +1250,12 @@ static void test_qcard()
         d.my.done_split[1] = 55000;
         d.my.done_age = 1.0;
         v = &t4.update(d, cfg, 1.0);
-        CHECK(v->card.on && v->card.time == "1:18.500" && v->card.sec[2] != sec_none && v->card.sec[2] != sec_now);
-        d.my.done_age = 8.0;
+        CHECK(v->card.on && v->card.sec_long[2] && (v->card.big[0] == '-' || v->card.big[0] == '+'));
+        CHECK(v->card.sec[2] != sec_none && v->card.sec[2] != sec_now);
+        d.my.done_age = 6.0;
+        v = &t4.update(d, cfg, 1.5);
+        CHECK(v->card.big == "1:18.500" && v->card.big_col == big_white && !v->card.sec_long[2]);
+        d.my.done_age = 8.5;
         CHECK(!t4.update(d, cfg, 2.0).card.on);
         // a cool-down lap: sector 1 far off the player's best -> no card for the rest of that lap
         d.my.done_ms = -1;
@@ -1241,9 +1265,11 @@ static void test_qcard()
         for (const CarIn &c : d.cars)
             if (c.me)
                 d.my.split[0] = c.pb_sec[0] + 5000;
+        d.my.split_age[0] = 0.1;
         d.my.t_ms = d.my.split[0] + 100;
         CHECK(!t4.update(d, cfg, 3.0).card.on);
         d.my.split[0] = -1;
+        d.my.split_age[0] = -1;
         d.my.t_ms = 1000; // still the same lap (laps unchanged): stays off
         CHECK(!t4.update(d, cfg, 3.1).card.on);
         d.my.laps = 8;
@@ -1251,6 +1277,7 @@ static void test_qcard()
     }
     // the formats
     CHECK(fmt_run(9400) == "9.4" && fmt_run(56690) == "56.6" && fmt_run(81849) == "1:21.8");
+    CHECK(fmt_lap_short(30752) == "30.752" && fmt_lap_short(64773) == "1:04.773");
     CHECK(fmt_delta(-457) == "-0.457" && fmt_delta(696) == "+0.696" && fmt_delta(0) == "+0.000");
 }
 

@@ -85,11 +85,11 @@ int main(int argc, char **argv)
                 const QCard &q = v.card;
                 std::fprintf(f,
                              "],\"qc\":{\"on\":%d,\"team\":%d,\"name\":\"%s\",\"pos\":\"%s\",\"tyre\":\"%c\","
-                             "\"time\":\"%s\",\"delta\":\"%s\",\"dcol\":%d,\"target\":\"%s\",\"tname\":\"%s\","
-                             "\"cut\":\"%s\",\"sec\":[%d,%d,%d]}}",
-                             int(q.on), q.team, q.name.c_str(), q.pos.c_str(), q.tyre ? q.tyre : ' ', q.time.c_str(),
-                             q.delta.c_str(), q.dcol, q.target.c_str(), q.target_name.c_str(), q.cut.c_str(), q.sec[0],
-                             q.sec[1], q.sec[2]);
+                             "\"big\":\"%s\",\"bc\":%d,\"target\":\"%s\",\"tname\":\"%s\","
+                             "\"sec\":[%d,%d,%d],\"lng\":[%d,%d,%d]}}",
+                             int(q.on), q.team, q.name.c_str(), q.pos.c_str(), q.tyre ? q.tyre : ' ', q.big.c_str(),
+                             q.big_col, q.target.c_str(), q.target_name.c_str(), q.sec[0], q.sec[1], q.sec[2],
+                             int(q.sec_long[0]), int(q.sec_long[1]), int(q.sec_long[2]));
             }
             std::fprintf(f, "]");
         }

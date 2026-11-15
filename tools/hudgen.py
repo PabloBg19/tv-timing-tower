@@ -63,10 +63,11 @@ REF = {
     "chq_h": 22.0,
 }
 
-# The broadcast's qualifying card, measured on 1080p captures (px from the card's top-left): 388 x 127, header 43
-# with the position box 38 wide, a 3 px team colour line, then the body; at 20 % of the screen's width as on TV
-# (205 units: 0.528 a pixel)
-QC_S = 205.0 / 388.0
+# The 2026 broadcast's qualifying card, measured on the user's capture of the TV (px from the card's top-left):
+# 495 x 174, header 52 with the position box 63 wide, a 4 px team colour line, the body, and three bars 7 px tall at
+# the bottom; texts centred: the big figure at 121 (cap 38), the target at 373 (time cap 22, name 17), S1 S2 S3 at the
+# sixths. 205 units wide as the broadcast's 20 % of the screen (0.414 a pixel)
+QC_S = 205.0 / 495.0
 
 
 def q(v):
@@ -74,23 +75,21 @@ def q(v):
 
 
 QCARD = {
-    "w": q(388), "h": q(127), "hdr": q(43), "line": q(3), "posw": q(38),
-    "pos_cap": q(12), "pos_x": q(19), "logo_x": q(62), "name_x": q(85), "name_cap": q(16),
-    "tyre_x": q(365), "tyre_d": q(26), "tyre_cap": q(11),
-    "time_x": q(15), "time_base": q(82), "time_cap": q(27),
-    "delta_base": q(102), "delta_cap": q(10),
-    "div_x": q(188), "div_y": [q(55), q(95)],
-    "tgt_right": q(373), "tgt_base": q(75), "tgt_cap": q(17), "tn_base": q(95), "tn_cap": q(11),
-    "cut_x": [q(228), q(276)], "cut_h": q(15), "cut_cap": q(8), "cutname_x": q(282),
-    "lab_base": q(118), "lab_cap": q(9), "lab_dx": q(3),
-    "bars": [[q(11), q(129)], [q(135), q(253)], [q(259), q(377)]], "bar_y": [q(123), q(127)],
+    "w": q(495), "h": q(174), "hdr": q(52), "line": q(4), "posw": q(63),
+    "pos_x": q(31.5), "pos_cap": q(20), "logo_x": q(95), "name_x": q(134), "name_cap": q(24.5), "name_base": q(38.5),
+    "tyre_x": q(471), "tyre_cap": q(23), "tyre_base": q(36),
+    "big_x": q(121), "big_base": q(118), "big_cap": q(37),
+    "tgt_x": q(373), "tgt_base": q(97), "tgt_cap": q(22), "tn_base": q(125), "tn_cap": q(16.5),
+    "lab_base": q(161), "lab_cap": q(16), "lab_x": [q(82.5), q(247.5), q(412.5)],
+    "bars": [[q(0), q(163)], [q(166), q(329)], [q(332), q(495)]], "bar_y": [q(167), q(174)],
     # where it sits: right of the tower, its bottom near the screen's at the default HUD place (a 2000 x 1133
     # capture: tower top 97 px, 1.93 px a unit, screen bottom 537 units below the tower's top)
     "x": 8.0, "y": 448.0,
     "colours": {
-        "hdr": "#202026", "pos": "#08080A", "body": "#171C22", "body2": "#14181D", "div": "#4A4D52",
-        "green": "#3CCF3C", "yellow": "#F2CF0D", "purple": "#C13FDA", "now": "#6B6E73", "later": "#35383D",
-        "lab_dim": "#6B6E73", "tname": "#A3A5AA", "cut": "#3D4046", "cut_text": "#C9CBCF",
+        "hdr": "#2D2C33", "pos": "#151218", "body": "#2A2930", "body2": "#1F1C24",
+        "white": "#F2F0F6", "grey": "#BCBBC0", "green": "#4FD35A", "yellow": "#E5CE4B", "purple": "#B95CE6",
+        "bar_green": "#30CF3F", "bar_yellow": "#E5CE4B", "bar_purple": "#A93FD9", "bar_grey": "#928F93",
+        "lab_dim": "#9D9CA2", "tname": "#B4B1BA",
     },
 }
 
@@ -220,47 +219,32 @@ def make_art(art: Path):
     # the qualifying card (QCARD): bounds from the card's top-left
     Q, QC = QCARD, QCARD["colours"]
     qw, qh, qhd, ql = Q["w"], Q["h"], Q["hdr"], Q["line"]
-    img = flat(qw, qh, (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    sy = img.size[1] / qh
-    sx = img.size[0] / qw
-    rad = int(1.4 * sx)
-    d.rounded_rectangle([0, 0, img.size[0] - 1, img.size[1] - 1], rad, fill=hexrgba(QC["body"], 240))
-    top = int((qhd + ql) * sy)
-    for yy in range(top, img.size[1] - rad):
-        t = (yy - top) / max(1, img.size[1] - top)
-        c0, c1 = hexrgba(QC["body"]), hexrgba(QC["body2"])
-        d.line([(0, yy), (img.size[0] - 1, yy)], fill=tuple(int(c0[k] + (c1[k] - c0[k]) * t) for k in range(3)) + (240,))
-    d.rectangle([0, rad, img.size[0] - 1, int(qhd * sy)], fill=hexrgba(QC["hdr"], 240))
-    d.rounded_rectangle([0, 0, img.size[0] - 1, int(qhd * sy)], rad, fill=hexrgba(QC["hdr"], 240))
-    d.rectangle([0, rad, int(Q["posw"] * sx), int(qhd * sy)], fill=hexrgba(QC["pos"], 250))
-    d.rounded_rectangle([0, 0, int(Q["posw"] * sx), int(qhd * sy)], rad, fill=hexrgba(QC["pos"], 250))
-    d.rectangle([int(Q["posw"] * sx) - rad, 0, int(Q["posw"] * sx), int(qhd * sy)], fill=hexrgba(QC["pos"], 250))
-    x0 = int(Q["div_x"] * sx)
-    d.rectangle([x0, int(Q["div_y"][0] * sy), x0 + max(1, int(0.5 * sx)), int(Q["div_y"][1] * sy)],
-                fill=hexrgba(QC["div"]))
-    add("qc_bg", img, [0, 0, qw, qh])
-    # the team colour line (tinted per car) and the tyre rings
-    add("qc_line", flat(qw, ql, (255, 255, 255, 255)), [0, qhd, qw, qhd + ql])
-    td = Q["tyre_d"]
-    for t, col in C["tyres"].items():
-        img = flat(td, td, (0, 0, 0, 0))
-        big = img.resize((img.size[0] * 4, img.size[1] * 4))
-        dd = ImageDraw.Draw(big)
-        N = big.size[0]
-        dd.ellipse([N * 0.04, N * 0.04, N * 0.96, N * 0.96], outline=hexrgba(col), width=int(N * 0.085))
-        add(f"qc_ty{t}", big.resize(img.size, Image.LANCZOS),
-            [Q["tyre_x"] - td / 2, qhd / 2 - td / 2, Q["tyre_x"] + td / 2, qhd / 2 + td / 2])
     by0, by1 = Q["bar_y"]
+    img = flat(qw, qh, (0, 0, 0, 0))
+    big = img.resize((img.size[0] * 2, img.size[1] * 2))
+    d = ImageDraw.Draw(big)
+    sx = big.size[0] / qw
+    rad = int(1.2 * sx)
+    W2, H2 = big.size
+    hb = int(qhd * sx)
+    c0, c1 = hexrgba(QC["body"]), hexrgba(QC["body2"])
+    body_top, body_bot = int((qhd + ql) * sx), int(by0 * sx)
+    for yy in range(body_top, body_bot):
+        t = (yy - body_top) / max(1, body_bot - body_top)
+        d.line([(0, yy), (W2 - 1, yy)], fill=tuple(int(c0[k] + (c1[k] - c0[k]) * t) for k in range(3)) + (240,))
+    d.rounded_rectangle([0, 0, W2 - 1, hb + rad], rad, fill=hexrgba(QC["hdr"], 245))
+    d.rectangle([0, rad, W2 - 1, hb], fill=hexrgba(QC["hdr"], 245))
+    pw = int(Q["posw"] * sx)
+    d.rounded_rectangle([0, 0, pw + rad, hb], rad, fill=hexrgba(QC["pos"], 250))
+    d.rectangle([rad, 0, pw, hb], fill=hexrgba(QC["pos"], 250))
+    d.rectangle([0, rad, pw, hb], fill=hexrgba(QC["pos"], 250))
+    add("qc_bg", big.resize(img.size, Image.LANCZOS), [0, 0, qw, qh])
+    # the team colour line (tinted per car)
+    add("qc_line", flat(qw, ql, (255, 255, 255, 255)), [0, qhd, qw, qhd + ql])
     for i, (bx0, bx1) in enumerate(Q["bars"]):
-        for st, col in (("later", QC["later"]), ("now", QC["now"]), ("green", QC["green"]),
-                        ("yellow", QC["yellow"]), ("purple", QC["purple"])):
+        for st, col in (("grey", QC["bar_grey"]), ("green", QC["bar_green"]), ("yellow", QC["bar_yellow"]),
+                        ("purple", QC["bar_purple"])):
             add(f"qc_b{i}{st}", flat(bx1 - bx0, by1 - by0, hexrgba(col)), [bx0, by0, bx1, by1])
-    cx0, cx1 = Q["cut_x"]
-    cy = Q["tn_base"] - Q["tn_cap"] / 2
-    img = flat(cx1 - cx0, Q["cut_h"], (0, 0, 0, 0))
-    ImageDraw.Draw(img).rounded_rectangle([0, 0, img.size[0] - 1, img.size[1] - 1], int(0.8 * PX), fill=hexrgba(QC["cut"]))
-    add("qc_cutbg", img, [cx0, cy - Q["cut_h"] / 2, cx1, cy + Q["cut_h"] / 2])
 
     for i, a in enumerate(C["alpha"]):
         A = int(255 * a)
@@ -464,6 +448,9 @@ def private_art(art: Path, logos: Path, sprites: dict):
         # the banners' larger copy, centred on its own origin
         bw, bh2 = w * 2.0, h * 2.0
         add(f"tmb_{t}", fit_into(src, bw, bh2), [-bw / 2, -bh2 / 2, bw / 2, bh2 / 2])
+        # the qualifying card's, centred on its own origin (the TV card's logo: 46 x 30 px of a 495 px card)
+        cw, ch2 = q(46), q(30)
+        add(f"qtm_{t}", fit_into(src, cw, ch2), [-cw / 2, -ch2 / 2, cw / 2, ch2 / 2])
         found.append(i)
     return found
 
@@ -849,70 +836,67 @@ def banners(logos_found):
 
 
 def qcard(logos_found):
-    """The qualifying card (as the broadcast's, captures in DECISIONES.md D90): the player's position, team, surname
-    and tyre; the lap time (running in tenths, then the lap in thousandths), the gap at the last split to the target
-    lap, the target (P1, or the cut with CUT P15) and S1 S2 S3. Like the banner: the art follows `qc`, and the per
-    car name / colour slots sit straight under the always-shown group (they change only while the card shows)."""
+    """The qualifying card, as the 2026 broadcast's (DECISIONES.md D90-D91): the player's position, team, surname and
+    tyre letter; the big figure (the lap running, grey until the first split, white after; at a split the gap to the
+    target in green / purple / yellow; a lap done) centred on the left half; the target's time to the end of the
+    current sector and its name centred on the right; S1 S2 S3 centred in thirds ("SECTOR n" while its split shows)
+    over the bars. Like the banner: the art follows `qc`, and the per car name / colour slots sit straight under the
+    always-shown group (they change only while the card shows)."""
     Q, QC = QCARD, QCARD["colours"]
     C = LAYOUT["colours"]
     hd = Q["hdr"]
-    base = lambda cap, cy: cy + cap / 2  # a text's baseline for its capitals centred on cy
     art = [sprite("qbg", "qc_bg", 20),
-           text("qpos", "OSD_24_bold", "centre", Q["posw"], Q["pos_cap"], [Q["pos_x"], base(Q["pos_cap"], hd / 2)],
+           text("qpos", "OSD_24_bold", "centre", Q["posw"], Q["pos_cap"], [Q["pos_x"], hd / 2 + Q["pos_cap"] / 2],
                 value=vm("qc_pos"), case="none"),
-           text("qt", "OSD_24_bold", "left", q(170), Q["time_cap"], [Q["time_x"], Q["time_base"]], value=vm("qc_t"),
-                case="none", wrap="clampwidth"),
-           text("qtt", "OSD_24_regular", "right", q(170), Q["tgt_cap"], [Q["tgt_right"], Q["tgt_base"]],
-                value=vm("qc_tt"), case="none", wrap="clampwidth"),
-           group("qcutg", [sprite("qcutb", "qc_cutbg", 21),
-                           text("qcutt", "OSD_24_bold", "centre", Q["cut_x"][1] - Q["cut_x"][0], Q["cut_cap"],
-                                [(Q["cut_x"][0] + Q["cut_x"][1]) / 2, base(Q["cut_cap"], Q["tn_base"] - Q["tn_cap"] / 2)],
-                                value=vm("qc_cutl"), colour=QC["cut_text"] + "ff", case="none")], visible=vm("qc_cut"))]
-    for i, (key, col) in enumerate((("g", QC["green"]), ("y", QC["yellow"]), ("p", QC["purple"]))):
-        art.append(text(f"qd{key}", "OSD_24_regular", "left", q(120), Q["delta_cap"], [Q["time_x"], Q["delta_base"]],
-                        value=vm("qc_d"), colour=col + "ff", visible=vm(f"qc_dc{i + 1}"), case="none"))
+           text("qtt", "OSD_24_bold", "centre", q(220), Q["tgt_cap"], [Q["tgt_x"], Q["tgt_base"]],
+                value=vm("qc_tt"), colour=QC["white"] + "ff", case="none", wrap="clampwidth")]
+    # the big figure: one text per colour, its one-hot picks
+    for i, key in enumerate(("white", "grey", "green", "yellow", "purple")):
+        art.append(text(f"qb{key[0]}", "OSD_24_bold", "centre", q(230), Q["big_cap"], [Q["big_x"], Q["big_base"]],
+                        value=vm("qc_t"), colour=QC[key] + "ff", visible=vm(f"qc_bc{i}"), case="none"))
     for k, t in enumerate("SMHIW"):
-        art.append(sprite(f"qty{t}", f"qc_ty{t}", 22, visible=vm(f"qc_ty{k}")))
-        art.append(text(f"qtl{t}", "OSD_24_bold", "centre", Q["tyre_d"], Q["tyre_cap"],
-                        [Q["tyre_x"], base(Q["tyre_cap"], hd / 2)], literal=t, colour=C["tyres"][t] + "ff",
-                        visible=vm(f"qc_ty{k}")))
-    states = [("later", QC["lab_dim"]), ("now", QC["lab_dim"]), ("green", QC["green"]), ("yellow", QC["yellow"]),
-              ("purple", QC["purple"])]
-    for i, (bx0, _) in enumerate(Q["bars"]):
-        art.append(sprite(f"qb{i}l", f"qc_b{i}later", 21))
-        for st_i, (st, col) in enumerate(states):
-            if st_i > 0:
-                art.append(sprite(f"qb{i}{st[0]}", f"qc_b{i}{st}", 22, visible=vm(f"qc_s{i + 1}_{st_i}")))
-            art.append(text(f"ql{i}{st[0]}", "OSD_24_regular", "left", q(40), Q["lab_cap"],
-                            [bx0 + Q["lab_dx"], Q["lab_base"]], literal=f"S{i + 1}", colour=col + "ff",
-                            visible=vm(f"qc_s{i + 1}_{st_i}")))
+        art.append(text(f"qtl{t}", "OSD_24_bold", "centre", q(40), Q["tyre_cap"], [Q["tyre_x"], Q["tyre_base"]],
+                        literal=t, colour=C["tyres"][t] + "ff", visible=vm(f"qc_ty{k}")))
+    # the bars: grey under, the sector's colour over once done; the labels: "Sn" (grey, or the colour) and, while its
+    # split shows, "SECTOR n" in the colour
+    lab_col = [QC["lab_dim"], QC["lab_dim"], QC["green"], QC["yellow"], QC["purple"]]
+    for i in range(3):
+        art.append(sprite(f"qb{i}g", f"qc_b{i}grey", 21))
+        for st_i, st in ((2, "green"), (3, "yellow"), (4, "purple")):
+            art.append(sprite(f"qb{i}{st[0]}", f"qc_b{i}{st}", 22, visible=vm(f"qc_s{i + 1}_{st_i}")))
+        x = Q["lab_x"][i]
+        short = []
+        for st_i in range(5):
+            short.append(text(f"ql{i}{st_i}", "OSD_24_bold", "centre", q(60), Q["lab_cap"], [x, Q["lab_base"]],
+                              literal=f"S{i + 1}", colour=lab_col[st_i] + "ff", visible=vm(f"qc_s{i + 1}_{st_i}")))
+        art.append(group(f"qls{i}", short, visible=vm(f"qc_l{i + 1}", True, True)))
+        art.append(group(f"qll{i}", [text(f"qlL{i}{st_i}", "OSD_24_bold", "centre", q(150), Q["lab_cap"],
+                                          [x, Q["lab_base"]], literal=f"SECTOR {i + 1}", colour=lab_col[st_i] + "ff",
+                                          visible=vm(f"qc_s{i + 1}_{st_i}")) for st_i in (2, 3, 4)],
+                         visible=vm(f"qc_l{i + 1}")))
     # demo: the simulated names
     art.append(group("qdn", [
-        text("qdnm", "OSD_24_bold", "left", q(270), Q["name_cap"], [Q["name_x"], base(Q["name_cap"], hd / 2)],
+        text("qdnm", "OSD_24_bold", "left", q(320), Q["name_cap"], [Q["name_x"], Q["name_base"]],
              value=vm("qc_nm"), wrap="clampwidth", case="upper"),
-        text("qdtn", "OSD_24_regular", "right", q(150), Q["tn_cap"], [Q["tgt_right"], Q["tn_base"]],
+        text("qdtn", "OSD_24_bold", "centre", q(220), Q["tn_cap"], [Q["tgt_x"], Q["tn_base"]],
              value=vm("qc_tnm"), colour=QC["tname"] + "ff", wrap="clampwidth", case="upper")], visible=vm("demo")))
 
     tint = {"session_car": "nub_colour", "slot_var": "V", "default": "#00000000"}
     me = group("qv", [
-        text("qn", "OSD_24_bold", "left", q(270), Q["name_cap"], [Q["name_x"], base(Q["name_cap"], hd / 2)],
+        text("qn", "OSD_24_bold", "left", q(320), Q["name_cap"], [Q["name_x"], Q["name_base"]],
              value={"session_car": "driver.second_name", "slot_var": "V"}, wrap="clampwidth", case="upper"),
         group("qlg", [sprite("qln", "qc_line", 21, tint=tint)]),
     ], visible=vm("qc_c{VV}"), repeat={"count": SLOTS, "var": "V"})
     tgt = group("qw", [
-        text("qwn", "OSD_24_regular", "right", q(150), Q["tn_cap"], [Q["tgt_right"], Q["tn_base"]],
+        text("qwn", "OSD_24_bold", "centre", q(220), Q["tn_cap"], [Q["tgt_x"], Q["tn_base"]],
              value={"session_car": "driver.second_name", "slot_var": "V"}, colour=QC["tname"] + "ff",
-             wrap="clampwidth", case="upper", visible=vm("qc_ncut")),
-        text("qwc", "OSD_24_regular", "left", Q["tgt_right"] - Q["cutname_x"], Q["tn_cap"], [Q["cutname_x"], Q["tn_base"]],
-             value={"session_car": "driver.second_name", "slot_var": "V"}, colour=QC["tname"] + "ff",
-             wrap="clampwidth", case="upper", visible=vm("qc_cut")),
+             wrap="clampwidth", case="upper"),
     ], visible=vm("qc_n{VV}"), repeat={"count": SLOTS, "var": "V"})
     # the team logo: the broadcast icon (private build: the rows' sprite, moved) by one-hot, else the game's badge
     lx, ly = Q["logo_x"], hd / 2
-    R = LAYOUT["row"]
-    lg = [group(f"qtm{i:02d}g", [sprite(f"qtm{i:02d}", f"tm_{TEAMS[i]}", 27)],
-                at=[lx - LAYOUT["logo_x"], ly - R / 2], visible=vm(f"qc_tm{i:02d}")) for i in logos_found]
-    lg.append({"kind": "unit", "id": "qlgu", "unit": "team_logo", "at": [lx, ly], "size": LAYOUT["unit_logo"] * 1.1,
+    lg = [group(f"qtm{i:02d}g", [sprite(f"qtm{i:02d}", f"qtm_{TEAMS[i]}", 27)], at=[lx, ly],
+                visible=vm(f"qc_tm{i:02d}")) for i in logos_found]
+    lg.append({"kind": "unit", "id": "qlgu", "unit": "team_logo", "at": [lx, ly], "size": LAYOUT["unit_logo"] * 1.2,
                "visible": vm("qc_bdg"), "texture": vm("qc_badge")})
     g = group("qg", [group("qart", art, visible=vm("qc")), me, tgt] + lg)
     return group("qcard", [g], at=[LAYOUT["width"] + Q["x"], LAYOUT["offset_y"] + Q["y"]])

@@ -109,6 +109,19 @@ inline std::string fmt_lap(int ms)
     return b;
 }
 
+// a target time as the qualifying card shows it: "30.752" under a minute, "1:04.773" over
+inline std::string fmt_lap_short(int ms)
+{
+    char b[24];
+    if (ms < 0)
+        return "";
+    if (ms < 60000)
+        std::snprintf(b, sizeof b, "%d.%03d", ms / 1000, ms % 1000);
+    else
+        std::snprintf(b, sizeof b, "%d:%02d.%03d", ms / 60000, (ms / 1000) % 60, ms % 1000);
+    return b;
+}
+
 inline std::string fmt_laps_down(int n)
 {
     if (n <= 0)
@@ -244,6 +257,7 @@ struct MyLap {
     bool flying = false;      // a lap begun at the line with no pit lane since (not an out lap)
     int t_ms = -1;            // into that lap (the addon's clock: pauses left out)
     int split[2] = {-1, -1};  // to the end of sector 1 and of sector 2, ms (the game's when it has them)
+    double split_age[2] = {-1, -1}; // seconds since each split was crossed (the addon's clock), -1 not yet
     int done_ms = -1;         // the last flying lap completed, -1 none
     int done_split[2] = {-1, -1};
     double done_age = -1;     // seconds since it was completed (the addon's clock), -1 none
@@ -359,11 +373,13 @@ struct Header {
     bool lead = false;         // gaps are to the leader
 };
 
-// The player's qualifying card (as the broadcast's): position, team, surname and tyre; the lap time running (tenths)
-// or done (thousandths), the gap at the last split to the target lap, the target (P1, or the cut in a knockout
-// zone) and the three sectors
+// The player's qualifying card, as the 2026 broadcast's (measured on the user's capture of the TV, 495 x 174 px):
+// position, team, surname and tyre; the big figure is the lap running (tenths, grey until the first split, then
+// white), or at a split the gap to the target for kSplitHold (green / purple / yellow) with "SECTOR n" under it; on
+// the right the target's time to the end of the sector being run (its split, then the lap), and its name; S1 S2 S3
+// bars in the sector's colour once done
 enum SecState : int { sec_none = 0, sec_now = 1, sec_green = 2, sec_yellow = 3, sec_purple = 4 };
-enum DeltaCol : int { dcol_none = 0, dcol_green = 1, dcol_yellow = 2, dcol_purple = 3 };
+enum BigCol : int { big_white = 0, big_grey = 1, big_green = 2, big_yellow = 3, big_purple = 4 };
 struct QCard {
     bool on = false;
     int vid = -1;
@@ -372,14 +388,13 @@ struct QCard {
     std::string name;          // demo only
     std::string pos;           // "8", "-" without a time
     char tyre = 0;
-    std::string time;          // "30.2", "1:21.8" running; "1:21.845" done
-    std::string delta;         // "-0.457", "+0.696", "" none
-    int dcol = dcol_none;
-    std::string target;        // "1:30.054", "" none
+    std::string big;           // "30.2" / "1:21.8" running, "-3.610" at a split, "1:21.845" a lap done
+    int big_col = big_white;
+    std::string target;        // the target's time to the end of the current sector, "" none
     int target_vid = -1;
     std::string target_name;   // demo only
-    std::string cut;           // "CUT P15", "" when the target is P1
     int sec[3] = {sec_none, sec_none, sec_none};
+    bool sec_long[3] = {false, false, false}; // "SECTOR n" in place of "Sn" (its split just crossed)
 };
 
 // running lap time, tenths, truncated as on TV: "9.4", "56.6", "1:21.8"
@@ -1157,7 +1172,9 @@ private:
     }
 
     // ---- the qualifying card
-    static constexpr double kCardHold = 7.0; // a completed lap stays this long (its time, gap and sectors)
+    static constexpr double kSplitHold = 4.5; // a split's gap stays this long in place of the time (TV: ~4.5 s)
+    static constexpr double kDoneDelta = 4.5; // a lap done: its gap, then the lap time until kDoneHold
+    static constexpr double kDoneHold = 8.0;
 
     void card(QCard &k, const Snapshot &snap, Kind kind, const Config &cfg)
     {
@@ -1171,13 +1188,15 @@ private:
                 me = &c;
         if (!me)
             return;
-        const bool hold = m.done_ms > 0 && m.done_age >= 0 && m.done_age < kCardHold;
+        const bool done = m.done_ms > 0 && m.done_age >= 0 && m.done_age < kDoneHold;
         if (m.laps != card_lap_) {
             card_lap_ = m.laps;
             card_cool_ = false;
         }
 
-        // the target: the fastest other car; in a knockout zone (or without a time) the last car through
+        // the target: the fastest other car; in a knockout zone (or without a time) the last car through. It follows
+        // the order during the lap (on TV it changed between two splits when P1 changed), and stays put while a lap
+        // just done is on show
         const int seg = knockout_segment(snap.s.type);
         const int cut = (seg == 1 || seg == 2) ? knockout_cut(seg, field_) : 0;
         const CarIn *p1 = nullptr, *cut_car = nullptr;
@@ -1191,8 +1210,7 @@ private:
         }
         const bool through = me->best_ms > 0 && me->pos > 0 && me->pos <= cut;
         const CarIn *pick = cut > 0 && cut_car && !through ? cut_car : p1;
-        // a lap just done keeps the target it was run against (the order changes as it lands)
-        if (!hold || card_tg_vid_ < 0) {
+        if (!done || card_tg_vid_ < 0) {
             card_tg_vid_ = pick ? int(pick->vid) : -1;
             card_tg_cut_ = pick && pick == cut_car && pick != p1 ? cut : 0;
         }
@@ -1217,12 +1235,13 @@ private:
                 return int(sec_green);
             return int(sec_yellow);
         };
-        auto delta_col = [&](int d) {
-            return d < 0 ? (tg_cut ? int(dcol_green) : int(dcol_purple)) : int(dcol_yellow);
-        };
+        // under the target: green (purple when the target is P1: a provisional fastest); over it: yellow
+        auto gap_col = [&](int d) { return d < 0 ? (tg_cut ? int(big_green) : int(big_purple)) : int(big_yellow); };
         auto tsum = [&](int n) { // the target lap to the end of sector n (0-based), -1 unknown
             if (!tg)
                 return -1;
+            if (n >= 2)
+                return tg->best_ms;
             int t = 0;
             for (int i = 0; i <= n; i++) {
                 if (tg->best_sec[i] <= 0)
@@ -1231,20 +1250,24 @@ private:
             }
             return t;
         };
+        int tshow = -1; // the target's time on the right
 
-        if (hold && (!m.flying || m.t_ms < 1500 || card_cool_)) {
-            // the lap just done, for kCardHold (a next flying lap takes over once it is under way)
-            k.time = fmt_lap(m.done_ms);
+        if (done) {
+            // the lap just done: its gap with SECTOR 3, then its time, until kDoneHold (the next lap shows after)
             const int s1 = m.done_split[0];
             const int s2 = m.done_split[1] > 0 && s1 > 0 ? m.done_split[1] - s1 : -1;
             const int s3 = m.done_split[1] > 0 ? m.done_ms - m.done_split[1] : -1;
             k.sec[0] = colour(0, s1);
             k.sec[1] = colour(1, s2);
             k.sec[2] = colour(2, s3);
-            if (tg && tg->best_ms > 0) {
-                const int d = m.done_ms - tg->best_ms;
-                k.delta = fmt_delta(d);
-                k.dcol = delta_col(d);
+            tshow = tsum(2);
+            if (m.done_age < kDoneDelta && tshow > 0) {
+                const int d = m.done_ms - tshow;
+                k.big = fmt_delta(d);
+                k.big_col = gap_col(d);
+                k.sec_long[2] = true;
+            } else {
+                k.big = fmt_lap(m.done_ms);
             }
         } else if (m.flying && m.t_ms >= 0) {
             // an in-lap or a cool-down lap (sector 1 over 3 s off the car's best, or a quarter past a lap): no card
@@ -1255,17 +1278,23 @@ private:
                 card_cool_ = true;
             if (card_cool_)
                 return;
-            k.time = fmt_run(m.t_ms);
             const int s1 = m.split[0], s2 = m.split[1] > 0 && s1 > 0 ? m.split[1] - s1 : -1;
             k.sec[0] = s1 > 0 ? colour(0, s1) : int(sec_now);
             k.sec[1] = s2 > 0 ? colour(1, s2) : s1 > 0 ? int(sec_now) : int(sec_none);
             k.sec[2] = s2 > 0 ? int(sec_now) : int(sec_none);
+            // a split just crossed: its gap in place of the time, the target still at that split
             const int at = m.split[1] > 0 ? 1 : m.split[0] > 0 ? 0 : -1;
-            const int tt = at >= 0 ? tsum(at) : -1;
-            if (tt > 0) {
-                const int d = m.split[at] - tt;
-                k.delta = fmt_delta(d);
-                k.dcol = delta_col(d);
+            const bool holding = at >= 0 && m.split_age[at] >= 0 && m.split_age[at] < kSplitHold && tsum(at) > 0;
+            if (holding) {
+                tshow = tsum(at);
+                const int d = m.split[at] - tshow;
+                k.big = fmt_delta(d);
+                k.big_col = gap_col(d);
+                k.sec_long[at] = true;
+            } else {
+                k.big = fmt_run(m.t_ms);
+                k.big_col = s1 > 0 ? int(big_white) : int(big_grey);
+                tshow = tsum(at + 1);
             }
         } else {
             return;
@@ -1277,12 +1306,10 @@ private:
         k.name = me->name;
         k.pos = me->best_ms > 0 && me->pos > 0 ? std::to_string(me->pos) : "-";
         k.tyre = me->tyre;
-        if (tg && tg->best_ms > 0) {
-            k.target = fmt_lap(tg->best_ms);
+        if (tg && tshow > 0) {
+            k.target = fmt_lap_short(tshow);
             k.target_vid = int(tg->vid);
             k.target_name = tg->name;
-            if (tg_cut)
-                k.cut = "CUT P" + std::to_string(card_tg_cut_);
         }
     }
 

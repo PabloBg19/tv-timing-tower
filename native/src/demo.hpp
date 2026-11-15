@@ -258,6 +258,8 @@ inline Snapshot make(int sc, double t)
             m.t_ms = int(lt);
             m.split[0] = lt >= s1 ? s1 : -1;
             m.split[1] = lt >= s2 ? s2 : -1;
+            m.split_age[0] = lt >= s1 ? (lt - s1) / 6000.0 : -1;
+            m.split_age[1] = lt >= s2 ? (lt - s2) / 6000.0 : -1;
         } else {
             m.done_ms = lap;
             m.done_split[0] = s1;

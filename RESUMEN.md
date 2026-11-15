@@ -1,5 +1,14 @@
 # Resumen — TV Timing Tower
 
+## 0.21.0 (15-11-2026, en prueba): la tarjeta de clasificación como la de 2026
+
+- Rehecha con los vídeos de la tele de 2026 del usuario (medida en píxeles): el tiempo corre en gris hasta el primer
+  parcial y en blanco después; al pasar un parcial, en su lugar sale la diferencia en grande (verde, morado o
+  amarillo) 4,5 s con `SECTOR n` debajo; a la derecha, el tiempo del objetivo hasta el final del sector en curso
+  (su parcial 1, luego S1+S2, luego la vuelta) y su nombre, centrados; al cerrar la vuelta, la diferencia con
+  `SECTOR 3` y luego el tiempo. Sin la píldora `CUT P16` ni el aro del neumático (no están en 2026), cabecera más
+  clara que el cuadro de la posición, `S1 S2 S3` centrados en tercios, barras grises claras.
+
 ## 0.20.2 (15-11-2026, en prueba): lecturas más baratas
 
 - El crash de la sesión 20261115-123320 (error de memoria del propio juego al cargar unos libres de Modo

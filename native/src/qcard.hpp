@@ -86,8 +86,10 @@ public:
                 } else if (s.sector > k && prev_sector_ == k) {
                     at = s.sim;
                 }
-                if (at >= cross_)
+                if (at >= cross_) {
                     split_[k] = int(std::lround((at - cross_) * 1000.0));
+                    split_at_[k] = at;
+                }
             }
             // the game's figures for the same splits: cumulative, checked against ours
             int game_cum = 0;
@@ -109,6 +111,8 @@ public:
         out.t_ms = out.flying ? int(std::lround((s.sim - cross_) * 1000.0)) : -1;
         out.split[0] = out.flying ? split_[0] : -1;
         out.split[1] = out.flying ? split_[1] : -1;
+        for (int k = 0; k < 2; k++)
+            out.split_age[k] = out.split[k] >= 0 ? s.sim - split_at_[k] : -1;
         out.done_ms = done_ms_;
         out.done_split[0] = done_split_[0];
         out.done_split[1] = done_split_[1];
@@ -122,6 +126,7 @@ private:
     double cross_ = -1;
     bool flying_ = false;
     int split_[2] = {-1, -1};
+    double split_at_[2] = {0, 0};
     int done_ms_ = -1;
     int done_split_[2] = {-1, -1};
     double done_at_ = 0;
