@@ -38,9 +38,6 @@ REF = {
     "width": 135.0,
     "pos_w": 19.0, "pos_x": 9.5,
     "logo_x": 29.0, "logo_w": 15.0, "logo_h": 11.0,
-    # the game's own badge: a square texture, so a wide logo (Force India, Lotus, Manor) fills only a band of it;
-    # the square uses the whole gap between the position box (19) and the name (42)
-    "unit_logo": 12.0, "unit_x": 29.0,  # the game's badge in the TV icon's 15 x 11 box (19 was huge, 0.23.1)
     "name_x": 42.0,
     "gap_right": 117.5,
     "gap_right_q": 121.0, "cap_gap_q": 6.2,   # practice / qualifying data column
@@ -111,7 +108,7 @@ LAYOUT = {
     "row": ROW_UNITS,
     "width": u(REF["width"]),
     "pos_w": u(REF["pos_w"]), "pos_x": u(REF["pos_x"]),
-    "logo_x": u(REF["logo_x"]), "logo_w": u(REF["logo_w"]), "logo_h": u(REF["logo_h"]), "unit_logo": u(REF["unit_logo"]), "unit_x": u(REF["unit_x"]),
+    "logo_x": u(REF["logo_x"]), "logo_w": u(REF["logo_w"]), "logo_h": u(REF["logo_h"]),
     "name_x": u(REF["name_x"]),
     "name_box": u(REF["gap_right"] - REF["name_x"] - 2),
     # the constructors' table: a team's name runs up to the points (ASTON MARTIN, RACING BULLS), a little smaller
@@ -398,6 +395,31 @@ def make_art(art: Path):
     return sprites
 
 
+# The game's team badges (Logos de equipo: Juego) at the size of the broadcast icons they replace: a badge is a
+# square texture its logo fills on the long side (measured in game: Mercedes, Ferrari, Red Bull, McLaren at size 19
+# against the icons), so each team's size is its icon's long side once fitted in the icon's box. The width / height of
+# each team's logo (the tv_<team>.png icons' bounds, kept here so the public build has them too).
+TEAM_ASPECT = {"mercedes": 1.0, "ferrari": 0.74, "redbull": 2.64, "mclaren": 1.81, "astonmartin": 4.34,
+               "alpine": 2.0, "williams": 1.8, "racingbulls": 1.2, "haas": 1.13, "sauber": 1.0, "audi": 2.93,
+               "cadillac": 2.64}
+
+
+def badge_size(i, w, h):
+    """The badge's size for team i (len(TEAMS): unknown) in a w x h icon box."""
+    if i >= len(TEAMS):
+        return round((w + h) / 2, 3)
+    a = TEAM_ASPECT[TEAMS[i]]
+    return round(min(w, h * a) if a >= 1 else h, 3)
+
+
+def badge_units(id_, at, w, h, leaf):
+    """One badge unit a team (its size), shown by the one-hot leaf<NN>; the texture is the badge leaf."""
+    return [{"kind": "unit", "id": f"{id_}{i:02d}", "unit": "team_logo", "at": at, "size": badge_size(i, w, h),
+             "visible": vm(f"{leaf}_bt{i:02d}" if not leaf.endswith("_") else f"{leaf}bt{i:02d}"),
+             "texture": vm(f"{leaf}_badge" if not leaf.endswith("_") else f"{leaf}badge")}
+            for i in range(len(TEAMS) + 1)]
+
+
 def fit_into(src: Path, w_units, h_units):
     """The logo scaled to fit a w x h box (units), centred, at PX*2 pixels a unit."""
     im = Image.open(src).convert("RGBA")
@@ -654,8 +676,7 @@ def row(flavour, logos_found):
     # team logo: the broadcast's icons (private build) by one-hot, else the game's own badge (colour or white)
     for i in logos_found:
         k.append(sprite(f"tm{i:02d}", f"tm_{TEAMS[i]}", 27, visible=vm(r + f"tm{i:02d}")))
-    k.append({"kind": "unit", "id": "lg", "unit": "team_logo", "at": [L["unit_x"], R / 2], "size": L["unit_logo"],
-              "visible": vm(r + "bdg"), "texture": vm(r + "badge")})
+    k += badge_units("lg", [L["logo_x"], R / 2], L["logo_w"], L["logo_h"], r)
 
     # driver name: the game's own per-car values, one slot per vehicle id (changed only while the row shows). The texts
     # carry their own visible (no wrapper groups): 24 rows x 30 slots is most of the record, and the game's HUD
@@ -825,8 +846,7 @@ def banners(logos_found):
     # the team logo: the broadcast icon (private build) by one-hot, else the game's badge
     lg = [group(f"{k}tm{i:02d}g", [sprite(f"{k}tm{i:02d}", f"tmb_{TEAMS[i]}", 27)], at=[logo_cx, bh / 2],
                 visible=vm(f"{k}_tm{i:02d}")) for i in logos_found]
-    lg.append({"kind": "unit", "id": f"{k}lg", "unit": "team_logo", "at": [logo_cx, bh / 2],
-               "size": L["unit_logo"] * 2.0, "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
+    lg += badge_units(f"{k}lg", [logo_cx, bh / 2], L["logo_w"] * 2.0, L["logo_h"] * 2.0, k)
     g = group(f"{k}g", [group(f"{k}art", art, visible=vm(k)), cars] + lg, at=[-L["ban_lw"] / 2, 0])
 
     # FASTEST LAP (back in 0.20 with the game's own lap times): "ANTONELLI (logo) 1:37.477" flush against the time,
@@ -849,8 +869,7 @@ def banners(logos_found):
                  visible=vm(f"{k}_c{{VV}}"), repeat={"count": SLOTS, "var": "V"})
     lg = [group(f"{k}tm{i:02d}g", [sprite(f"{k}tm{i:02d}", f"tmb_{TEAMS[i]}", 27)], at=[logo_cx, bh / 2],
                 visible=vm(f"{k}_tm{i:02d}")) for i in logos_found]
-    lg.append({"kind": "unit", "id": f"{k}lg", "unit": "team_logo", "at": [logo_cx, bh / 2],
-               "size": L["unit_logo"] * 2.0, "visible": vm(f"{k}_bdg"), "texture": vm(f"{k}_badge")})
+    lg += badge_units(f"{k}lg", [logo_cx, bh / 2], L["logo_w"] * 2.0, L["logo_h"] * 2.0, k)
     f = group(f"{k}g", [group(f"{k}art", art, visible=vm(k)), cars] + lg, at=[-L["ban_fw"] / 2, 0])
     return group("ban", [g, f], at=[L["ban_cx"], L["offset_y"] + L["ban_y"]])
 
@@ -916,8 +935,7 @@ def qcard(logos_found):
     lx, ly = Q["logo_x"], hd / 2
     lg = [group(f"qtm{i:02d}g", [sprite(f"qtm{i:02d}", f"qtm_{TEAMS[i]}", 27)], at=[lx, ly],
                 visible=vm(f"qc_tm{i:02d}")) for i in logos_found]
-    lg.append({"kind": "unit", "id": "qlgu", "unit": "team_logo", "at": [lx, ly], "size": q(33),
-               "visible": vm("qc_bdg"), "texture": vm("qc_badge")})
+    lg += badge_units("qlgu", [lx, ly], q(46), q(30), "qc")
     g = group("qg", [group("qart", art, visible=vm("qc")), me, tgt] + lg)
     return group("qcard", [g], at=[LAYOUT["width"] + Q["x"], LAYOUT["offset_y"] + Q["y"]])
 

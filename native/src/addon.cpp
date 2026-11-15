@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.23.2"
+#define TVT_VERSION "0.23.3"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings

@@ -1,10 +1,12 @@
 # Resumen — TV Timing Tower
 
-## 0.23.2 (15-11-2026, en prueba): escudos del juego al tamaño de la tele
+## 0.23.3 (15-11-2026, en prueba): escudos del juego del mismo tamaño que los iconos de la tele
 
-- Con `Logos de equipo: Juego` los escudos salían enormes (tamaño 19, en el juego): ahora caben en el mismo hueco de
-  15 x 11 que los iconos de la tele (tamaño 12, centrados en el mismo sitio). Los avisos (x2) y la tarjeta de
-  clasificación (el logo de 46 x 30 px de la tele) también.
+- Con `Logos de equipo: Juego` los escudos salían enormes (tamaño 19, en el juego). Ahora cada equipo tiene el tamaño
+  de su icono de la tele en el mismo sitio: el escudo es un cuadrado que su logo llena por el lado largo (medido en
+  el juego con Mercedes, Ferrari, Red Bull y McLaren), así que un logo ancho (Red Bull, McLaren) va a 15 y uno
+  redondo o alto (Mercedes, Ferrari) a 11, como sus iconos en su hueco de 15 x 11. Igual en los avisos (x2) y la
+  tarjeta de clasificación (46 x 30 px de la tele). Un equipo desconocido: 13.
 
 ## 0.23.1 (15-11-2026, en prueba): sin `No Time` y logos del juego por defecto
 

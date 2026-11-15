@@ -29,7 +29,7 @@ struct RowLeaves {
     hud::BoolLeaf fl, chq, gu, gd, g0, fx, nob;
     hud::TextLeaf nm, badge, tn;
     hud::BoolLeaf bdg;
-    hud::OneHot tm, car;
+    hud::OneHot tm, car, bt; // bt: the game's badge, by team (its size): kTeams = a team we cannot name
     hud::BoolLeaf sd[5], su[5]; // the row's slides (hudgen SLIDE_BITS): 1, 2, 4, 8, 16 rows down / up
 };
 
@@ -77,6 +77,7 @@ public:
             x.on = L.boolean(k);
             x.car = L.one_hot(k + "_c", kSlots, 2);
             x.tm = L.one_hot(k + "_tm", kTeams, 2);
+            x.bt = L.one_hot(k + "_bt", kTeams + 1, 2);
             x.badge = L.text(k + "_badge", 96);
             x.bdg = L.boolean(k + "_bdg");
             x.nm = L.text(k + "_nm", 24); // demo: the simulated driver's name
@@ -88,6 +89,7 @@ public:
             x.on = L.boolean("qc");
             x.car = L.one_hot("qc_c", kSlots, 2);
             x.tm = L.one_hot("qc_tm", kTeams, 2);
+            x.bt = L.one_hot("qc_bt", kTeams + 1, 2);
             x.badge = L.text("qc_badge", 96);
             x.bdg = L.boolean("qc_bdg");
             x.nm = L.text("qc_nm", 24);
@@ -155,6 +157,7 @@ public:
                 r.su[b] = l.boolean("su" + std::to_string(b));
             }
             r.tm = l.one_hot("tm", kTeams, 2);
+            r.bt = l.one_hot("bt", kTeams + 1, 2);
             r.car = l.one_hot("c", kSlots, 2);
             return r;
         });
@@ -216,6 +219,7 @@ public:
             L.set(x.tm, icon ? h.ban_team : -1);
             L.set(x.badge, mine && !icon ? h.ban_badge : std::string());
             L.set(x.bdg, mine && !icon && !h.ban_badge.empty());
+            L.set(x.bt, mine && !icon && !h.ban_badge.empty() ? badge_slot(h.ban_team) : -1);
             L.set(x.nm, mine && h.demo ? h.ban_name : std::string());
             if (b == 1)
                 L.set(x.time, mine ? h.ban_time : std::string());
@@ -234,6 +238,7 @@ public:
             L.set(x.tm, icon ? k.team : -1);
             L.set(x.badge, on && !icon ? k.badge : std::string());
             L.set(x.bdg, on && !icon && !k.badge.empty());
+            L.set(x.bt, on && !icon && !k.badge.empty() ? badge_slot(k.team) : -1);
             L.set(x.nm, on && h.demo ? k.name : std::string());
             L.set(x.pos, on ? k.pos : std::string());
             static const char kTy[] = "SMHIW";
@@ -363,6 +368,7 @@ public:
             L.set(x.tm, icon ? r.team : -1);
             L.set(x.badge, icon ? std::string() : r.badge);
             L.set(x.bdg, !icon && !r.badge.empty());
+            L.set(x.bt, !icon && !r.badge.empty() ? badge_slot(r.team) : -1);
             // no badge from the game (My Team, a custom team): a chip in the team's own colour
             L.set(x.nob, !icon && r.badge.empty() && !h.demo);
             L.set(x.car, r.vid >= 0 && r.vid < kSlots && !h.demo ? r.vid : -1);
@@ -382,18 +388,21 @@ public:
     hud::Leaves::Rows<RowLeaves> rows;
     struct BannerLeaves {
         hud::BoolLeaf on, bdg;
-        hud::OneHot car, tm;
+        hud::OneHot car, tm, bt;
         hud::TextLeaf badge, nm, time;
     };
     BannerLeaves ban[2]; // 0 NEW RACE LEADER, 1 FASTEST LAP
     struct CardLeaves {
         hud::BoolLeaf on, bdg;
         hud::BoolLeaf lng[3];
-        hud::OneHot car, tm, ty, bc, tcar;
+        hud::OneHot car, tm, bt, ty, bc, tcar;
         hud::OneHot sec[3];
         hud::TextLeaf badge, nm, pos, big, tt, tnm;
     };
     CardLeaves qc; // the qualifying card
+
+    // the game's badge drawn at its team's size (hudgen badge_size): the team, or kTeams when unknown
+    static int badge_slot(int team) { return team >= 0 && team < kTeams ? team : kTeams; }
 
     static constexpr double kFadeHold = 0.16; // the row's fade out (generic_fade_on) before the swap
     static constexpr int kMaxFades = 12;      // more rows changing at once: no animation (a start, a restart)

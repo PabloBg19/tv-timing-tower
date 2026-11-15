@@ -859,6 +859,8 @@ static void test_leaves_and_record()
     CHECK(Config{}.logos == Config::Logos::game);
     pp.publish(ti.update(demo::make(demo::race, 1.0), cfg, 1.1), cfg);
     CHECK(core.number("view_model_data.hud_tvt_r00_tm00") == 0 && core.number("view_model_data.hud_tvt_r00_bdg") == 1);
+    // ...at its team's size: the one-hot of its team
+    CHECK(core.number("view_model_data.hud_tvt_r00_bt00") == 1 && core.number("view_model_data.hud_tvt_r00_bt12") == 0);
     // the clock leaf exists (written "" once); the game's formatter owns it afterwards
     CHECK(core.text("view_model_data.hud_tvt_clock").empty());
     // row change fade: the old car stays while the row fades out, then the new one comes in
