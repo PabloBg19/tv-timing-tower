@@ -205,6 +205,8 @@ struct CarIn {
     int best_ms = -1;         // best valid lap
     int last_ms = -1;         // last completed lap
     bool me = false;
+    int best_sec[3] = {-1, -1, -1}; // the game's: the best lap's sectors (ms)
+    int pb_sec[3] = {-1, -1, -1};   // the game's: the car's best of each sector
     std::string badge;        // the game's team badge key ("ferrari_2026") or ""
     std::string name;         // only demo mode: the driver's surname
     std::string code;         // only demo mode: three-letter code
@@ -236,8 +238,21 @@ struct ChampEntry {
     int vid = -1;       // his car in this session, -1 none
 };
 
+// The player's lap (qcard.hpp measures it): the qualifying card's input
+struct MyLap {
+    bool known = false;       // the player's car is on track and its line crossings are being followed
+    bool flying = false;      // a lap begun at the line with no pit lane since (not an out lap)
+    int t_ms = -1;            // into that lap (the addon's clock: pauses left out)
+    int split[2] = {-1, -1};  // to the end of sector 1 and of sector 2, ms (the game's when it has them)
+    int done_ms = -1;         // the last flying lap completed, -1 none
+    int done_split[2] = {-1, -1};
+    double done_age = -1;     // seconds since it was completed (the addon's clock), -1 none
+    uint32_t laps = 0;        // flying laps begun this session (a new number: a new lap)
+};
+
 struct Snapshot {
     SessionIn s;
+    MyLap my;
     std::vector<CarIn> cars;  // classification order, leader first
     std::vector<ChampEntry> champ; // a career's drivers' championship, the game's order (empty: none or unreadable)
 };
@@ -263,6 +278,7 @@ struct Config {
     bool tyre_age = false;
     bool arrows = true;
     bool highlight = true;     // player's row highlighted
+    bool qcard = true;         // qualifying: the player's lap card (time, splits, target)
     // tv: the broadcast's team icons (private build; a team without one falls back to the game's badge);
     // game: the game's broadcast badges (colour, follow logo mods); game_white: the game's white HUD badges
     enum class Logos { tv, game, game_white } logos = Logos::tv;
@@ -341,8 +357,55 @@ struct Header {
     bool lead = false;         // gaps are to the leader
 };
 
+// The player's qualifying card (as the broadcast's): position, team, surname and tyre; the lap time running (tenths)
+// or done (thousandths), the gap at the last split to the target lap, the target (P1, or the cut in a knockout
+// zone) and the three sectors
+enum SecState : int { sec_none = 0, sec_now = 1, sec_green = 2, sec_yellow = 3, sec_purple = 4 };
+enum DeltaCol : int { dcol_none = 0, dcol_green = 1, dcol_yellow = 2, dcol_purple = 3 };
+struct QCard {
+    bool on = false;
+    int vid = -1;
+    int team = -1;
+    std::string badge;         // the game's badge texture path
+    std::string name;          // demo only
+    std::string pos;           // "8", "-" without a time
+    char tyre = 0;
+    std::string time;          // "30.2", "1:21.8" running; "1:21.845" done
+    std::string delta;         // "-0.457", "+0.696", "" none
+    int dcol = dcol_none;
+    std::string target;        // "1:30.054", "" none
+    int target_vid = -1;
+    std::string target_name;   // demo only
+    std::string cut;           // "CUT P15", "" when the target is P1
+    int sec[3] = {sec_none, sec_none, sec_none};
+};
+
+// running lap time, tenths, truncated as on TV: "9.4", "56.6", "1:21.8"
+inline std::string fmt_run(int ms)
+{
+    char b[24];
+    if (ms < 0)
+        ms = 0;
+    if (ms >= 60000)
+        std::snprintf(b, sizeof b, "%d:%02d.%d", ms / 60000, (ms / 1000) % 60, (ms % 1000) / 100);
+    else
+        std::snprintf(b, sizeof b, "%d.%d", ms / 1000, (ms % 1000) / 100);
+    return b;
+}
+
+// a split's gap with its sign: "-0.457", "+0.696"
+inline std::string fmt_delta(int ms)
+{
+    if (ms >= 0)
+        return fmt_gap_ms(ms);
+    std::string g = fmt_gap_ms(-ms);
+    g[0] = '-';
+    return g;
+}
+
 struct View {
     Header h;
+    QCard card;
     std::array<Row, kRows> rows;
     int shown = 0;
 };
@@ -471,6 +534,7 @@ public:
         v.shown = slot;
         h.wide = slot > 22;
         banners(snap, kind, cfg, h, now);
+        card(v.card, snap, kind, cfg);
         return v;
     }
 
@@ -508,6 +572,10 @@ public:
         formation_t0_ = -1;
         ban_ = Pending{};
         ban_until_ = -1;
+        card_lap_ = ~0u;
+        card_cool_ = false;
+        card_tg_vid_ = -1;
+        card_tg_cut_ = 0;
         ban_next_ = 0;
         queue_.clear();
     }
@@ -1072,6 +1140,140 @@ private:
                 h.ban_badge = c.badge.empty() ? "" : "#overrides.osd.timing_tower.team_badges_broadcast." + c.badge;
             }
     }
+
+    // ---- the qualifying card
+    static constexpr double kCardHold = 7.0; // a completed lap stays this long (its time, gap and sectors)
+
+    void card(QCard &k, const Snapshot &snap, Kind kind, const Config &cfg)
+    {
+        const MyLap &m = snap.my;
+        k = QCard{};
+        if (!cfg.qcard || !(kind == Kind::quali || kind == Kind::sprint_quali) || !m.known)
+            return;
+        const CarIn *me = nullptr;
+        for (const CarIn &c : snap.cars)
+            if (c.me)
+                me = &c;
+        if (!me)
+            return;
+        const bool hold = m.done_ms > 0 && m.done_age >= 0 && m.done_age < kCardHold;
+        if (m.laps != card_lap_) {
+            card_lap_ = m.laps;
+            card_cool_ = false;
+        }
+
+        // the target: the fastest other car; in a knockout zone (or without a time) the last car through
+        const int seg = knockout_segment(snap.s.type);
+        const int cut = (seg == 1 || seg == 2) ? knockout_cut(seg, field_) : 0;
+        const CarIn *p1 = nullptr, *cut_car = nullptr;
+        for (const CarIn &c : snap.cars) {
+            if (c.me || c.best_ms <= 0)
+                continue;
+            if (!p1 || c.best_ms < p1->best_ms)
+                p1 = &c;
+            if (cut > 0 && c.pos == cut)
+                cut_car = &c;
+        }
+        const bool through = me->best_ms > 0 && me->pos > 0 && me->pos <= cut;
+        const CarIn *pick = cut > 0 && cut_car && !through ? cut_car : p1;
+        // a lap just done keeps the target it was run against (the order changes as it lands)
+        if (!hold || card_tg_vid_ < 0) {
+            card_tg_vid_ = pick ? int(pick->vid) : -1;
+            card_tg_cut_ = pick && pick == cut_car && pick != p1 ? cut : 0;
+        }
+        const CarIn *tg = nullptr;
+        for (const CarIn &c : snap.cars)
+            if (int(c.vid) == card_tg_vid_)
+                tg = &c;
+        const bool tg_cut = tg && card_tg_cut_ > 0;
+
+        // the session's best of each sector (every car's own best)
+        int sb[3] = {-1, -1, -1};
+        for (const CarIn &c : snap.cars)
+            for (int i = 0; i < 3; i++)
+                if (c.pb_sec[i] > 0 && (sb[i] < 0 || c.pb_sec[i] < sb[i]))
+                    sb[i] = c.pb_sec[i];
+        auto colour = [&](int i, int st) {
+            if (st <= 0)
+                return int(sec_none);
+            if (sb[i] > 0 && st <= sb[i])
+                return int(sec_purple);
+            if (me->pb_sec[i] <= 0 || st <= me->pb_sec[i])
+                return int(sec_green);
+            return int(sec_yellow);
+        };
+        auto delta_col = [&](int d) {
+            return d < 0 ? (tg_cut ? int(dcol_green) : int(dcol_purple)) : int(dcol_yellow);
+        };
+        auto tsum = [&](int n) { // the target lap to the end of sector n (0-based), -1 unknown
+            if (!tg)
+                return -1;
+            int t = 0;
+            for (int i = 0; i <= n; i++) {
+                if (tg->best_sec[i] <= 0)
+                    return -1;
+                t += tg->best_sec[i];
+            }
+            return t;
+        };
+
+        if (hold && (!m.flying || m.t_ms < 1500 || card_cool_)) {
+            // the lap just done, for kCardHold (a next flying lap takes over once it is under way)
+            k.time = fmt_lap(m.done_ms);
+            const int s1 = m.done_split[0];
+            const int s2 = m.done_split[1] > 0 && s1 > 0 ? m.done_split[1] - s1 : -1;
+            const int s3 = m.done_split[1] > 0 ? m.done_ms - m.done_split[1] : -1;
+            k.sec[0] = colour(0, s1);
+            k.sec[1] = colour(1, s2);
+            k.sec[2] = colour(2, s3);
+            if (tg && tg->best_ms > 0) {
+                const int d = m.done_ms - tg->best_ms;
+                k.delta = fmt_delta(d);
+                k.dcol = delta_col(d);
+            }
+        } else if (m.flying && m.t_ms >= 0) {
+            // an in-lap or a cool-down lap (sector 1 over 3 s off the car's best, or a quarter past a lap): no card
+            if (m.split[0] > 0 && me->pb_sec[0] > 0 && m.split[0] > me->pb_sec[0] + 3000)
+                card_cool_ = true;
+            const int ref = me->best_ms > 0 ? me->best_ms : tg ? tg->best_ms : -1;
+            if (ref > 0 && m.t_ms > ref + ref / 4)
+                card_cool_ = true;
+            if (card_cool_)
+                return;
+            k.time = fmt_run(m.t_ms);
+            const int s1 = m.split[0], s2 = m.split[1] > 0 && s1 > 0 ? m.split[1] - s1 : -1;
+            k.sec[0] = s1 > 0 ? colour(0, s1) : int(sec_now);
+            k.sec[1] = s2 > 0 ? colour(1, s2) : s1 > 0 ? int(sec_now) : int(sec_none);
+            k.sec[2] = s2 > 0 ? int(sec_now) : int(sec_none);
+            const int at = m.split[1] > 0 ? 1 : m.split[0] > 0 ? 0 : -1;
+            const int tt = at >= 0 ? tsum(at) : -1;
+            if (tt > 0) {
+                const int d = m.split[at] - tt;
+                k.delta = fmt_delta(d);
+                k.dcol = delta_col(d);
+            }
+        } else {
+            return;
+        }
+        k.on = true;
+        k.vid = int(me->vid);
+        k.team = team_index(me->badge);
+        k.badge = me->badge.empty() ? "" : "#overrides.osd.timing_tower.team_badges_broadcast." + me->badge;
+        k.name = me->name;
+        k.pos = me->best_ms > 0 && me->pos > 0 ? std::to_string(me->pos) : "-";
+        k.tyre = me->tyre;
+        if (tg && tg->best_ms > 0) {
+            k.target = fmt_lap(tg->best_ms);
+            k.target_vid = int(tg->vid);
+            k.target_name = tg->name;
+            if (tg_cut)
+                k.cut = "CUT P" + std::to_string(card_tg_cut_);
+        }
+    }
+
+    uint32_t card_lap_ = ~0u;
+    bool card_cool_ = false;
+    int card_tg_vid_ = -1, card_tg_cut_ = 0;
 
     struct Pending {
         int kind = banner_none;

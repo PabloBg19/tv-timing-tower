@@ -42,7 +42,12 @@ struct Car {
     int best_ms = -1;  // its best valid lap, -1 none
     int last_ms = -1;  // its last completed lap (valid or not), -1 none
     bool last_valid = false;
+    int best_sec[3] = {-1, -1, -1}; // the best lap's three sectors (the qualifying card's target splits)
+    int pb_sec[3] = {-1, -1, -1};   // the car's best of each sector over its valid laps
+    int cur_sec[2] = {-1, -1};      // the lap in progress: sector 1 and 2 once done (-1 not yet, or not recorded)
 };
+
+inline int to_ms(float s) { return int(std::lround(double(s) * 1000.0)); }
 
 // a float of seconds stored XOR'ed with the dword 8 bytes after it
 inline float xor_float(const uint8_t *p)
@@ -151,12 +156,23 @@ template <class Read> bool read_car(Read &rd, uintptr_t system, uint32_t vid, Ca
     if (!rd(data + kLapCount, &n, 1) || n > kMaxLaps)
         return why = "a car's lap count is out of range", false;
     out.laps = n;
-    if (!n)
+    if (!n) {
+        std::vector<uint8_t> first(kLapSize);
+        if (rd(data + kLap0, first.data(), kLapSize) && !sane(xor_float(first.data() + kTime))) {
+            const float a = xor_float(first.data() + kS1), b = xor_float(first.data() + kS2);
+            if (sector_sane(a)) {
+                out.cur_sec[0] = to_ms(a);
+                if (sector_sane(b))
+                    out.cur_sec[1] = to_ms(b);
+            }
+        }
         return true;
+    }
     std::vector<uint8_t> buf(size_t(n) * kLapSize);
     if (!rd(data + kLap0, buf.data(), buf.size()))
         return why = "a car's laps are unreadable", false;
     float best = 0;
+    int best_i = -1;
     for (int i = 0; i < n; i++) {
         const uint8_t *lap = buf.data() + size_t(i) * kLapSize;
         const float t = xor_float(lap + kTime), s1 = xor_float(lap + kS1), s2 = xor_float(lap + kS2),
@@ -169,11 +185,46 @@ template <class Read> bool read_car(Read &rd, uintptr_t system, uint32_t vid, Ca
             out.last_ms = int(std::lround(t * 1000.0));
             out.last_valid = flag(lap + kValid);
         }
-        if (sane(t) && sectors && flag(lap + kValid) && (best == 0 || t < best))
-            best = t;
+        if (sane(t) && sectors && flag(lap + kValid)) {
+            if (best == 0 || t < best) {
+                best = t;
+                best_i = i;
+            }
+            const float sec[3] = {s1, s2, s3};
+            for (int k = 0; k < 3; k++)
+                if (out.pb_sec[k] < 0 || to_ms(sec[k]) < out.pb_sec[k])
+                    out.pb_sec[k] = to_ms(sec[k]);
+        }
     }
-    if (best > 0)
+    if (best > 0) {
         out.best_ms = int(std::lround(best * 1000.0));
+        const uint8_t *lap = buf.data() + size_t(best_i) * kLapSize;
+        out.best_sec[0] = to_ms(xor_float(lap + kS1));
+        out.best_sec[1] = to_ms(xor_float(lap + kS2));
+        out.best_sec[2] = to_ms(xor_float(lap + kS3));
+    }
+    // the lap in progress: the last one when it has no time yet, else the next slot (its sectors as they are done).
+    // The caller checks these against its own clock before using them.
+    {
+        const uint8_t *last = buf.data() + size_t(n - 1) * kLapSize;
+        std::vector<uint8_t> next;
+        const uint8_t *cur = nullptr;
+        if (!sane(xor_float(last + kTime)))
+            cur = last;
+        else if (n < int(kMaxLaps)) {
+            next.resize(kLapSize);
+            if (rd(data + kLap0 + size_t(n) * kLapSize, next.data(), kLapSize))
+                cur = next.data();
+        }
+        if (cur && !sane(xor_float(cur + kTime))) {
+            const float a = xor_float(cur + kS1), b = xor_float(cur + kS2);
+            if (sector_sane(a)) {
+                out.cur_sec[0] = to_ms(a);
+                if (sector_sane(b))
+                    out.cur_sec[1] = to_ms(b);
+            }
+        }
+    }
     return true;
 }
 

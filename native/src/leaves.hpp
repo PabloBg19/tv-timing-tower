@@ -77,6 +77,28 @@ public:
             x.bdg = L.boolean(k + "_bdg");
             x.nm = L.text(k + "_nm", 24); // demo: the simulated driver's name
         }
+        {
+            CardLeaves &x = qc;
+            x.on = L.boolean("qc");
+            x.car = L.one_hot("qc_c", kSlots, 2);
+            x.tm = L.one_hot("qc_tm", kTeams, 2);
+            x.badge = L.text("qc_badge", 96);
+            x.bdg = L.boolean("qc_bdg");
+            x.nm = L.text("qc_nm", 24);
+            x.pos = L.text("qc_pos", 4);
+            x.ty = L.one_hot("qc_ty", 5, 0);
+            x.t = L.text("qc_t", 12);
+            x.d = L.text("qc_d", 12);
+            x.dc = L.one_hot("qc_dc", 3, 0, 1);
+            x.tt = L.text("qc_tt", 12);
+            x.tcar = L.one_hot("qc_n", kSlots, 2);
+            x.tnm = L.text("qc_tnm", 24);
+            x.cut = L.boolean("qc_cut");
+            x.cutl = L.text("qc_cutl", 8);
+            x.ncut = L.boolean("qc_ncut");
+            for (int i = 0; i < 3; i++)
+                x.sec[i] = L.one_hot("qc_s" + std::to_string(i + 1) + "_", 5, 0);
+        }
         gained = L.boolean("gained");
         rows = L.rows<RowLeaves>("r", kRows, 2, [](hud::Leaves &l, int) {
             RowLeaves r;
@@ -184,6 +206,41 @@ public:
             L.set(x.badge, mine && !icon ? h.ban_badge : std::string());
             L.set(x.bdg, mine && !icon && !h.ban_badge.empty());
             L.set(x.nm, mine && h.demo ? h.ban_name : std::string());
+        }
+
+        // the qualifying card: as the banner, its slots sit straight under an always-shown group and change while
+        // the card shows; hidden, every slot is off
+        {
+            CardLeaves &x = qc;
+            const QCard &k = v.card;
+            const bool on = h.on && k.on;
+            hud::Leaves::Atomic group(L);
+            L.set(x.on, on);
+            const bool icon = on && cfg.logos == Config::Logos::tv && k.team >= 0 && has_team(k.team);
+            L.set(x.car, on && !h.demo && k.vid >= 0 && k.vid < kSlots ? k.vid : -1);
+            L.set(x.tm, icon ? k.team : -1);
+            L.set(x.badge, on && !icon ? k.badge : std::string());
+            L.set(x.bdg, on && !icon && !k.badge.empty());
+            L.set(x.nm, on && h.demo ? k.name : std::string());
+            L.set(x.pos, on ? k.pos : std::string());
+            static const char kTy[] = "SMHIW";
+            int ty = -1;
+            for (int i = 0; i < 5; i++)
+                if (on && k.tyre == kTy[i])
+                    ty = i;
+            L.set(x.ty, ty);
+            L.set(x.t, on ? k.time : std::string());
+            L.set(x.d, on ? k.delta : std::string());
+            L.set(x.dc, on && !k.delta.empty() ? k.dcol - 1 : -1);
+            L.set(x.tt, on ? k.target : std::string());
+            const bool tgt = on && !k.target.empty();
+            L.set(x.tcar, tgt && !h.demo && k.target_vid >= 0 && k.target_vid < kSlots ? k.target_vid : -1);
+            L.set(x.tnm, tgt && h.demo ? k.target_name : std::string());
+            L.set(x.cut, tgt && !k.cut.empty());
+            L.set(x.ncut, tgt && k.cut.empty());
+            L.set(x.cutl, tgt ? k.cut : std::string());
+            for (int i = 0; i < 3; i++)
+                L.set(x.sec[i], on ? k.sec[i] : -1);
         }
 
         // Row change fades: only for a few rows at a time (a start or a restart reshuffles the field: snap) and at
@@ -296,6 +353,13 @@ public:
         hud::TextLeaf badge, nm;
     };
     BannerLeaves ban; // NEW RACE LEADER
+    struct CardLeaves {
+        hud::BoolLeaf on, bdg, cut, ncut;
+        hud::OneHot car, tm, ty, dc, tcar;
+        hud::OneHot sec[3];
+        hud::TextLeaf badge, nm, pos, t, d, tt, tnm, cutl;
+    };
+    CardLeaves qc; // the qualifying card
 
     static constexpr double kFadeHold = 0.16; // the row's fade out (generic_fade_on) before the swap
     static constexpr int kMaxFades = 4;       // more rows changing at once: no fade (a start, a restart)

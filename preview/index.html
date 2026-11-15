@@ -202,6 +202,44 @@
       if (logos && h.btm >= 0) add(spr('tmb_' + L.teams[h.btm], logoCx, bh / 2, 43));
       tower.append(b);
     }
+    // the qualifying card, right of the tower near the bottom (hudgen's qcard)
+    const qc = fr.qc, Q = L.qcard;
+    if (qc && qc.on && Q) {
+      const QC = Q.colours;
+      const b = document.createElement('div'); b.className = 'el';
+      Object.assign(b.style, { left: (W + Q.x) + 'px', top: Q.y + 'px', width: Q.w + 'px', height: Q.h + 'px' });
+      const add = e => e && b.append(e);
+      const mid = cap => Q.hdr / 2 + cap / 2;
+      add(spr('qc_bg', 0, 0, 40));
+      const sl = S.qc_line;
+      if (sl) { const d = document.createElement('div'); d.className = 'el'; const bb = sl.bounds;
+        Object.assign(d.style, { left: bb[0] + 'px', top: bb[1] + 'px', width: (bb[2] - bb[0]) + 'px', height: (bb[3] - bb[1]) + 'px',
+          zIndex: 41, backgroundColor: TEAMCOL[L.teams[qc.team]] || '#888' });
+        add(d); }
+      add(txt(qc.pos, Q.pos_x, mid(Q.pos_cap), Q.pos_cap, 'centre', '#fff', 700));
+      if (logos && qc.team >= 0) add(spr('tm_' + L.teams[qc.team], Q.logo_x - L.logo_x, Q.hdr / 2 - R / 2, 43));
+      add(txt(qc.name.toUpperCase(), Q.name_x, mid(Q.name_cap), Q.name_cap, 'left', '#fff', 700));
+      if (qc.tyre.trim()) {
+        add(spr('qc_ty' + qc.tyre, 0, 0, 42));
+        add(txt(qc.tyre, Q.tyre_x, mid(Q.tyre_cap), Q.tyre_cap, 'centre', C.tyres[qc.tyre], 700));
+      }
+      add(txt(qc.time, Q.time_x, Q.time_base, Q.time_cap, 'left', '#fff', 700));
+      const dc = [null, QC.green, QC.yellow, QC.purple][qc.dcol];
+      if (qc.delta && dc) add(txt(qc.delta, Q.time_x, Q.delta_base, Q.delta_cap, 'left', dc, 400));
+      add(txt(qc.target, Q.tgt_right, Q.tgt_base, Q.tgt_cap, 'right', '#fff', 400));
+      if (qc.cut) {
+        add(spr('qc_cutbg', 0, 0, 41));
+        add(txt(qc.cut, (Q.cut_x[0] + Q.cut_x[1]) / 2, Q.tn_base - Q.tn_cap / 2 + Q.cut_cap / 2, Q.cut_cap, 'centre', QC.cut_text, 700));
+        add(txt(qc.tname.toUpperCase(), Q.cutname_x, Q.tn_base, Q.tn_cap, 'left', QC.tname, 400));
+      } else if (qc.target) add(txt(qc.tname.toUpperCase(), Q.tgt_right, Q.tn_base, Q.tn_cap, 'right', QC.tname, 400));
+      const st = ['later', 'now', 'green', 'yellow', 'purple'];
+      const lab = [QC.lab_dim, QC.lab_dim, QC.green, QC.yellow, QC.purple];
+      qc.sec.forEach((s, i) => {
+        add(spr('qc_b' + i + st[s], 0, 0, 42));
+        add(txt('S' + (i + 1), Q.bars[i][0] + Q.lab_dx, Q.lab_base, Q.lab_cap, 'left', lab[s], 400));
+      });
+      tower.append(b);
+    }
     $('tv').textContent = t.toFixed(1) + ' s';
     $('t').value = Math.round(t / F.step);
   }

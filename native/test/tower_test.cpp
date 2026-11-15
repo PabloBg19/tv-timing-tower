@@ -17,6 +17,7 @@
 #include "../src/demo.hpp"
 #include "../src/lap_clock.hpp"
 #include "../src/laptimes.hpp"
+#include "../src/qcard.hpp"
 #include "../src/leaves.hpp"
 #include "../src/model.hpp"
 #include "../src/source_live.hpp"
@@ -1013,6 +1014,188 @@ static void test_game_lap_times()
     CHECK(lt::find_system(g.m, g.base, why) == 0 && why == "no game manager");
 }
 
+static void test_qcard()
+{
+    namespace lt = laptimes;
+    // the game's records: best lap sectors, the best of each sector, the lap in progress
+    {
+        FakeLapTimes f(2);
+        f.lap(0, 0, 30.0f, 31.25f, 29.0f, true);
+        f.lap(0, 1, 29.9f, 31.4f, 29.1f, true);   // 90.4: not the best, but the best sector 1
+        f.lap(0, 2, 29.5f, 31.0f, 28.5f, false);  // deleted: its sectors don't count
+        std::string why;
+        const uintptr_t sys = lt::find_system(f.m, f.base, why);
+        lt::Car c;
+        CHECK(lt::read_car(f.m, sys, 0, c, why) && c.best_ms == 90250);
+        CHECK(c.best_sec[0] == 30000 && c.best_sec[1] == 31250 && c.best_sec[2] == 29000);
+        CHECK(c.pb_sec[0] == 29900 && c.pb_sec[1] == 31250 && c.pb_sec[2] == 29000);
+        CHECK(c.cur_sec[0] < 0 && c.cur_sec[1] < 0);
+        // the next lap under way: sector 1 done (no lap time yet)
+        const uintptr_t nx = f.recs[0] + lt::kCarData + lt::kLap0 + 3 * lt::kLapSize;
+        f.put_time(nx + lt::kS1, 30.2f);
+        CHECK(lt::read_car(f.m, sys, 0, c, why) && c.laps == 3 && c.cur_sec[0] == 30200 && c.cur_sec[1] < 0);
+        f.put_time(nx + lt::kS2, 31.1f);
+        CHECK(lt::read_car(f.m, sys, 0, c, why) && c.cur_sec[1] == 31100);
+        // a car with no lap yet, its first under way
+        f.put_time(f.recs[1] + lt::kCarData + lt::kLap0 + lt::kS1, 30.6f);
+        CHECK(lt::read_car(f.m, sys, 1, c, why) && c.laps == 0 && c.cur_sec[0] == 30600);
+    }
+    // the tracker: an out lap (no card), the line, the splits placed by distance, the game's figures when they agree
+    {
+        MyLapTracker tr;
+        MySample m;
+        m.ok = true;
+        m.vid = 3;
+        m.end[0] = 1500.f;
+        m.end[1] = 3000.f;
+        m.in_pit = true;
+        m.cross = -1;
+        m.sim = 1.0;
+        m.lap_m = 200.f;
+        CHECK(!tr.step(m).known);
+        m.in_pit = false; // out lap: crossings known, but the lap began in the pit lane
+        m.cross = 0.5;
+        m.sim = 2.0;
+        CHECK(!tr.step(m).flying);
+        // the line at sim 10.0: a flying lap
+        m.cross = 10.0;
+        m.sim = 10.1;
+        m.lap_m = 5.f;
+        MyLap l = tr.step(m);
+        CHECK(l.known && l.flying && l.laps == 1 && l.t_ms == 100);
+        m.sim = 40.0;
+        m.lap_m = 1490.f;
+        CHECK(tr.step(m).split[0] < 0);
+        m.sim = 40.2;
+        m.lap_m = 1510.f; // 1500 halfway: split at 40.1 -> 30.100
+        l = tr.step(m);
+        CHECK(l.split[0] == 30100 && l.split[1] < 0);
+        // the game's sector 1 a few ms off ours: the game's
+        m.game_sec[0] = 30087;
+        m.sim = 40.3;
+        m.lap_m = 1515.f;
+        CHECK(tr.step(m).split[0] == 30087);
+        // a stale figure far from ours is ignored
+        MyLapTracker t2 = tr;
+        m.game_sec[1] = 5000;
+        m.sim = 72.0;
+        m.lap_m = 2990.f;
+        tr.step(m);
+        m.sim = 72.2;
+        m.lap_m = 3010.f;
+        l = tr.step(m);
+        CHECK(l.split[1] == 72100 - 10000);
+        (void)t2;
+        // the line again: the lap is done; then the game's lap time replaces ours
+        m.game_sec[0] = m.game_sec[1] = -1;
+        m.game_last_ms = 88000; // the previous lap's, still in the record
+        m.cross = 99.5;
+        m.sim = 99.6;
+        m.lap_m = 4.f;
+        l = tr.step(m);
+        CHECK(l.done_ms == 89500 && l.done_split[0] == 30087 && l.flying && l.laps == 2);
+        m.game_last_ms = 89512;
+        m.sim = 100.0;
+        l = tr.step(m);
+        CHECK(l.done_ms == 89512 && l.done_age > 0.3 && l.done_age < 0.5);
+        // into the pit lane: no flying lap
+        m.in_pit = true;
+        m.sim = 101.0;
+        CHECK(!tr.step(m).flying);
+    }
+    // the card: qualifying only, the target (P1, or the cut from the knockout zone), the colours
+    {
+        Tower t;
+        Config cfg;
+        Snapshot q = demo::make(demo::quali_q1, 0.5);
+        const View *v = &t.update(q, cfg, 0.5);
+        const QCard &k = v->card;
+        CHECK(k.on && k.vid == demo::kPlayer && !k.time.empty() && k.time.find(':') == std::string::npos);
+        CHECK(k.sec[0] == sec_now && k.sec[1] == sec_none && k.delta.empty());
+        cfg.qcard = false;
+        CHECK(!t.update(q, cfg, 0.6).card.on);
+        cfg.qcard = true;
+        Snapshot r = demo::make(demo::race, 0.5);
+        CHECK(!t.update(r, cfg, 0.7).card.on);
+
+        // a split under the target's: purple gap to P1 (the player through the cut)
+        Tower t2;
+        Snapshot s = demo::make(demo::quali_q1, 0.5);
+        CarIn *me = nullptr, *p1 = nullptr;
+        for (CarIn &c : s.cars) {
+            if (c.me)
+                me = &c;
+            if (c.pos == 1)
+                p1 = &c;
+        }
+        CHECK(me && p1 && me->pos <= 16);
+        s.my.split[0] = p1->best_sec[0] - 100;
+        s.my.t_ms = s.my.split[0] + 2000;
+        v = &t2.update(s, cfg, 1.0);
+        CHECK(v->card.delta == "-0.100" && v->card.dcol == dcol_purple && v->card.cut.empty());
+        CHECK(v->card.target == fmt_lap(p1->best_ms) && v->card.target_vid == int(p1->vid));
+        CHECK(v->card.sec[0] == sec_purple && v->card.sec[1] == sec_now);
+        // slower: yellow; a sector under the player's own best only: green
+        s.my.split[0] = me->pb_sec[0] - 1;
+        v = &t2.update(s, cfg, 1.1);
+        CHECK(v->card.dcol == dcol_yellow && v->card.delta[0] == '+' && v->card.sec[0] == sec_green);
+        s.my.split[0] = me->pb_sec[0] + 400;
+        CHECK(t2.update(s, cfg, 1.2).card.sec[0] == sec_yellow);
+
+        // the knockout zone: the target is the car on the cut, CUT P16 (22 cars), green when under it
+        Tower t3;
+        Snapshot z = demo::make(demo::quali_q1, 0.5);
+        for (CarIn &c : z.cars)
+            if (c.me) {
+                c.pos = 19;
+                c.best_ms = 99000;
+            }
+        const CarIn *cutc = nullptr;
+        for (const CarIn &c : z.cars)
+            if (c.pos == 16 && !c.me)
+                cutc = &c;
+        CHECK(cutc != nullptr);
+        z.my.split[0] = cutc->best_sec[0] - 50;
+        z.my.t_ms = z.my.split[0] + 1000;
+        v = &t3.update(z, cfg, 1.0);
+        CHECK(v->card.cut == "CUT P16" && v->card.target_vid == int(cutc->vid) && v->card.dcol == dcol_green);
+        CHECK(v->card.pos == "19");
+
+        // a lap done: its time in thousandths and all three sectors for the hold, then nothing (in-lap)
+        Tower t4;
+        Snapshot d = demo::make(demo::quali_q1, 0.5);
+        d.my.flying = false;
+        d.my.t_ms = -1;
+        d.my.split[0] = d.my.split[1] = -1;
+        d.my.done_ms = 78500;
+        d.my.done_split[0] = 23500;
+        d.my.done_split[1] = 55000;
+        d.my.done_age = 1.0;
+        v = &t4.update(d, cfg, 1.0);
+        CHECK(v->card.on && v->card.time == "1:18.500" && v->card.sec[2] != sec_none && v->card.sec[2] != sec_now);
+        d.my.done_age = 8.0;
+        CHECK(!t4.update(d, cfg, 2.0).card.on);
+        // a cool-down lap: sector 1 far off the player's best -> no card for the rest of that lap
+        d.my.done_ms = -1;
+        d.my.done_age = -1;
+        d.my.flying = true;
+        d.my.laps = 7;
+        for (const CarIn &c : d.cars)
+            if (c.me)
+                d.my.split[0] = c.pb_sec[0] + 5000;
+        d.my.t_ms = d.my.split[0] + 100;
+        CHECK(!t4.update(d, cfg, 3.0).card.on);
+        d.my.split[0] = -1;
+        d.my.t_ms = 1000; // still the same lap (laps unchanged): stays off
+        CHECK(!t4.update(d, cfg, 3.1).card.on);
+        d.my.laps = 8;
+        CHECK(t4.update(d, cfg, 3.2).card.on);
+    }
+    // the formats
+    CHECK(fmt_run(9400) == "9.4" && fmt_run(56690) == "56.6" && fmt_run(81849) == "1:21.8");
+    CHECK(fmt_delta(-457) == "-0.457" && fmt_delta(696) == "+0.696" && fmt_delta(0) == "+0.000");
+}
+
 static void test_championship()
 {
     namespace st = standings;
@@ -1109,6 +1292,7 @@ int main()
     test_cards();
     test_banners();
     test_game_lap_times();
+    test_qcard();
     test_championship();
     test_yellow_texts();
     test_lap_clock();

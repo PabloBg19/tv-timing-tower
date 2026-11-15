@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.18.1"
+VERSION = "0.19.0"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
@@ -140,6 +140,9 @@ OPTIONS = [
      "When a row's car changes (overtakes), the row fades out and back in with the new car.", {"default": True}),
     ("highlight", "toggle", "Resaltar mi coche", "Highlight my car", "Tu fila un poco más clara.",
      "Your row slightly brighter.", {"default": True}),
+    ("quali_card", "toggle", "Tarjeta de clasificación", "Qualifying lap card",
+     "Clasificación: tu vuelta como en la TV, al lado de la torre: tiempo, parciales, diferencia con P1 o el corte.",
+     "Qualifying: your lap as on TV, beside the tower: time, sectors, gap to P1 or the cut.", {"default": True}),
     ("in_practice", "toggle", "En libres", "In practice", "Torre en los entrenamientos libres.",
      "Tower in practice.", {"default": True}),
     ("in_quali", "toggle", "En clasificación", "In qualifying", "Torre en Q1, Q2 y Q3.",

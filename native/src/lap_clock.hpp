@@ -160,6 +160,8 @@ public:
     int fastest_vid() const { return fastest_vid_; }
     int fastest_ms() const { return fastest_ms_; }
     double sim_time() const { return sim_; }
+    // sim time of the car's last line crossing, -1 unknown (none seen yet, or its lap was thrown out)
+    double cross_t(uint32_t vid) const { return vid < kCars ? cars_[vid].cross_t : -1; }
 
     // The fastest of the car's valid laps that is not faster than `floor_ms`, -1 for none. The tower uses it so a
     // lap the game threw out (and we could not tell) never puts a car's time ahead of a car the game ranks higher.

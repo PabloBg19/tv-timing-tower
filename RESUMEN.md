@@ -1,5 +1,16 @@
 # Resumen — TV Timing Tower
 
+## 0.19.0 (15-11-2026, en prueba): tarjeta de clasificación
+
+- En clasificación (Q1/Q2/Q3, SQ1/SQ2/SQ3), a la derecha de la parte baja de la torre, la tarjeta de tu vuelta como
+  en la TV: posición, logo, apellido y neumático; el tiempo de la vuelta corriendo (décimas) y, al cerrarla, en
+  milésimas durante 7 s; la diferencia en el último parcial con la vuelta objetivo (morado si mejoras a P1, verde si
+  mejoras el corte, amarillo si no); el objetivo a la derecha (P1, o `CUT P16` y el piloto del corte si estás en la
+  zona de eliminación); y las barras S1 S2 S3 (morado mejor de la sesión, verde tu mejor, amarillo más lento).
+- El tiempo en curso es el reloj del addon (se para con la pausa); los parciales se miden al pasar el final de
+  cada sector y se cambian por los del juego cuando coinciden. Vuelta de salida y vuelta de enfriamiento: sin
+  tarjeta. Ajuste `Tarjeta de clasificación` (activado). Medidas sacadas de capturas de la tele (388 x 127 px).
+
 ## 0.18.1 (15-11-2026, en prueba): la columna de tiempos de libres y clasificación
 
 - Probada la 0.18.0 en Q1: los tiempos salen. El tiempo del líder (1:05.173) se metía en el nombre. En libres y

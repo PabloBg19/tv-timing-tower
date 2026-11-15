@@ -235,6 +235,36 @@ inline Snapshot make(int sc, double t)
         for (int r = 16; r < 22; r++)
             snap.cars[size_t(r)].in_pit = true;
     }
+    // every lap's sectors (30 % / 40 % / the rest), each car's best sectors a little under its best lap's
+    for (CarIn &c : snap.cars)
+        if (c.best_ms > 0) {
+            c.best_sec[0] = c.best_ms * 3 / 10;
+            c.best_sec[1] = c.best_ms * 4 / 10;
+            c.best_sec[2] = c.best_ms - c.best_sec[0] - c.best_sec[1];
+            for (int k = 0; k < 3; k++)
+                c.pb_sec[k] = c.best_sec[k] - 20 - int(c.vid % 4) * 15;
+        }
+    // the player's lap for the qualifying card, four times as fast: S1 under P1's (purple), S2 slower, then the lap
+    // done 0.430 better than before, held, while the player cools down
+    if (sc == quali_q1 || sc == quali_q2 || sc == sprint_quali) {
+        MyLap &m = snap.my;
+        const int lap = 78900 + kPlayer * 71 + (kPlayer * 131) % 97 - 430;
+        const int s1 = 23400, s2 = s1 + 31900;
+        const double lt = 9000 + t * 6000;
+        m.known = true;
+        m.laps = 1;
+        if (lt < lap) {
+            m.flying = true;
+            m.t_ms = int(lt);
+            m.split[0] = lt >= s1 ? s1 : -1;
+            m.split[1] = lt >= s2 ? s2 : -1;
+        } else {
+            m.done_ms = lap;
+            m.done_split[0] = s1;
+            m.done_split[1] = s2;
+            m.done_age = (lt - lap) / 6000.0;
+        }
+    }
     return snap;
 }
 

@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.18.1"
+#define TVT_VERSION "0.19.0"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -36,6 +36,7 @@ SWOFTY_SETTING(bool, arrows, true);
 SWOFTY_SETTING(bool, animations, true);
 SWOFTY_SETTING(std::string_view, logos, "tv");
 SWOFTY_SETTING(bool, highlight, true);
+SWOFTY_SETTING(bool, quali_card, true);
 SWOFTY_SETTING(bool, in_practice, true);
 SWOFTY_SETTING(bool, in_quali, true);
 SWOFTY_SETTING(bool, in_sprint_quali, true);
@@ -75,6 +76,7 @@ tvt::Config read_config()
     c.logos = lg == "game" ? tvt::Config::Logos::game : lg == "game_white" ? tvt::Config::Logos::game_white
                                                                            : tvt::Config::Logos::tv;
     c.highlight = highlight;
+    c.qcard = quali_card;
     c.en_practice = in_practice;
     c.en_quali = in_quali;
     c.en_sprint_quali = in_sprint_quali;

@@ -17,6 +17,7 @@
 
 #include "lap_clock.hpp"
 #include "laptimes.hpp"
+#include "qcard.hpp"
 #include "model.hpp"
 #include "standings.hpp"
 
@@ -32,6 +33,7 @@ public:
     {
         clock_.reset();
         stints_.reset();
+        my_.reset();
         badges_.fill(Badge{});
         last_type_ = -1;
         last_gen_ = ~0u;
@@ -63,6 +65,7 @@ public:
             if (int(s.type) != last_type_) {
                 clock_.reset();
                 stints_.reset();
+                my_.reset();
                 champ_reset();
                 lt_cars_.fill(LtCar{});
             }
@@ -174,7 +177,37 @@ public:
             champ_step(snap, now);
         // practice and qualifying: the game's own lap times (simulated laps included) in place of the addon's clock
         if (!race && !snap.cars.empty())
-            game_times(snap, now);
+            game_times(snap, now, me);
+        // qualifying: the player's lap for the card
+        if (!race && me >= 0 && me < int(live::max_cars) && cars[size_t(me)] &&
+            live::has(*cars[size_t(me)], SWOFTY_LIVE_HAVE_PROGRESS)) {
+            const live::Car &c = *cars[size_t(me)];
+            MySample ms;
+            ms.ok = true;
+            ms.vid = uint32_t(me);
+            ms.sim = clock_.sim_time();
+            ms.cross = clock_.cross_t(uint32_t(me));
+            ms.lap_m = c.lap_m;
+            ms.in_pit = live::in_pit(c) || live::pit_status(c).value_or(0) != 0;
+            ms.sector = live::has(c, SWOFTY_LIVE_HAVE_SECTOR) ? int(c.sector) : -1;
+            if (live::has(s, SWOFTY_LIVE_SHAVE_SECTORS) && s.sector_count >= 3 && si.track_m > 100.f) {
+                for (int k = 0; k < 2; k++) {
+                    const float e = s.sector_end_m[k];
+                    ms.end[k] = e > 50.f && e < si.track_m - 50.f ? e : -1.f;
+                }
+                if (ms.end[0] < 0 || ms.end[1] <= ms.end[0])
+                    ms.end[0] = ms.end[1] = -1.f;
+            }
+            if (lt_state_ == 1 && lt_system_ && size_t(me) < lt_cars_.size()) {
+                const laptimes::Car &g = lt_cars_[size_t(me)].car;
+                ms.game_sec[0] = g.cur_sec[0];
+                ms.game_sec[1] = g.cur_sec[1];
+                ms.game_last_ms = g.last_ms;
+            }
+            snap.my = my_.step(ms);
+        } else {
+            my_.reset();
+        }
         return snap.cars.empty() ? Why::no_order : Why::ok;
     }
 
@@ -197,7 +230,7 @@ private:
         return true;
     }
 
-    void game_times(Snapshot &snap, double now)
+    void game_times(Snapshot &snap, double now, int me)
     {
         if (lt_state_ == 2)
             return;
@@ -260,16 +293,22 @@ private:
                 }
                 lc.car = car;
                 lc.laps = n;
-                lc.next = now + 2.0;
+                // the player's car: its lap in progress feeds the qualifying card's splits
+                lc.next = now + (int(c.vid) == me ? 0.1 : 2.0);
             }
             c.best_ms = lc.car.best_ms;
             c.last_ms = lc.car.last_ms;
+            for (int k = 0; k < 3; k++) {
+                c.best_sec[k] = lc.car.best_sec[k];
+                c.pb_sec[k] = lc.car.pb_sec[k];
+            }
             with += lc.car.best_ms > 0;
         }
         snap.s.game_times = true;
         lt_note_ = "lap times: the game's, " + std::to_string(with) + " cars with a time";
     }
 
+    MyLapTracker my_;
     int lt_state_ = 0; // 0 to check, 1 this build, 2 off (another build, or something didn't look right)
     uintptr_t lt_system_ = 0;
     double lt_search_ = 0, lt_check_ = 0;
