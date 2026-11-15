@@ -164,7 +164,7 @@
       if (r.gap) {
         const col = r.purple ? C.purple : r.green ? C.green : r.inpit ? C.inpit : r.label ? C.label : C.gap;
         // practice / qualifying: the data column ends further right, its figures smaller (as hudgen's `dq`)
-        const q = !h.race && !r.label && !r.inpit && !r.gch;
+        const q = (!h.race || r.gap.includes(':')) && !r.label && !r.inpit && !r.gch;
         const cap = r.label || r.inpit ? L.cap_label : q ? L.cap_gap_q : L.cap_gap;
         add(txt(r.gap, r.gch ? W - 0.8 : r.gon ? L.gain_right : q ? L.gap_right_q : L.gap_right, L.text_y, r.gch ? cap * 0.79 : cap, 'right', col, (r.purple || r.green || r.inpit) ? 700 : 400));
       }

@@ -18,7 +18,7 @@ inline constexpr const char *kPrefix = "view_model_data.hud_tvt_";
 struct RowLeaves {
     hud::BoolLeaf on, sep, me, p1, ko, kol, dim, up, dn;
     hud::TextLeaf pos, gap;
-    hud::BoolLeaf gpu, gpg, glb, gip, gsp, gch;
+    hud::BoolLeaf gpu, gpg, glb, gip, gsp, gch, gq;
     hud::BoolLeaf tS, tM, tH, tI, tW;
     hud::BoolLeaf sS, sM, sH, sI, sW; // STARTING TYRES: the compound's name
     hud::TextLeaf tage;
@@ -121,6 +121,7 @@ public:
             r.gip = l.boolean("gip");
             r.gch = l.boolean("gch");
             r.gsp = l.boolean("gsp");
+            r.gq = l.boolean("gq");
             r.tS = l.boolean("tS");
             r.tM = l.boolean("tM");
             r.tH = l.boolean("tH");
@@ -309,6 +310,8 @@ public:
             L.set(x.gip, r.gap_inpit);
             L.set(x.gch, r.gap_champ);
             L.set(x.gsp, r.gap_purple || r.gap_green || r.gap_label || r.gap_inpit || r.gap_champ);
+            // a lap time (or a gap over a minute) in the narrow column: practice, qualifying, the fastest lap flash
+            L.set(x.gq, h.timed || r.gap.find(':') != std::string::npos);
             L.set(x.tS, r.tyre == 'S');
             L.set(x.tM, r.tyre == 'M');
             L.set(x.tH, r.tyre == 'H');

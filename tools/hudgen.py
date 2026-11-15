@@ -696,8 +696,10 @@ def row(flavour, logos_found):
                 text("gg", "OSD_24_bold", "right", L["gap_box"], cap, [gx, ty], value=vm(r + "gap"),
                      colour=C["green"] + "ff", visible=vm(r + "gpg"))]
     gx = L["gap_right"]
-    k.append(group("dr", data(gx, L["cap_gap"]), visible=vm("timed", True, True)))
-    k.append(group("dq", data(L["gap_right_q"], L["cap_gap_q"]), visible=vm("timed")))
+    # per row: the narrow column for a full lap time (timed sessions, a race's fastest lap flash: 1:07.743 ran into
+    # the name at the race size, 0.20.0 in game)
+    k.append(group("dr", data(gx, L["cap_gap"]), visible=vm(r + "gq", True, True)))
+    k.append(group("dq", data(L["gap_right_q"], L["cap_gap_q"]), visible=vm(r + "gq")))
     k.append(text("gl", "OSD_24_regular", "right", u(40), L["cap_label"], [gx, ty], value=vm(r + "gap"),
                   colour=C["label"] + "ff", visible=vm(r + "glb"), case="none", wrap="clampwidth"))
     k.append(text("gi", "OSD_24_bold", "right", u(46), u(6.6), [L["tyre_x"] + u(4), ty], value=vm(r + "gap"),

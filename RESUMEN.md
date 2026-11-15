@@ -1,5 +1,11 @@
 # Resumen — TV Timing Tower
 
+## 0.20.1 (15-11-2026, en prueba)
+
+- Probada la 0.20.0 en carrera: la franja y el icono de vuelta rápida salen bien. El tiempo morado de la fila
+  (1:07.743) se metía en el nombre: una fila con un tiempo completo usa ahora la columna estrecha de libres y
+  clasificación (más a la derecha y cifras algo más pequeñas), también en carrera.
+
 ## 0.20.0 (15-11-2026, en prueba): vuelta rápida en carrera, la del juego
 
 - En carrera también se leen los tiempos del juego, y la vuelta rápida es la suya: la vuelta válida más rápida de
