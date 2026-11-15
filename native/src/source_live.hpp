@@ -15,6 +15,7 @@
 #include <swofty/live.hpp>
 #include <swofty/mem.hpp>
 
+#include "guarded_read.hpp"
 #include "lap_clock.hpp"
 #include "laptimes.hpp"
 #include "qcard.hpp"
@@ -34,6 +35,7 @@ public:
         clock_.reset();
         stints_.reset();
         my_.reset();
+        rd.invalidate();
         badges_.fill(Badge{});
         last_type_ = -1;
         last_gen_ = ~0u;
@@ -50,11 +52,15 @@ public:
     Why read(Snapshot &snap, double dt, double now)
     {
         snap = Snapshot{};
-        if (!live::available())
+        if (!live::available()) {
+            rd.invalidate();
             return Why::no_core;
+        }
         std::optional<live::Session> so = live::session();
-        if (!so || !live::has(*so, SWOFTY_LIVE_SHAVE_TYPE))
+        if (!so || !live::has(*so, SWOFTY_LIVE_SHAVE_TYPE)) {
+            rd.invalidate();
             return Why::no_session;
+        }
         const live::Session &s = *so;
         if (live::game_mode(s) == live::GameMode::time_trial || s.type == 18)
             return Why::time_trial;
@@ -62,6 +68,7 @@ public:
             return Why::no_order;
 
         if (int(s.type) != last_type_ || s.generation != last_gen_) {
+            rd.invalidate();
             if (int(s.type) != last_type_) {
                 clock_.reset();
                 stints_.reset();
@@ -232,13 +239,8 @@ private:
         laptimes::Car car;
     };
 
-    static bool rd(uintptr_t at, void *dst, size_t n)
-    {
-        if (!at || !n || !swofty::mem::readable(at, n))
-            return false;
-        std::memcpy(dst, reinterpret_cast<const void *>(at), n);
-        return true;
-    }
+    // guarded reads with a region cache (guarded_read.hpp), dropped on every session change
+    GuardedReader rd;
 
     void game_times(Snapshot &snap, double now, int me)
     {

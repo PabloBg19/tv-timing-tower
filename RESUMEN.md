@@ -1,5 +1,13 @@
 # Resumen — TV Timing Tower
 
+## 0.20.2 (15-11-2026, en prueba): lecturas más baratas
+
+- El crash de la sesión 20261115-123320 (error de memoria del propio juego al cargar unos libres de Modo
+  Carrera) no viene de la torre: nuestro DLL no tenía estado en vivo y no leyó nada en esa sesión.
+- Revisando los logs: en 0.18.x la lectura de tiempos gastaba ~3,9 s de cada minuto en comprobaciones de memoria
+  (VirtualQuery, ~1,4 ms cada una, en un hilo del juego). Ahora una comprobación vale para toda la región de
+  memoria durante 2 s y se descarta al cambiar de sesión (`native/src/guarded_read.hpp`).
+
 ## 0.20.1 (15-11-2026, en prueba)
 
 - Probada la 0.20.0 en carrera: la franja y el icono de vuelta rápida salen bien. El tiempo morado de la fila
