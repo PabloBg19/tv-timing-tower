@@ -1,5 +1,21 @@
 # Resumen — TV Timing Tower
 
+## 0.24.0 (17-11-2026, en prueba): arreglos de los comentarios de Overtake
+
+- **Tras la actualización del juego la torre solo sale en la demo:** Swofty 1.9.59 apaga su estado en vivo en el
+  build nuevo (`[live] off: build 1794312636 has no proven live layouts`), y la torre depende de él. No se puede
+  arreglar desde el addon: vuelve cuando Swofty dé por buenos los datos del build nuevo. Ahora el log apunta el tipo
+  de cada sesión para diagnosticar.
+- **Tiempos de clasificación y vuelta rápida en carrera:** el lector de los tiempos del juego solo funcionaba en el
+  build de Steam anterior (en EA nunca). Ahora en cualquier otro build toma `g_Game_Manager` de Swofty
+  (`api->resolve`) y busca el sistema de tiempos por su nombre de clase (`VehicleLapTimesSystem`), con las mismas
+  comprobaciones de siempre.
+- **Diferencias con milésimas (`+10.007`, `+1:02.597`) encima del código del piloto:** la caja de la diferencia
+  termina 6 unidades antes del código (46 en lugar de 52 y 70) y una cifra larga se comprime dentro.
+- **`NEW RACE LEADER` y `FASTEST LAP` encima del logo:** el texto se comprime para acabar antes del bloque del equipo.
+- **Tarjeta de clasificación cortada abajo:** su parte de abajo va ahora a la altura de la última fila de una torre
+  de 22 coches, en lugar de cerca del borde de la pantalla (en la pantalla de un usuario se salía).
+
 ## 0.23.3 (15-11-2026, en prueba): escudos del juego del mismo tamaño que los iconos de la tele
 
 - Con `Logos de equipo: Juego` los escudos salían enormes (tamaño 19, en el juego). Ahora cada equipo tiene el tamaño

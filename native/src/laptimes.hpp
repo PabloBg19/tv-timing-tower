@@ -13,9 +13,10 @@
 //     bytes after it; the lap's valid flag is the byte at +0x98 equal to bit 0 of the qword at +0xa0
 //   the game's best lap is the fastest valid lap with all three sectors (the UDP builder's own rule)
 //
-// Only on the build these addresses were read from (the PE timestamp below) and only when the registry key names
-// "VehicleLapTimesSystem"; every read is guarded and every time checked (range, sectors adding up to the lap). Anything
-// else: no times, as before. Nothing is ever written.
+// On the build these addresses were read from (the PE timestamp below) as they are; on any other (a game update, the
+// EA build) the game manager comes from Swofty's own binding (api->resolve("g_Game_Manager")) and the system is the
+// registry slot whose key's class is "VehicleLapTimesSystem". Every read is guarded and every time checked (range,
+// sectors adding up to the lap); anything else: no times. Nothing is ever written.
 #pragma once
 #include <cmath>
 #include <cstdint>
@@ -72,19 +73,42 @@ inline bool flag(const uint8_t *p)
 inline bool sane(float s) { return std::isfinite(s) && s > 10.f && s < 600.f; }
 inline bool sector_sane(float s) { return std::isfinite(s) && s > 0.5f && s < 600.f; }
 
-// Read(at, dst, n): a guarded read. The lap times system, or 0 with `why`.
-template <class Read> uintptr_t find_system(Read &rd, uintptr_t base, std::string &why)
+// A registry key's class name (its type record +8), "" when it has none we can read
+template <class Read> std::string key_name_at(Read &rd, uintptr_t key)
 {
-    auto at = [&](uintptr_t va) { return va - kImageBase + base; };
+    uintptr_t p = 0;
+    if (!key || (key & 7) || !rd(key + 8, &p, 8) || !p)
+        return {};
+    char s[48] = {};
+    if (!rd(p, s, sizeof s - 1)) {
+        // the name may end near a page edge: byte by byte
+        for (size_t i = 0; i + 1 < sizeof s; i++) {
+            if (!rd(p + i, &s[i], 1))
+                return {};
+            if (!s[i])
+                break;
+        }
+    }
+    s[sizeof s - 1] = 0;
+    for (size_t i = 0; s[i]; i++)
+        if (s[i] < 0x20 || s[i] > 0x7e)
+            return {};
+    return s;
+}
+
+// Read(at, dst, n): a guarded read. The lap times system from the game manager at `mgr_at` (its address in memory),
+// or 0 with `why`. `key`: the system's registry key when known; 0 finds it by its class name (any game build, the
+// key moves with each one) and sets it.
+template <class Read> uintptr_t find_system(Read &rd, uintptr_t mgr_at, uintptr_t &key, std::string &why)
+{
     uintptr_t mgr = 0, reg = 0, sl[2] = {};
-    if (!rd(at(kGameManager), &mgr, 8) || !mgr || (mgr & 7))
+    if (!mgr_at || !rd(mgr_at, &mgr, 8) || !mgr || (mgr & 7))
         return why = "no game manager", 0;
     if (!rd(mgr + kRegistry, &reg, 8) || !reg || (reg & 7) || !rd(reg + kSlots, sl, sizeof sl))
         return why = "no system registry", 0;
     const uintptr_t slots = sl[0], info = sl[1];
     if (!slots || (slots & 7) || info <= slots || (info - slots) % 16 || (info - slots) / 16 > kMaxSlots)
         return why = "the system registry doesn't look like one", 0;
-    const uintptr_t key = at(kSystemKey);
     const size_t n = (info - slots) / 16;
     uintptr_t chunk[2 * 64];
     for (size_t i = 0; i < n; i += 64) {
@@ -92,31 +116,17 @@ template <class Read> uintptr_t find_system(Read &rd, uintptr_t base, std::strin
         if (!rd(slots + i * 16, chunk, k * 16))
             return why = "the system registry is unreadable", 0;
         for (size_t j = 0; j < k; j++) {
-            const uintptr_t value = chunk[2 * j + 1];
+            const uintptr_t kk = chunk[2 * j], value = chunk[2 * j + 1];
             uint8_t used = 0;
-            if (chunk[2 * j] == key && value && !(value & 7) && rd(info + i + j, &used, 1) && used)
+            if (!kk || !value || (value & 7) || !rd(info + i + j, &used, 1) || !used)
+                continue;
+            if (key ? kk == key : key_name_at(rd, kk) == kSystemName) {
+                key = kk;
                 return value;
+            }
         }
     }
     return why = "no lap times system in the registry", 0;
-}
-
-// The registry key's class name (its type record +8): the check that the key is the lap times system's
-template <class Read> std::string key_name(Read &rd, uintptr_t base)
-{
-    uintptr_t p = 0;
-    if (!rd(kSystemKey - kImageBase + base + 8, &p, 8) || !p)
-        return {};
-    char s[48] = {};
-    for (size_t i = 0; i + 1 < sizeof s; i++) {
-        if (!rd(p + i, &s[i], 1))
-            return {};
-        if (!s[i])
-            break;
-        if (s[i] < 0x20 || s[i] > 0x7e)
-            return {};
-    }
-    return s;
 }
 
 // The laps the game has recorded for vehicle `vid` (cheap: one byte), -1 when the car has no record

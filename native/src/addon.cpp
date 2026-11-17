@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.23.3"
+#define TVT_VERSION "0.24.0"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -203,6 +203,7 @@ struct State {
     int last_scenario = -99;
     std::string last_champ_note;
     std::string last_times_note; // the game's lap times (laptimes.hpp): what came of reading them
+    int last_logged_type = -1;    // the session type last logged
     double demo_t0 = 0;
     int key_prev = 0;
     tvt::LiveSource::Why last_why = tvt::LiveSource::Why::no_session;
@@ -313,6 +314,14 @@ void frame(double dt, void *)
             g->last_why = why;
         }
         have = why == tvt::LiveSource::Why::ok;
+        // each session's type, once (a session the tower doesn't know stays on the game's own board)
+        if (have && snap.s.type != g->last_logged_type) {
+            g->last_logged_type = snap.s.type;
+            const tvt::Kind k = tvt::kind_of(snap.s.type);
+            static const char *kinds[] = {"unknown: the game's board", "practice", "qualifying", "sprint qualifying",
+                                          "race", "time trial"};
+            swofty::log("%s session type %d (%s), %zu cars", kTag, snap.s.type, kinds[int(k)], snap.cars.size());
+        }
         // what came of the championship read, once a session (standings.hpp)
         // the game's lap times: logged when the outcome changes (not every count of cars with a time)
         {

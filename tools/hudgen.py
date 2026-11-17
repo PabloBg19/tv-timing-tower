@@ -81,9 +81,10 @@ QCARD = {
     "tgt_x": q(373), "tgt_base": q(97), "tgt_cap": q(22), "tn_base": q(125), "tn_cap": q(16.5),
     "lab_base": q(161), "lab_cap": q(16), "lab_x": [q(82.5), q(247.5), q(412.5)],
     "bars": [[q(0), q(163)], [q(166), q(329)], [q(332), q(495)]], "bar_y": [q(167), q(174)],
-    # where it sits: right of the tower, its bottom near the screen's at the default HUD place (a 2000 x 1133
-    # capture: tower top 97 px, 1.93 px a unit, screen bottom 537 units below the tower's top)
-    "x": 8.0, "y": 448.0,
+    # where it sits: right of the tower, its bottom level with a 22-car tower's last row. 0.23.3 put it near the
+    # screen's bottom (448 units down), and on a user's screen that ran off the edge while the tower fitted: level
+    # with the tower it shows wherever the tower does (the HUD editor moves and scales them together)
+    "x": 8.0, "y": round(ROW_UNITS * 22 + 59.419 - q(174), 3),
     "colours": {
         "hdr": "#2D2C33", "pos": "#151218", "body": "#2A2930", "body2": "#1F1C24",
         "white": "#F2F0F6", "grey": "#BCBBC0", "green": "#4FD35A", "yellow": "#E5CE4B", "purple": "#B95CE6",
@@ -113,7 +114,7 @@ LAYOUT = {
     "name_box": u(REF["gap_right"] - REF["name_x"] - 2),
     # the constructors' table: a team's name runs up to the points (ASTON MARTIN, RACING BULLS), a little smaller
     "team_box": u(REF["width"] - REF["name_x"] - 17), "cap_team": u(REF["cap_name"] * 0.9),
-    "gap_right": u(REF["gap_right"]), "gap_box": u(70), "gap_right_q": u(REF["gap_right_q"]), "cap_gap_q": u(REF["cap_gap_q"]),
+    "gap_right": u(REF["gap_right"]), "gap_box": u(46), "gap_right_q": u(REF["gap_right_q"]), "cap_gap_q": u(REF["cap_gap_q"]),
     "tyre_x": u(REF["tyre_x"]),
     "text_y": u(REF["base"]),
     "cap_name": u(REF["cap_name"]), "cap_pos": u(REF["cap_pos"]), "cap_gap": u(REF["cap_gap"]),
@@ -705,7 +706,9 @@ def row(flavour, logos_found):
     # time ending 5.74 rows from the left, the tyre letter at 6.13) the column ends further right and its figures are
     # smaller (our font is wider than the broadcast's narrow one)
     def data(gx, cap):
-        return [group("gw", [text("g", "OSD_24_regular", "right", u(52), cap, [gx, ty],
+        # the box ends 6 units clear of a three-letter code (a classic "+10.007" filled the old 52 and touched RUS,
+        # 0.23.3 on a user's capture): a longer figure is squeezed into it (clampwidth) rather than running over
+        return [group("gw", [text("g", "OSD_24_regular", "right", L["gap_box"], cap, [gx, ty],
                                   value=vm(r + "gap"), colour=C["gap"] + "ff", case="none", wrap="clampwidth")],
                       visible=vm(r + "gsp", True, True)),
                 text("gp", "OSD_24_bold", "right", L["gap_box"], cap, [gx, ty], value=vm(r + "gap"),
@@ -834,8 +837,10 @@ def banners(logos_found):
     # layers as the rows': the background under the game's team badge unit, which always draws at 30
     art = [sprite(f"{k}bg", "ban_l_bg", 20),
            group(f"{k}tdg", [sprite(f"{k}td", "ban_team_d", 21)], visible=vm("demo")),
-           text(f"{k}lab", "OSD_24_bold", "left", 120.0, cap, [L["ban_lab_x"], ty], literal="NEW RACE LEADER",
-                colour=C["ban_label"] + "ff"),
+           # squeezed to end 6 units before the team's block: the game's font ran it under the logo (0.23.3, a
+           # user's capture)
+           text(f"{k}lab", "OSD_24_bold", "left", L["ban_lw"] - L["ban_team_w"] - L["ban_lab_x"] - 6.0, cap,
+                [L["ban_lab_x"], ty], literal="NEW RACE LEADER", colour=C["ban_label"] + "ff", wrap="clampwidth"),
            group(f"{k}dn", [text(f"{k}dnm", "OSD_24_bold", "right", name_box, cap, [name_x, ty],
                                  value=vm(f"{k}_nm"), wrap="clampwidth", case="upper")], visible=vm("demo"))]
     slot = [sprite(f"{k}tc", "ban_team", 21, tint={"session_car": "nub_colour", "slot_var": "V",
@@ -857,8 +862,8 @@ def banners(logos_found):
     logo_cx = L["ban_flogo"]
     name_x, name_box = L["ban_fname_r"], L["ban_fname_r"] - L["ban_label_w"] - 3 * L["ban_trail"] - 6.0
     art = [sprite(f"{k}bg", "ban_f_bg", 20),
-           text(f"{k}lab", "OSD_24_bold", "left", L["ban_label_w"], cap, [10.0, ty], literal="FASTEST LAP",
-                colour=C["ban_flabel"] + "ff"),
+           text(f"{k}lab", "OSD_24_bold", "left", L["ban_label_w"] - 4.0, cap, [10.0, ty], literal="FASTEST LAP",
+                colour=C["ban_flabel"] + "ff", wrap="clampwidth"),
            text(f"{k}tm", "OSD_24_bold", "left", 80.0, cap, [L["ban_ftime"], ty], value=vm(f"{k}_t"),
                 colour=C["ban_time"] + "ff", case="none"),
            group(f"{k}dn", [text(f"{k}dnm", "OSD_24_bold", "right", name_box, cap, [name_x, ty],
@@ -875,6 +880,8 @@ def banners(logos_found):
 
 
 def qcard(logos_found):
+    # QCARD's y assumes this header height: level with the 22nd row's bottom
+    assert abs(QCARD["y"] + QCARD["h"] - (LAYOUT["header"] + 22 * LAYOUT["row"])) < 0.01, "QCARD y: header changed"
     """The qualifying card, as the 2026 broadcast's (DECISIONES.md D90-D91): the player's position, team, surname and
     tyre letter; the big figure (the lap running, grey until the first split, white after; at a split the gap to the
     target in green / purple / yellow; a lap done) centred on the left half; the target's time to the end of the

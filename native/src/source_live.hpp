@@ -249,17 +249,22 @@ private:
             return;
         const uintptr_t base = reinterpret_cast<uintptr_t>(GetModuleHandleA(nullptr));
         if (lt_state_ == 0) {
-            // only the game build these addresses come from
+            // the game manager: this build's address as read, else Swofty's own binding for the running build
             uint32_t stamp = 0;
-            uintptr_t nt = 0;
             int32_t lfanew = 0;
-            if (!base || !rd(base + 0x3c, &lfanew, 4) || !rd(base + uintptr_t(lfanew) + 8, &stamp, 4) ||
-                stamp != laptimes::kPeStamp) {
-                lt_state_ = 2;
-                lt_note_ = "lap times: not this game build (stamp " + std::to_string(stamp) + "): no times";
-                return;
+            if (base && rd(base + 0x3c, &lfanew, 4) && rd(base + uintptr_t(lfanew) + 8, &stamp, 4) &&
+                stamp == laptimes::kPeStamp) {
+                lt_mgr_ = laptimes::kGameManager - laptimes::kImageBase + base;
+                lt_key_ = laptimes::kSystemKey - laptimes::kImageBase + base;
+            } else {
+                lt_mgr_ = swofty::api && swofty::api->resolve ? swofty::api->resolve("g_Game_Manager") : 0;
+                lt_key_ = 0;
+                if (!lt_mgr_) {
+                    lt_state_ = 2;
+                    lt_note_ = "lap times: build " + std::to_string(stamp) + ", Swofty has no g_Game_Manager: no times";
+                    return;
+                }
             }
-            (void)nt;
             lt_state_ = 1;
         }
         if (!lt_system_ || now >= lt_check_) {
@@ -268,11 +273,12 @@ private:
             lt_search_ = now + 1.0;
             lt_check_ = now + 5.0;
             std::string why;
-            uintptr_t sys = laptimes::find_system(rd, base, why);
+            const bool known = lt_key_ != 0;
+            uintptr_t sys = laptimes::find_system(rd, lt_mgr_, lt_key_, why);
             if (sys && lt_name_.empty()) {
                 // the key's class name, when the game has one there: another name is another system (the key is
                 // wrong for this game), no name leaves it to the data's own checks (sectors adding up to the lap)
-                lt_name_ = laptimes::key_name(rd, base);
+                lt_name_ = known ? laptimes::key_name_at(rd, lt_key_) : std::string(laptimes::kSystemName);
                 if (lt_name_.empty())
                     lt_name_ = "?";
                 else if (lt_name_ != laptimes::kSystemName) {
@@ -324,6 +330,7 @@ private:
     MyLapTracker my_;
     int lt_state_ = 0; // 0 to check, 1 this build, 2 off (another build, or something didn't look right)
     uintptr_t lt_system_ = 0;
+    uintptr_t lt_mgr_ = 0, lt_key_ = 0; // the game manager's address, the system's registry key (0: by name)
     double lt_search_ = 0, lt_check_ = 0;
     std::string lt_name_, lt_note_;
     std::array<LtCar, 32> lt_cars_{};

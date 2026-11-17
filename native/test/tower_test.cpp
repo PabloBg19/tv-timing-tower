@@ -1089,9 +1089,14 @@ static void test_game_lap_times()
     f.lap(2, 0, 30.5f, 31.5f, 29.5f, true);
     f.m.put<uintptr_t>(f.cars + 8, 0);
     std::string why;
-    const uintptr_t sys = lt::find_system(f.m, f.base, why);
+    const uintptr_t gm = lt::kGameManager - lt::kImageBase + f.base;
+    uintptr_t key = lt::kSystemKey - lt::kImageBase + f.base;
+    const uintptr_t sys = lt::find_system(f.m, gm, key, why);
     CHECK(sys == f.system);
-    CHECK(lt::key_name(f.m, f.base) == lt::kSystemName);
+    CHECK(lt::key_name_at(f.m, key) == lt::kSystemName);
+    // another game build (an update, EA): the key unknown, found by its class name
+    uintptr_t found = 0;
+    CHECK(lt::find_system(f.m, gm, found, why) == f.system && found == key);
     lt::Car c;
     CHECK(lt::read_car(f.m, sys, 0, c, why) && c.laps == 4);
     CHECK(c.best_ms == 90100);                  // the fastest VALID lap, not the 89.8 deleted one
@@ -1107,7 +1112,9 @@ static void test_game_lap_times()
     // no system under the key, or a broken registry: nothing, with a reason
     FakeLapTimes g(2);
     g.m.put<uintptr_t>(g.base + (lt::kGameManager - lt::kImageBase), 0);
-    CHECK(lt::find_system(g.m, g.base, why) == 0 && why == "no game manager");
+    uintptr_t gk = 0;
+    CHECK(lt::find_system(g.m, lt::kGameManager - lt::kImageBase + g.base, gk, why) == 0 && why == "no game manager");
+    CHECK(lt::find_system(g.m, 0, gk, why) == 0 && why == "no game manager"); // Swofty has no binding
 }
 
 static void test_qcard()
@@ -1120,7 +1127,8 @@ static void test_qcard()
         f.lap(0, 1, 29.9f, 31.4f, 29.1f, true);   // 90.4: not the best, but the best sector 1
         f.lap(0, 2, 29.5f, 31.0f, 28.5f, false);  // deleted: its sectors don't count
         std::string why;
-        const uintptr_t sys = lt::find_system(f.m, f.base, why);
+        uintptr_t key = 0;
+        const uintptr_t sys = lt::find_system(f.m, lt::kGameManager - lt::kImageBase + f.base, key, why);
         lt::Car c;
         CHECK(lt::read_car(f.m, sys, 0, c, why) && c.best_ms == 90250);
         CHECK(c.best_sec[0] == 30000 && c.best_sec[1] == 31250 && c.best_sec[2] == 29000);
