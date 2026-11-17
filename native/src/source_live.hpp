@@ -18,6 +18,7 @@
 #include "guarded_read.hpp"
 #include "lap_clock.hpp"
 #include "laptimes.hpp"
+#include "mtbadge.hpp"
 #include "qcard.hpp"
 #include "model.hpp"
 #include "standings.hpp"
@@ -47,6 +48,7 @@ public:
     const std::string &champ_note() const { return champ_note_; }
     // what came of reading the game's own lap times (laptimes.hpp), for the log
     const std::string &times_note() const { return lt_note_; }
+    const std::string &badge_note() const { return mt_note_; }
 
     // Fills `snap` from the live state. `dt` is the frame time; `now` the wall clock (badge refresh).
     Why read(Snapshot &snap, double dt, double now)
@@ -154,7 +156,11 @@ public:
             ci.gap_leader_ms = live::gap_leader_ms(c).value_or(-1);
             ci.me = int(vid) == me;
             ci.out_lap = !ci.in_pit && clock_.via_pit(vid);
-            ci.badge = badge(vid, now);
+            {
+                const Badge &bd = badge(vid, now);
+                ci.badge = bd.key;
+                ci.badge_tex = bd.tex;
+            }
             ci.last_ms = clock_.last_ms(vid);
             if (race) {
                 ci.best_ms = clock_.best_ms(vid);
@@ -233,6 +239,28 @@ public:
 
 private:
     // ---- the game's lap times (laptimes.hpp): the system is looked up once a second until found; each tick reads
+    // g_Game_Manager's address: the build the lap times were read from as read (mgr_known_), else Swofty's own binding
+    // for the running build (an update, EA); 0 when neither. Found once.
+    uintptr_t mgr_at_ = 0;
+    bool mgr_tried_ = false, mgr_known_ = false;
+    uintptr_t game_manager()
+    {
+        if (mgr_tried_)
+            return mgr_at_;
+        mgr_tried_ = true;
+        const uintptr_t base = reinterpret_cast<uintptr_t>(GetModuleHandleA(nullptr));
+        uint32_t stamp = 0;
+        int32_t lfanew = 0;
+        if (base && rd(base + 0x3c, &lfanew, 4) && rd(base + uintptr_t(lfanew) + 8, &stamp, 4) &&
+            stamp == laptimes::kPeStamp) {
+            mgr_known_ = true;
+            mgr_at_ = laptimes::kGameManager - laptimes::kImageBase + base;
+        } else {
+            mgr_at_ = swofty::api && swofty::api->resolve ? swofty::api->resolve("g_Game_Manager") : 0;
+        }
+        return mgr_at_;
+    }
+
     // every car's lap count (one byte) and its laps again when that changes or every 2 s
     struct LtCar {
         int laps = -2;
@@ -249,21 +277,12 @@ private:
             return;
         const uintptr_t base = reinterpret_cast<uintptr_t>(GetModuleHandleA(nullptr));
         if (lt_state_ == 0) {
-            // the game manager: this build's address as read, else Swofty's own binding for the running build
-            uint32_t stamp = 0;
-            int32_t lfanew = 0;
-            if (base && rd(base + 0x3c, &lfanew, 4) && rd(base + uintptr_t(lfanew) + 8, &stamp, 4) &&
-                stamp == laptimes::kPeStamp) {
-                lt_mgr_ = laptimes::kGameManager - laptimes::kImageBase + base;
-                lt_key_ = laptimes::kSystemKey - laptimes::kImageBase + base;
-            } else {
-                lt_mgr_ = swofty::api && swofty::api->resolve ? swofty::api->resolve("g_Game_Manager") : 0;
-                lt_key_ = 0;
-                if (!lt_mgr_) {
-                    lt_state_ = 2;
-                    lt_note_ = "lap times: build " + std::to_string(stamp) + ", Swofty has no g_Game_Manager: no times";
-                    return;
-                }
+            lt_mgr_ = game_manager();
+            lt_key_ = mgr_known_ ? laptimes::kSystemKey - laptimes::kImageBase + base : 0;
+            if (!lt_mgr_) {
+                lt_state_ = 2;
+                lt_note_ = "lap times: Swofty has no g_Game_Manager on this build: no times";
+                return;
             }
             lt_state_ = 1;
         }
@@ -439,21 +458,33 @@ private:
 
     struct Badge {
         std::string key;
+        std::string tex; // a rendered badge's texture path (My Team, mtbadge.hpp) when the car has no key
         double next = 0;
     };
 
     // Team badges change only with the car set; ask again every 2 s while a car has none.
-    const std::string &badge(uint32_t vid, double now)
+    const Badge &badge(uint32_t vid, double now)
     {
         Badge &b = badges_[vid];
         if (now >= b.next) {
             auto k = live::team_badge(vid);
             if (k)
                 b.key = *k;
-            b.next = now + (b.key.empty() ? 2.0 : 30.0);
+            if (b.key.empty()) {
+                std::string why;
+                b.tex = mtbadge::find(rd, game_manager(), vid, why);
+                if (!why.empty())
+                    mt_note_ = "My Team badge: " + why;
+                else if (!b.tex.empty())
+                    mt_note_ = "My Team badge: " + b.tex;
+            } else {
+                b.tex.clear();
+            }
+            b.next = now + (b.key.empty() && b.tex.empty() ? 2.0 : 30.0);
         }
-        return b.key;
+        return b;
     }
+    std::string mt_note_;
 
     LapClock clock_;
     Stints stints_;

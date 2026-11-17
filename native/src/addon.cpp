@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.24.1"
+#define TVT_VERSION "0.25.0"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -204,6 +204,7 @@ struct State {
     std::string last_champ_note;
     std::string last_times_note; // the game's lap times (laptimes.hpp): what came of reading them
     int last_logged_type = -1;    // the session type last logged
+    std::string last_badge_note;  // what came of reading a rendered (My Team) badge
     double demo_t0 = 0;
     int key_prev = 0;
     tvt::LiveSource::Why last_why = tvt::LiveSource::Why::no_session;
@@ -332,6 +333,11 @@ void frame(double dt, void *)
                 if (!tn.empty())
                     swofty::log("%s %s", kTag, tn.c_str());
             }
+        }
+        if (g->src.badge_note() != g->last_badge_note) {
+            g->last_badge_note = g->src.badge_note();
+            if (!g->last_badge_note.empty())
+                swofty::log("%s %s", kTag, g->last_badge_note.c_str());
         }
         if (g->src.champ_note() != g->last_champ_note) {
             g->last_champ_note = g->src.champ_note();

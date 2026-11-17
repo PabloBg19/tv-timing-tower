@@ -1,5 +1,16 @@
 # Resumen — TV Timing Tower
 
+## 0.25.0 (17-11-2026, en prueba): el escudo de Mi Equipo, leído del juego
+
+- Swofty no da la clave del escudo de Mi Equipo porque el juego no lo saca de `team_badges_hud`: lo renderiza en
+  ejecución. Leído del constructor de escudos del HUD (0x1417617a0 en el build 1794312636) y del de nombres de
+  textura (0x14bd1e150): `g_Game_Manager → +0xc0 → +0x88 → +0x260` es la sesión, sus coches de `+0x2e0` a `+0x2e8`
+  (0x88 bytes, id de vehículo en `+0x82`), y el escudo en `+0x68` (tipo) y `+0x6a` (id). La textura es
+  `eaid://ui_package/art/textures/render_badge_<tipo> <id>` (`ePreLoaded`, `eUserDefined`, `eNetworkReplicated`).
+- Solo para coches sin clave de escudo; lecturas protegidas y comprobadas (tamaño de la lista, id, tipo). Si algo no
+  cuadra, queda la ficha de color como antes. El log dice qué textura encontró o por qué no.
+- Sin ver en el juego: hace falta que Swofty vuelva a dar el estado en vivo en el build nuevo.
+
 ## 0.24.1 (17-11-2026, en prueba): aviso de nuevo líder aunque el segundo vaya pegado
 
 - `NEW RACE LEADER` sale también cuando el nuevo líder lleva 4 s delante, aunque el segundo siga a menos de 0,6 s

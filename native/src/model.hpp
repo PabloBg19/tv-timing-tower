@@ -230,9 +230,21 @@ struct CarIn {
     int best_sec[3] = {-1, -1, -1}; // the game's: the best lap's sectors (ms)
     int pb_sec[3] = {-1, -1, -1};   // the game's: the car's best of each sector
     std::string badge;        // the game's team badge key ("ferrari_2026") or ""
+    std::string badge_tex;    // a rendered badge's texture path (My Team), used when there is no key
     std::string name;         // only demo mode: the driver's surname
     std::string code;         // only demo mode: three-letter code
 };
+
+// The texture of a car's badge for the game's logo unit: the stock badge by its key (the broadcast set in colour, which
+// follows logo mods, or the HUD's white set), else a rendered badge (My Team), else "" (the team's colour chip)
+inline std::string badge_texture(const CarIn &c, bool hud_white)
+{
+    if (!c.badge.empty())
+        return std::string(hud_white ? "#overrides.osd.timing_tower.team_badges_hud."
+                                     : "#overrides.osd.timing_tower.team_badges_broadcast.") +
+               c.badge;
+    return c.badge_tex;
+}
 
 struct SessionIn {
     int type = 0;
@@ -780,11 +792,7 @@ private:
         r.p1 = pos == 1;
         r.me = cfg.highlight && c.me;
         // the game's own badge for the car's team: the broadcast set is in colour (and follows logo mods)
-        r.badge = c.badge.empty() ? ""
-                                  : std::string(cfg.logos == Config::Logos::game_white
-                                                    ? "#overrides.osd.timing_tower.team_badges_hud."
-                                                    : "#overrides.osd.timing_tower.team_badges_broadcast.") +
-                                        c.badge;
+        r.badge = badge_texture(c, cfg.logos == Config::Logos::game_white);
         r.team = team_index(c.badge);
         r.name = c.name.empty() ? "" : (h.abbr && !c.code.empty() ? c.code : c.name);
 
@@ -1220,7 +1228,7 @@ private:
             if (int(c.vid) == ban_.vid) {
                 h.ban_team = team_index(c.badge);
                 h.ban_name = c.name;
-                h.ban_badge = c.badge.empty() ? "" : "#overrides.osd.timing_tower.team_badges_broadcast." + c.badge;
+                h.ban_badge = badge_texture(c, false);
             }
     }
 
@@ -1355,7 +1363,7 @@ private:
         k.on = true;
         k.vid = int(me->vid);
         k.team = team_index(me->badge);
-        k.badge = me->badge.empty() ? "" : "#overrides.osd.timing_tower.team_badges_broadcast." + me->badge;
+        k.badge = badge_texture(*me, false);
         k.name = me->name;
         k.pos = me->best_ms > 0 && me->pos > 0 ? std::to_string(me->pos) : "-";
         k.tyre = me->tyre;

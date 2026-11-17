@@ -17,6 +17,7 @@
 #include "../src/demo.hpp"
 #include "../src/lap_clock.hpp"
 #include "../src/laptimes.hpp"
+#include "../src/mtbadge.hpp"
 #include "../src/qcard.hpp"
 #include "../src/leaves.hpp"
 #include "../src/model.hpp"
@@ -1070,6 +1071,43 @@ struct FakeLapTimes {
     }
 };
 
+// My Team's rendered badge: the session's cars list, the car by vehicle id, its badge's type and id
+static void test_my_team_badge()
+{
+    namespace mb = mtbadge;
+    FakeMem m;
+    const uintptr_t gm_at = 0x146000000;
+    m.place(gm_at, 8);
+    uintptr_t mgr = m.alloc(0x100), game = m.alloc(0x100), mid = m.alloc(0x300), sess = m.alloc(0x300),
+              cars = m.alloc(mb::kCarSize * 3);
+    m.put<uintptr_t>(gm_at, mgr);
+    m.put<uintptr_t>(mgr + mb::kMgrGame, game);
+    m.put<uintptr_t>(game + mb::kGameSess, mid);
+    m.put<uintptr_t>(mid + mb::kSession, sess);
+    m.put<uintptr_t>(sess + mb::kCars, cars);
+    m.put<uintptr_t>(sess + mb::kCarsEnd, cars + mb::kCarSize * 3);
+    for (int i = 0; i < 3; i++) {
+        const uintptr_t c = cars + i * mb::kCarSize;
+        m.put<uint8_t>(c + mb::kVid, uint8_t(10 + i));
+        m.put<uint8_t>(c + mb::kBadgeType, uint8_t(i == 1 ? 1 : 0));
+        m.put<uint16_t>(c + mb::kBadgeId, uint16_t(i == 1 ? 7 : mb::kNoBadge));
+    }
+    std::string why;
+    CHECK(mb::find(m, gm_at, 11, why) == "eaid://ui_package/art/textures/render_badge_eUserDefined 7" && why.empty());
+    CHECK(mb::find(m, gm_at, 10, why).empty() && why.empty()); // a stock car: no rendered badge
+    CHECK(mb::find(m, gm_at, 20, why).empty());                // not in the session
+    m.put<uintptr_t>(sess + mb::kCarsEnd, cars + mb::kCarSize * 3 - 8); // not a whole number of cars
+    CHECK(mb::find(m, gm_at, 11, why).empty() && !why.empty());
+    CHECK(mb::find(m, 0, 11, why).empty() && why == "no session");
+    CHECK(mb::texture(3, 1).empty() && mb::texture(0, 2) == "eaid://ui_package/art/textures/render_badge_ePreLoaded 2");
+    // the model: a car with a rendered badge and no key gets that texture, not the colour chip
+    CarIn c;
+    c.badge_tex = "eaid://x";
+    CHECK(badge_texture(c, false) == "eaid://x");
+    c.badge = "ferrari_26";
+    CHECK(badge_texture(c, true) == "#overrides.osd.timing_tower.team_badges_hud.ferrari_26");
+}
+
 static void test_game_lap_times()
 {
     // the model: qualifying shows the game's times (off by default) as soon as the source says they are the game's
@@ -1454,6 +1492,7 @@ int main()
     test_cards();
     test_banners();
     test_game_lap_times();
+    test_my_team_badge();
     test_qcard();
     test_championship();
     test_yellow_texts();
