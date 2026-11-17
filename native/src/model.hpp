@@ -1158,6 +1158,7 @@ private:
     static constexpr double kChampSeconds = 30.0; // ...the drivers' championship for this long
     static constexpr double kConsSeconds = 20.0;  // ...then the constructors' for this long
     static constexpr int kLeaderClearMs = 600; // NEW RACE LEADER once the new leader is this far clear of P2
+    static constexpr double kLeaderHoldSeconds = 4.0; // ...or once it has led this long, however close P2 is
 
     void banners(const Snapshot &snap, Kind kind, const Config &cfg, Header &h, double now)
     {
@@ -1176,15 +1177,16 @@ private:
             leader_vid_ = v; // first sight, the start, a red flag: no banner, just follow
             leader_cand_ = -1;
         } else if (v != leader_vid_) {
-            // a new leader is announced once it has pulled 0.6 s clear of P2 (not while the two are still fighting
-            // over it), and has been in front for at least 1 s (a re-sort or a torn read does not count); if the
-            // old leader takes it back first, nothing is said
+            // a new leader is announced once it has pulled 0.6 s clear of P2 after at least 1 s in front (a re-sort
+            // or a torn read does not count), or after kLeaderHoldSeconds in front however close P2 is (a user: the
+            // banner never came while the two stayed close); if the old leader takes it back first, nothing is said
             const int gap2 = snap.cars.size() > 1 ? snap.cars[1].gap_ahead_ms : -1;
             if (leader_cand_ != v) {
                 leader_cand_ = v;
                 leader_cand_t_ = now;
             }
-            if (now - leader_cand_t_ >= 1.0 && gap2 >= kLeaderClearMs) {
+            const double held = now - leader_cand_t_;
+            if ((held >= 1.0 && gap2 >= kLeaderClearMs) || held >= kLeaderHoldSeconds) {
                 if (cfg.ban_leader)
                     push(Pending{banner_leader, v});
                 leader_vid_ = v;

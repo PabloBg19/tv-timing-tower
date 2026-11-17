@@ -1,5 +1,12 @@
 # Resumen — TV Timing Tower
 
+## 0.24.1 (17-11-2026, en prueba): aviso de nuevo líder aunque el segundo vaya pegado
+
+- `NEW RACE LEADER` sale también cuando el nuevo líder lleva 4 s delante, aunque el segundo siga a menos de 0,6 s
+  (antes solo con 0,6 s de ventaja y un usuario no lo veía nunca). Con ventaja sigue saliendo al segundo.
+- Mi Equipo sin escudo: Swofty no da su clave (`team_badge` vacío) y el HUD no tiene un campo de escudo por coche;
+  queda el color del equipo. Haría falta investigar la memoria del juego.
+
 ## 0.24.0 (17-11-2026, en prueba): arreglos de los comentarios de Overtake
 
 - **Tras la actualización del juego la torre solo sale en la demo:** Swofty 1.9.59 apaga su estado en vivo en el

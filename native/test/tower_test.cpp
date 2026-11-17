@@ -337,15 +337,21 @@ static void test_banners()
         CHECK(any == 0);
     }
     {
-        // a lead that changes hands but never gets 0.6 s clear: no banner
-        Tower t;
-        int any = 0;
+        // a lead that changes hands but never gets 0.6 s clear: the banner all the same, 3 s later than a clear one
+        // (kLeaderHoldSeconds 4 in front against 1)
+        Tower t, tc;
+        double close_at = -1, clear_at = -1;
         for (int i = 0; i <= 140; i++) {
             Snapshot s = demo::make(demo::banners, i * 0.1);
+            Snapshot c = s;
             s.cars[1].gap_ahead_ms = 350;
-            any += t.update(s, cfg, i * 0.1).h.banner == banner_leader;
+            c.cars[1].gap_ahead_ms = 900;
+            if (t.update(s, cfg, i * 0.1).h.banner == banner_leader && close_at < 0)
+                close_at = i * 0.1;
+            if (tc.update(c, cfg, i * 0.1).h.banner == banner_leader && clear_at < 0)
+                clear_at = i * 0.1;
         }
-        CHECK(any == 0);
+        CHECK(clear_at >= 0 && close_at >= clear_at + 3.0);
     }
     {
         // switched off: none
