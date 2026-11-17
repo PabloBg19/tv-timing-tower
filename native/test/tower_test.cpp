@@ -1096,6 +1096,9 @@ static void test_my_team_badge()
     CHECK(mb::find(m, gm_at, 11, why) == "eaid://ui_package/art/textures/render_badge_eUserDefined 7" && why.empty());
     CHECK(mb::find(m, gm_at, 10, why).empty() && why.empty()); // a stock car: no rendered badge
     CHECK(mb::find(m, gm_at, 20, why).empty());                // not in the session
+    m.put<uint8_t>(cars + 2 * mb::kCarSize + mb::kVid, 11); // a vehicle id twice: not the session's cars
+    CHECK(mb::find(m, gm_at, 11, why).empty() && !why.empty());
+    m.put<uint8_t>(cars + 2 * mb::kCarSize + mb::kVid, 12);
     m.put<uintptr_t>(sess + mb::kCarsEnd, cars + mb::kCarSize * 3 - 8); // not a whole number of cars
     CHECK(mb::find(m, gm_at, 11, why).empty() && !why.empty());
     CHECK(mb::find(m, 0, 11, why).empty() && why == "no session");

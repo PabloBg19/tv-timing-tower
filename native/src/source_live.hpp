@@ -238,7 +238,6 @@ public:
     const LapClock &clock() const { return clock_; }
 
 private:
-    // ---- the game's lap times (laptimes.hpp): the system is looked up once a second until found; each tick reads
     // g_Game_Manager's address: the build the lap times were read from as read (mgr_known_), else Swofty's own binding
     // for the running build (an update, EA); 0 when neither. Found once.
     uintptr_t mgr_at_ = 0;
@@ -261,7 +260,11 @@ private:
         return mgr_at_;
     }
 
-    // every car's lap count (one byte) and its laps again when that changes or every 2 s
+    // ---- the game's lap times (laptimes.hpp): the system is looked up once a second until found (by its class name
+    // on a build whose key we don't know, at most kNameTries times a game); each tick reads every car's lap count
+    // (one byte) and its laps again when that changes or every 2 s
+    static constexpr int kNameTries = 120;
+    int lt_tries_ = 0;
     struct LtCar {
         int laps = -2;
         double next = 0;
@@ -311,6 +314,11 @@ private:
             lt_system_ = sys;
             if (!sys) {
                 lt_note_ = "lap times: " + why;
+                // looking for it by name reads every registry slot's class name: not for ever
+                if (!known && ++lt_tries_ >= kNameTries) {
+                    lt_state_ = 2;
+                    lt_note_ = "lap times: " + why + " after " + std::to_string(kNameTries) + " searches: no times";
+                }
                 return;
             }
         }

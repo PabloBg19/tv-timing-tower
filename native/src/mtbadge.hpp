@@ -48,17 +48,25 @@ template <class Read> std::string find(Read &rd, uintptr_t mgr_at, uint32_t vid,
     if (!rd(p + kCars, v, sizeof v) || !v[0] || v[1] < v[0] || (v[1] - v[0]) % kCarSize ||
         (v[1] - v[0]) / kCarSize > kMaxCars)
         return why = "the session's cars don't look right", std::string();
+    // the whole list: each vehicle id once (a list that isn't the session's cars would rarely pass that)
     const size_t n = (v[1] - v[0]) / kCarSize;
+    uint8_t cars[kMaxCars * kCarSize];
+    if (!n || !rd(v[0], cars, n * kCarSize))
+        return why = "the session's cars are unreadable", std::string();
+    uint64_t seen = 0;
+    const uint8_t *mine = nullptr;
     for (size_t i = 0; i < n; i++) {
-        uint8_t car[kCarSize];
-        if (!rd(v[0] + i * kCarSize, car, sizeof car))
-            return why = "the session's cars are unreadable", std::string();
-        if (car[kVid] != vid)
-            continue;
-        const uint16_t id = uint16_t(car[kBadgeId] | (car[kBadgeId + 1] << 8));
-        return texture(car[kBadgeType], id);
+        const uint8_t *car = cars + i * kCarSize;
+        const uint8_t id = car[kVid];
+        if (id >= 64 || (seen >> id & 1))
+            return why = "the session's cars don't look right", std::string();
+        seen |= uint64_t(1) << id;
+        if (id == vid)
+            mine = car;
     }
-    return {};
+    if (!mine)
+        return {};
+    return texture(mine[kBadgeType], uint16_t(mine[kBadgeId] | (mine[kBadgeId + 1] << 8)));
 }
 
 }

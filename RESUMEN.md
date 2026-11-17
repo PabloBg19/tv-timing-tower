@@ -1,5 +1,15 @@
 # Resumen — TV Timing Tower
 
+## 0.25.1 (17-11-2026, en prueba): repaso antes de publicar
+
+- README del paquete al día (tiempos en libres y clasificación, tarjeta, vuelta rápida, constructores, Mi Equipo,
+  filas que se deslizan, logos del juego por defecto, qué pasa tras una actualización del juego, eliminar la
+  versión anterior antes de instalar).
+- Textos de ajustes: Animaciones (deslizan), campeonato (pilotos y constructores), clasificación (también corta y a
+  una vuelta).
+- La búsqueda por nombre del sistema de tiempos se rinde tras 120 intentos en lugar de repetirse siempre.
+- Escudo de Mi Equipo: la lista de coches se lee entera y cada id de vehículo tiene que salir una sola vez.
+
 ## 0.25.0 (17-11-2026, en prueba): el escudo de Mi Equipo, leído del juego
 
 - Swofty no da la clave del escudo de Mi Equipo porque el juego no lo saca de `team_badges_hud`: lo renderiza en

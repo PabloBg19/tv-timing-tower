@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
-VERSION = "0.25.0"
+VERSION = "0.25.1"
 LANG = "both"  # settings labels: both, en, es (--lang)
 ADDON_ID = "pablo.tv-timing-tower"
 DLL = "tv_timing_tower.dll"
@@ -118,8 +118,8 @@ OPTIONS = [
      "Races: a banner top centre with FASTEST LAP, the driver and the time (the game's own), and the purple icon on the row.",
      {"default": True}),
     ("champ_formation", "toggle", "Campeonato en la vuelta de formación", "Championship on the formation lap",
-     "Modo carrera: tras los neumáticos de salida, la clasificación de pilotos con sus puntos (los del juego, sprints incluidas).",
-     "Career: after the starting tyres, the drivers' standings with their points (the game's own, sprints included).",
+     "Modo carrera: tras los neumáticos de salida, el campeonato de pilotos y después el de constructores (puntos del juego).",
+     "Career: after the starting tyres, the drivers' championship, then the constructors' (the game's own points).",
      {"default": True}),
     ("tyres", "toggle", "Neumáticos", "Tyres", "Muestra el compuesto actual de cada coche.",
      "Shows each car's current compound.", {"default": True}),
@@ -140,8 +140,8 @@ OPTIONS = [
      {"values": [("tv", "TV", "TV"), ("game", "Juego", "Game"), ("game_white", "Juego blanco", "Game white")],
       "default": "game", "public_values": ["game", "game_white"], "public_default": "game"}),
     ("animations", "toggle", "Animaciones", "Animations",
-     "Al cambiar el coche de una fila (adelantamientos), la fila se desvanece y vuelve con el nuevo coche.",
-     "When a row's car changes (overtakes), the row fades out and back in with the new car.", {"default": True}),
+     "Adelantamientos: la fila se desliza a su nuevo puesto, como en la TV.",
+     "Overtakes: the row slides into its new place, as on TV.", {"default": True}),
     ("highlight", "toggle", "Resaltar mi coche", "Highlight my car", "Tu fila un poco más clara.",
      "Your row slightly brighter.", {"default": True}),
     ("quali_card", "toggle", "Tarjeta de clasificación", "Qualifying lap card",
@@ -149,10 +149,11 @@ OPTIONS = [
      "Qualifying: your lap as on TV, beside the tower: time, sectors, gap to P1 or the cut.", {"default": True}),
     ("in_practice", "toggle", "En libres", "In practice", "Torre en los entrenamientos libres.",
      "Tower in practice.", {"default": True}),
-    ("in_quali", "toggle", "En clasificación", "In qualifying", "Torre en Q1, Q2 y Q3.",
-     "Tower in Q1, Q2 and Q3.", {"default": True}),
-    ("in_sprint_quali", "toggle", "En clasificación sprint", "In sprint qualifying", "Torre en SQ1, SQ2 y SQ3.",
-     "Tower in SQ1, SQ2 and SQ3.", {"default": True}),
+    ("in_quali", "toggle", "En clasificación", "In qualifying",
+     "Torre en la clasificación: Q1, Q2 y Q3, corta y a una vuelta.",
+     "Tower in qualifying: Q1, Q2 and Q3, short and one-shot.", {"default": True}),
+    ("in_sprint_quali", "toggle", "En clasificación sprint", "In sprint qualifying", "Torre en la clasificación sprint: SQ1, SQ2 y SQ3, corta y a una vuelta.",
+     "Tower in sprint qualifying: SQ1, SQ2 and SQ3, short and one-shot.", {"default": True}),
     ("in_race", "toggle", "En carrera y sprint", "In races", "Torre en la carrera y en la sprint.",
      "Tower in the race and the sprint.", {"default": True}),
     ("hotkey", "choice", "Tecla mostrar/ocultar", "Show/hide key",
