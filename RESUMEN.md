@@ -1,5 +1,15 @@
 # Resumen — TV Timing Tower
 
+## 0.26.1 (19-11-2026, en prueba): bandera roja falsa al empezar y franjas fuera de pantalla
+
+- Un usuario veía RED FLAG (y la torre con solo nombres) al empezar la carrera. La bandera roja que da el juego por
+  Swofty solo cuenta tras 2 s seguidos y, en carrera, con el líder ya lanzado (más de 500 m o en la vuelta 2); si ya
+  estaba puesta en parrilla o en la vuelta de formación se ignora hasta que el juego la quite. El log dice cada vez
+  que el juego la sube o la baja (`red flag from the game: up/down`, con vuelta y metros del líder).
+- Las franjas NEW RACE LEADER y FASTEST LAP se salían por arriba en la pantalla de otro usuario (van con la torre, no
+  con la pantalla, y no se mueven aparte en el editor de HUD). Bajan 57 unidades: su parte de arriba queda 30
+  unidades bajo la de la torre, así que se ven siempre que se vea la cabecera.
+
 ## 0.26.0 (19-11-2026, en prueba): escudo de Mi Equipo desde el estado en vivo de Swofty
 
 - Swofty (1.9.83) da ya el escudo de Mi Equipo: `live::team_badge_texture` (tabla v3) devuelve la ruta que usa el

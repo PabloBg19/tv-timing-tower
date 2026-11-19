@@ -405,6 +405,39 @@ static void test_cards()
         CHECK(v.h.card == card_red && v.rows[3].gap.empty() && v.h.bare && !v.h.abbr);
     }
     {
+        // the game's red flag (not the demo): believed after 2 s in a row once the race is under way
+        Tower t;
+        Snapshot r = demo::make(demo::red_flag, 1);
+        r.s.demo = false;
+        for (CarIn &c : r.cars)
+            c.lap = 5;
+        CHECK(t.update(r, cfg, 1.0).h.card != card_red);
+        CHECK(t.update(r, cfg, 2.5).h.card != card_red);
+        const View &v = t.update(r, cfg, 3.1);
+        CHECK(v.h.card == card_red && v.h.bare);
+        // ...and one already up on the grid is ignored (a user: RED FLAG as the race started) until it drops
+        Tower g;
+        Snapshot s = demo::make(demo::red_flag, 1);
+        s.s.demo = false;
+        for (CarIn &c : s.cars) {
+            c.lap = 0;
+            c.have_total = true;
+            c.total_m = 0.f;
+            c.speed_kmh = 0.f;
+        }
+        CHECK(g.update(s, cfg, 1.0).h.card != card_red);
+        for (CarIn &c : s.cars) {
+            c.lap = 2;
+            c.speed_kmh = 250.f;
+        }
+        CHECK(g.update(s, cfg, 10.0).h.card != card_red && !g.update(s, cfg, 20.0).h.bare);
+        s.s.red = false;
+        g.update(s, cfg, 21.0);
+        s.s.red = true;
+        g.update(s, cfg, 22.0);
+        CHECK(g.update(s, cfg, 24.5).h.card == card_red);
+    }
+    {
         Tower t;
         const View &v = t.update(demo::make(demo::finish, 5), cfg, 5);
         CHECK(v.h.card == card_none && v.rows[0].chq && v.rows[21].gap == "Out" && v.rows[20].gap == "DSQ");

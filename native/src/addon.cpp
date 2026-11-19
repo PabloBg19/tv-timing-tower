@@ -18,7 +18,7 @@
 #include "source_live.hpp"
 
 #ifndef TVT_VERSION
-#define TVT_VERSION "0.26.0"
+#define TVT_VERSION "0.26.1"
 #endif
 
 // ---------------------------------------------------------------------------------------------------- settings
@@ -204,6 +204,7 @@ struct State {
     std::string last_champ_note;
     std::string last_times_note; // the game's lap times (laptimes.hpp): what came of reading them
     int last_logged_type = -1;    // the session type last logged
+    bool last_red = false;        // the game's red flag last logged
     std::string last_badge_note;  // what came of reading a rendered (My Team) badge
     double demo_t0 = 0;
     int key_prev = 0;
@@ -322,6 +323,14 @@ void frame(double dt, void *)
             static const char *kinds[] = {"unknown: the game's board", "practice", "qualifying", "sprint qualifying",
                                           "race", "time trial"};
             swofty::log("%s session type %d (%s), %zu cars", kTag, snap.s.type, kinds[int(k)], snap.cars.size());
+        }
+        // the game's red flag as it comes in (the tower believes it only once it holds and the race is under way)
+        if (have && !snap.cars.empty() && snap.s.red != g->last_red) {
+            g->last_red = snap.s.red;
+            const tvt::CarIn &ld = snap.cars.front();
+            swofty::log("%s red flag from the game: %s (leader lap %d, %.0f m, formation %d)", kTag,
+                        snap.s.red ? "up" : "down", ld.lap, ld.have_total ? double(ld.total_m) : -1.0,
+                        int(snap.s.formation));
         }
         // what came of the championship read, once a session (standings.hpp)
         // the game's lap times: logged when the outcome changes (not every count of cars with a time)

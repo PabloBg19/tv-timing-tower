@@ -456,20 +456,31 @@ public:
     Tower() { reset_session(); }
 
     // now: seconds, monotonic (pauses included: flashes and arrows are wall-clock)
-    const View &update(const Snapshot &snap, const Config &cfg, double now)
+    const View &update(const Snapshot &snap_in, const Config &cfg, double now)
     {
         View &v = view_;
         v = View{};
-        const SessionIn &s = snap.s;
-        const Kind kind = kind_of(s.type);
+        const Kind kind = kind_of(snap_in.s.type);
 
-        if (s.type != last_type_) {
+        if (snap_in.s.type != last_type_) {
             // Q1 -> Q2 -> Q3 (and SQ1 -> SQ2 -> SQ3) are the same weekend segment: keep the field size, or the
             // Q2 cut is computed from Q2's own (already-reduced) car count instead of the field that started Q1.
             bool same_segment = kind_of(last_type_) == kind && kind != Kind::none;
             reset_session(same_segment);
-            last_type_ = s.type;
+            last_type_ = snap_in.s.type;
         }
+
+        // the red flag as the game reports it is only believed once it holds (a copy of the snapshot only while the
+        // two differ, so the usual frame costs nothing)
+        const Snapshot *sp = &snap_in;
+        const bool red = red_filter(snap_in, kind, now);
+        if (red != snap_in.s.red) {
+            red_fixed_ = snap_in;
+            red_fixed_.s.red = red;
+            sp = &red_fixed_;
+        }
+        const Snapshot &snap = *sp;
+        const SessionIn &s = snap.s;
 
         bool enabled = (kind == Kind::practice && cfg.en_practice) || (kind == Kind::quali && cfg.en_quali) ||
                        (kind == Kind::sprint_quali && cfg.en_sprint_quali) || (kind == Kind::race && cfg.en_race);
@@ -626,6 +637,8 @@ public:
         fastest_flash_until_ = 0;
         grid_.fill(0);
         grid_state_ = 0;
+        red_since_ = -1;
+        red_stale_ = false;
         last_pit_lap_ = -1;
         pit_until_ = -1;
         last_tyre_lap_ = -1;
@@ -1051,6 +1064,34 @@ private:
 
     // ---- on the grid: lap 0, before the order first changes after the formation lap, and every car standing
     // (or the formation lap itself)
+    // A red flag seen by a user at the start of a race (on the grid, before anything happened) came with the rest of
+    // the tower in its red-flag look. So the game's flag counts only after kRedHoldSeconds in a row and, in a race,
+    // once the leader is away (past kRedAwayM or on lap 2); one already up on the grid or the formation lap is
+    // ignored until the game drops it.
+    static constexpr double kRedHoldSeconds = 2.0;
+    static constexpr float kRedAwayM = 500.f;
+    bool red_filter(const Snapshot &snap, Kind kind, double now)
+    {
+        if (!snap.s.red || snap.cars.empty()) {
+            red_since_ = -1;
+            red_stale_ = false;
+            return false;
+        }
+        if (snap.s.demo)
+            return true;
+        if (kind == Kind::race) {
+            const CarIn &lead = snap.cars.front();
+            const bool away = lead.lap >= 1 || (lead.have_total && lead.total_m > kRedAwayM);
+            if (snap.s.formation || !away || on_grid(snap))
+                red_stale_ = true;
+        }
+        if (red_stale_)
+            return false;
+        if (red_since_ < 0)
+            red_since_ = now;
+        return now - red_since_ >= kRedHoldSeconds;
+    }
+
     bool on_grid(const Snapshot &snap) const
     {
         const CarIn &lead = snap.cars.front();
@@ -1542,6 +1583,9 @@ private:
     }
     double pit_until_ = -1;
     int grid_state_ = 0;       // 0 none, 1 recording, 2 frozen
+    double red_since_ = -1;    // the game's red flag up since (red_filter)
+    bool red_stale_ = false;   // ...already up before the race got going: ignored until it drops
+    Snapshot red_fixed_;
     double gained_until_ = -1;
     bool gained_shown_ = false;
 };

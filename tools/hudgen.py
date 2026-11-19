@@ -99,8 +99,10 @@ LAYOUT = {
     # the NEW RACE LEADER banner top centre, where the game puts its own centre notification. Measured
     # on a full-screen 2000 x 1125 capture at the default HUD place: the tower's left edge at 41 px, 207 px wide
     # (1.88 px a unit), so the screen's centre is 510 units right of it, and the game's toast starts 27 units
-    # above the tower's top. Sized as the broadcast's: 37 % of the screen's width.
-    "ban_cx": 510.0, "ban_y": -27.0,
+    # above the tower's top. Sized as the broadcast's: 37 % of the screen's width. 0.26.1: a user saw only the
+    # banners' bottom edge (the tower placed higher, or another screen shape), and they follow the tower, not the
+    # screen: their top now 30 units under the tower's top, so they stay on screen wherever the tower's header does.
+    "ban_cx": 510.0, "ban_y": 30.0,
     "ban_h": 38.0, "ban_lw": 364.0, "ban_fw": 393.0, "ban_cap": 12.0, "ban_fcap": 11.4,
     "ban_name_w": 138.0, "ban_lab_x": 157.0, "ban_team_w": 49.0, "ban_chev": 12.0,
     # FASTEST LAP (0.14.1's, back with the game's own lap times): label, trail, name, logo, time
