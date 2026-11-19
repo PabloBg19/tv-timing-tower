@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 #pragma once
+#include <swofty/live_images.h>
 #include <atomic>
 #include <cstdint>
 #include <optional>
@@ -143,6 +144,46 @@ inline std::optional<std::string> team_badge(uint32_t vehicle)
     if (!t || !t->team_badge || t->team_badge(vehicle, key, sizeof key) != SWOFTY_ASSET_OK)
         return std::nullopt;
     return std::string(key);
+}
+
+// The driver name the game shows for the car (the player's name for a human), UTF-8. Empty on a core whose live table
+// is older than version 2 or while the driver names group is off.
+inline std::optional<std::string> driver_name(uint32_t vehicle)
+{
+    auto t = detail::table();
+    char name[128] = {};
+    if (!t || t->version < 2 || !t->driver_name || t->driver_name(vehicle, name, sizeof name) != SWOFTY_ASSET_OK)
+        return std::nullopt;
+    return std::string(name);
+}
+
+inline std::optional<std::string> team_badge_texture(uint32_t vehicle)
+{
+    auto t = detail::table();
+    char path[96] = {};
+    if (!t || t->version < 3 || !t->team_badge_texture ||
+        t->team_badge_texture(vehicle, path, sizeof path) != SWOFTY_ASSET_OK)
+        return std::nullopt;
+    return std::string(path);
+}
+
+// The fitted visual compound's compact icon, using the effective GameDB template.
+// Empty on cores older than version 5 or when the mapping is unavailable.
+inline std::optional<std::string> tyre_icon_texture(uint32_t vehicle)
+{
+    const auto *t = detail::table();
+    char path[160] = {};
+    if (!t || t->version < 5 || !t->tyre_icon_texture ||
+        t->tyre_icon_texture(vehicle, path, sizeof path) != SWOFTY_ASSET_OK)
+        return std::nullopt;
+    return std::string(path);
+}
+
+// Caller-owned image bytes; no disk files or table presentation policy.
+inline const SwoftyLiveImages *images()
+{
+    const auto *t = detail::table();
+    return t && t->version >= 4 && t->images ? t->images() : nullptr;
 }
 
 inline std::optional<uint64_t> frame()

@@ -46,7 +46,7 @@ OBS o SimHub), y no usa telemetría UDP.
 ## Requisitos
 
 - F1 25 (Steam; EA app con un Swofty que la soporte) con el 2026 Season Pack.
-- Swofty Launcher 1.9.x. **Tras una actualización del juego** la torre solo vuelve cuando Swofty da por buena la
+- Swofty Launcher 1.9.x (1.9.83 o posterior para el escudo de Mi Equipo). **Tras una actualización del juego** la torre solo vuelve cuando Swofty da por buena la
   versión nueva (hasta entonces el log dice `[live] off: build … has no proven live layouts` y solo funciona la demo).
 - Solo offline. El addon no hace conexiones de red ni toca nada del online ni del antitrampas.
 - El elemento **Posiciones** del HUD tiene que estar activado, porque la torre vive dentro de él.
@@ -145,7 +145,7 @@ My Team and team or logo mods work. If the session cannot be read, the game's ow
 `.swoftyaddon`) onto the page, enable it, play.
 
 **Requirements:** F1 25 (Steam; EA app with a Swofty that supports it) with the 2026 Season Pack, Swofty Launcher
-1.9.x, the game's Position HUD element switched on. After a game update the tower comes back only once Swofty
+1.9.x (1.9.83 or later for My Team's badge), the game's Position HUD element switched on. After a game update the tower comes back only once Swofty
 supports the new build (until then the log says `[live] off: build … has no proven live layouts` and only the demo
 works). Offline only: no network connections, nothing online or anti-cheat related.
 

@@ -18,7 +18,6 @@
 #include "guarded_read.hpp"
 #include "lap_clock.hpp"
 #include "laptimes.hpp"
-#include "mtbadge.hpp"
 #include "qcard.hpp"
 #include "model.hpp"
 #include "standings.hpp"
@@ -466,7 +465,7 @@ private:
 
     struct Badge {
         std::string key;
-        std::string tex; // a rendered badge's texture path (My Team, mtbadge.hpp) when the car has no key
+        std::string tex; // a rendered badge's texture path (My Team, live::team_badge_texture) when the car has no key
         double next = 0;
     };
 
@@ -479,12 +478,13 @@ private:
             if (k)
                 b.key = *k;
             if (b.key.empty()) {
-                std::string why;
-                b.tex = mtbadge::find(rd, game_manager(), vid, why);
-                if (!why.empty())
-                    mt_note_ = "My Team badge: " + why;
-                else if (!b.tex.empty())
-                    mt_note_ = "My Team badge: " + b.tex;
+                // My Team (and any team the game draws a rendered badge for): the texture path the stock timing pill
+                // binds, from Swofty's live state (table v3, "eaid://ui_package/art/textures/render_badge_<table>
+                // <index>"); an older core answers nothing and the team's colour chip stays
+                auto t = live::team_badge_texture(vid);
+                b.tex = t && t->rfind("eaid://", 0) == 0 ? *t : std::string();
+                if (!b.tex.empty())
+                    mt_note_ = "rendered badge (My Team): " + b.tex;
             } else {
                 b.tex.clear();
             }

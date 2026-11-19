@@ -1,5 +1,14 @@
 # Resumen — TV Timing Tower
 
+## 0.26.0 (19-11-2026, en prueba): escudo de Mi Equipo desde el estado en vivo de Swofty
+
+- Swofty (1.9.83) da ya el escudo de Mi Equipo: `live::team_badge_texture` (tabla v3) devuelve la ruta que usa el
+  propio juego (`eaid://ui_package/art/textures/render_badge_<tabla> <índice>`), sacada de la asignación guardada de
+  la carrera de Mi Equipo. Se usa para los coches sin clave de escudo; la lectura propia de la 0.25 (`mtbadge.hpp`)
+  se quita: podía coger el escudo de reserva del inscrito, que según Swofty no siempre es el de la partida.
+- SDK de Swofty actualizado (tabla en vivo v5). Swofty 1.9.83 ya da el estado en vivo en el build nuevo de Steam
+  (26566308), así que la torre debería volver a salir.
+
 ## 0.25.1 (17-11-2026, en prueba): repaso antes de publicar
 
 - README del paquete al día (tiempos en libres y clasificación, tarjeta, vuelta rápida, constructores, Mi Equipo,
